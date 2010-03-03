@@ -58,7 +58,7 @@ min: ${TM_MIN}
 
 doc: ${TM}
 	@@echo "Building documentation"
-	@@${JSDOCDIR}/jsrun.sh -d=${DOC_DIR} -t=${JSDOCDIR}/templates/jsdoc ${TM}
+	@@JSDOCDIR=${JSDOCDIR} ${JSDOCDIR}/jsrun.sh -d=${DOC_DIR} -t=${JSDOCDIR}/templates/jsdoc ${TM}
 
 
 ${TM_MIN}: ${TM}
