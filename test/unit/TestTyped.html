@@ -1,0 +1,95 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>TestTyped</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <script type="text/javascript" src="../assets/jsunittest.js"></script>
+  <script type="text/javascript" src="../../src/tm-src.js"></script>
+  <script type="text/javascript" src="datatypeaware.js"></script>
+  <script type="text/javascript" src="tmunittest.js"></script>
+  <link type="text/css" rel="stylesheet" href="../assets/unittest.css" />
+</head>
+<body>
+
+<!-- Log output -->
+<div id="testlog"> </div>
+
+<!-- Tests -->
+<script type="text/javascript" language="javascript">
+// <![CDATA[
+
+new Test.Unit.Runner({
+    setup: function() {
+        TMUnitTest.addCommonSetupFunctions(this);
+    },
+
+    teardown: function() {
+        TMUnitTest.addCommonTeardownFunctions(this);
+    },
+
+    testAssociation: function() { with(this) {
+        var typed = createAssociation();
+        var oldType = typed.getType();
+        assertNotNull(oldType, "Unexpected null type");
+        var type = createTopic();
+        typed.setType(type);
+        assert(type.equals(typed.getType()), "Expecting another type");
+        typed.setType(oldType);
+        assertEqual(oldType, typed.getType(), "Expecting the previous type");
+        assertRaise('ModelConstraintException', function() {
+                typed.setType(null);
+        }, "Setting the type to null should be disallowed.");
+    }},
+
+    testRole: function() { with(this) {
+        var typed = createRole();
+        var oldType = typed.getType();
+        assertNotNull(oldType, "Unexpected null type");
+        var type = createTopic();
+        typed.setType(type);
+        assert(type.equals(typed.getType()), "Expecting another type");
+        typed.setType(oldType);
+        assertEqual(oldType, typed.getType(), "Expecting the previous type");
+        assertRaise('ModelConstraintException', function() {
+                typed.setType(null);
+        }, "Setting the type to null should be disallowed.");
+    }},
+
+    testOccurrence: function() { with(this) {
+        var typed = createOccurrence();
+        var oldType = typed.getType();
+        assertNotNull(oldType, "Unexpected null type");
+        var type = createTopic();
+        typed.setType(type);
+        assert(type.equals(typed.getType()), "Expecting another type");
+        typed.setType(oldType);
+        assertEqual(oldType, typed.getType(), "Expecting the previous type");
+        assertRaise('ModelConstraintException', function() {
+                typed.setType(null);
+        }, "Setting the type to null should be disallowed.");
+    }},
+
+    testName: function() { with(this) {
+        var typed = createName();
+        var oldType = typed.getType();
+        assertNotNull(oldType, "Unexpected null type");
+        var type = createTopic();
+        typed.setType(type);
+        assert(type.equals(typed.getType()), "Expecting another type");
+        typed.setType(oldType);
+        assertEqual(oldType, typed.getType(), "Expecting the previous type");
+        assertRaise('ModelConstraintException', function() {
+                typed.setType(null);
+        }, "Setting the type to null should be disallowed.");
+    }},
+
+
+
+});
+
+
+// ]]>
+</script>
+</body>
+</html>

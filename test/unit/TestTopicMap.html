@@ -1,0 +1,197 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>TopicMapTest</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <script type="text/javascript" src="../assets/jsunittest.js"></script>
+  <script type="text/javascript" src="../../src/tm-src.js"></script>
+  <script type="text/javascript" src="datatypeaware.js"></script>
+  <script type="text/javascript" src="tmunittest.js"></script>
+  <link type="text/css" rel="stylesheet" href="../assets/unittest.css" />
+</head>
+<body>
+
+<!-- Log output -->
+<div id="testlog"> </div>
+
+<!-- Tests -->
+<script type="text/javascript" language="javascript">
+// <![CDATA[
+
+var tmp = new Test.Unit.Runner({
+    setup: function() {
+        TMUnitTest.addCommonSetupFunctions(this);
+    },
+
+    teardown: function() {
+        TMUnitTest.addCommonTeardownFunctions(this);
+    },
+
+    testParent: function() { with(this) {
+        assertNull(this._tm.getParent());
+    }},
+
+    testTopicCreationSubjectIdentifier: function() { with(this) {
+        var loc = createLocator("http://www.example.org");
+        assertEqual(0, _tm.getTopics().length);
+        var topic = _tm.createTopicBySubjectIdentifier(loc);
+        assertEqual(1, _tm.getTopics().length);
+        assert(_tm.getTopics().contains(topic));
+        assertEqual(1, topic.getSubjectIdentifiers().length);
+        assertEqual(0, topic.getItemIdentifiers().length);
+        assertEqual(0, topic.getSubjectLocators().length);
+        var loc2 = topic.getSubjectIdentifiers()[0];
+        assertEqual(loc, loc2);
+    }},
+
+    testTopicCreationSubjectIdentifierIllegal: function() { with(this) {
+        assertRaise('ModelConstraintException', function() {
+            _tm.createTopicBySubjectIdentifier(null);
+        }, "Subject identifier == null is illegal");
+    }},
+
+    testTopicCreationSubjectLocator: function() { with(this) {
+        var loc = createLocator("http://www.example.org/");
+        assertEqual(0, _tm.getTopics().length);
+        var topic = _tm.createTopicBySubjectLocator(loc);
+        assertEqual(1, _tm.getTopics().length);
+        assert(_tm.getTopics().contains(topic));
+        assertEqual(1, topic.getSubjectLocators().length);
+        assertEqual(0, topic.getItemIdentifiers().length);
+        assertEqual(0, topic.getSubjectIdentifiers().length);
+        var loc2 = topic.getSubjectLocators()[0];
+        assertEqual(loc, loc2);
+    }},
+
+    testTopicCreationSubjectLocatorIllegal: function() { with(this) {
+        assertRaise('ModelConstraintException', function() {
+            _tm.createTopicBySubjectLocator(null);
+        }, "Subject locator == null is illegal");
+    }},
+
+    testTopicCreationItemIdentifier: function() { with(this) {
+        var loc = createLocator("http://www.example.org/");
+        assertEqual(0, _tm.getTopics().length);
+        var topic = _tm.createTopicByItemIdentifier(loc);
+        assertEqual(1, _tm.getTopics().length);
+        assert(_tm.getTopics().contains(topic));
+        assertEqual(1, topic.getItemIdentifiers().length);
+        assertEqual(0, topic.getSubjectLocators().length);
+        assertEqual(0, topic.getSubjectIdentifiers().length);
+        var loc2 = topic.getItemIdentifiers()[0];
+        assertEqual(loc, loc2);
+    }},
+
+    testTopicCreationItemIdentifierIllegal: function() { with(this) {
+        assertRaise('ModelConstraintException', function() {
+            _tm.createTopicByItemIdentifier(null);
+        });
+    }},
+
+    testTopicCreationAutomagicItemIdentifier: function() { with(this) {
+        assertEqual(0, _tm.getTopics().length);
+        var topic = _tm.createTopic();
+        assertEqual(1, _tm.getTopics().length);
+        assert(_tm.getTopics().contains(topic));
+        assertEqual(1, topic.getItemIdentifiers().length);
+        assertEqual(0, topic.getSubjectLocators().length);
+        assertEqual(0, topic.getSubjectIdentifiers().length);
+    }},
+
+    testTopicBySubjectIdentifier: function() { with(this) {
+        var loc = createLocator("http://www.example.org/");
+        var t = _tm.getTopicBySubjectIdentifier(loc);
+        assertNull(t);
+        var topic = _tm.createTopicBySubjectIdentifier(loc);
+        t = _tm.getTopicBySubjectIdentifier(loc);
+        assertNotNull(t);
+        assertEqual(topic, t);
+        topic.remove();
+        t = _tm.getTopicBySubjectIdentifier(loc);
+        assertNull(t);
+    }},
+
+    testTopicBySubjectLocator: function() { with(this) {
+        var loc = createLocator("http://www.example.org/");
+        var t = _tm.getTopicBySubjectLocator(loc);
+        assertNull(t);
+        var topic = _tm.createTopicBySubjectLocator(loc);
+        t = _tm.getTopicBySubjectLocator(loc);
+        assertNotNull(t);
+        assertEqual(topic, t);
+        topic.remove();
+        t = _tm.getTopicBySubjectLocator(loc);
+        assertNull(t);
+    }},
+
+    testAssociationCreationType: function() { with(this) {
+        var type = _tm.createTopic();
+        assertEqual(0, _tm.getAssociations().length);
+        var assoc = _tm.createAssociation(type);
+        assertEqual(1, _tm.getAssociations().length);
+        assert(_tm.getAssociations().contains(assoc));
+        assertEqual(0, assoc.getRoles().length);
+        assertEqual(type, assoc.getType());
+        assertEqual(0, assoc.getScope().length);
+    }},
+
+    testAssociationCreationTypeScopeCollection: function() { with(this) {
+        var type = this._tm.createTopic();
+        var theme = this._tm.createTopic();
+        assertEqual(0, _tm.getAssociations().length);
+        var assoc = _tm.createAssociation(type, [theme]);
+        assertEqual(1, _tm.getAssociations().length);
+        assert(_tm.getAssociations().contains(assoc));
+        assertEqual(0, assoc.getRoles().length);
+        assertEqual(type, assoc.getType());
+        assertEqual(1, assoc.getScope().length);
+        assert(assoc.getScope().contains(theme));
+    }},
+
+    testAssociationCreationTypeScopeArray: function() { with(this) {
+        var type = this._tm.createTopic();
+        var theme = this._tm.createTopic();
+        var theme2 = this._tm.createTopic();
+        assertEqual(0, _tm.getAssociations().length);
+        // TODO: Support variable argument list:
+        // var assoc = _tm.createAssociation(type, theme, theme2);
+        var assoc = _tm.createAssociation(type, [theme, theme2]);
+        assertEqual(1, _tm.getAssociations().length);
+        assert(_tm.getAssociations().contains(assoc));
+        assertEqual(0, assoc.getRoles().length);
+        assertEqual(type, assoc.getType());
+        assertEqual(2, assoc.getScope().length);
+        assert(assoc.getScope().contains(theme));
+        assert(assoc.getScope().contains(theme2));
+    }},
+
+    testAssociationCreationIllegalTypeScopeArray: function() { with(this) {
+        assertRaise('ModelConstraintException', function() {
+            _tm.createAssociation(null);
+        }, "Creating an association with type == null is not allowed");
+    }},
+
+    testAssociationCreationIllegalTypeScopeCollection: function() { with(this) {
+        assertRaise('ModelConstraintException', function() {
+            _tm.createAssociation(null, [_tm.createTopic()]);
+        }, "Creating an association with type == null is not allowed");
+    }},
+
+    testAssociationCreationIllegalNullCollectionScope: function() { with(this) {
+        assertRaise('ModelConstraintException', function() {
+            _tm.createAssociation(_tm.createTopic(), null);
+        }, "Creating an association with scope == null is not allowed");
+    }},
+
+    testGetIndex: function() { with(this) {
+        var BogusIndex = function() {};
+        assertRaise('UnsupportedOperationException', function() {
+            _tm.getIndex(BogusIndex);
+        }, "Exception expected for an unknown index");
+    }}
+});
+// ]]>
+</script>
+</body>
+</html>

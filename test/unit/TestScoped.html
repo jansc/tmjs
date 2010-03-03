@@ -1,0 +1,82 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>TestScoped</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <script type="text/javascript" src="../assets/jsunittest.js"></script>
+  <script type="text/javascript" src="../../src/tm-src.js"></script>
+  <script type="text/javascript" src="datatypeaware.js"></script>
+  <script type="text/javascript" src="tmunittest.js"></script>
+  <link type="text/css" rel="stylesheet" href="../assets/unittest.css" />
+</head>
+<body>
+
+<!-- Log output -->
+<div id="testlog"> </div>
+
+<!-- Tests -->
+<script type="text/javascript" language="javascript">
+// <![CDATA[
+
+var _testScoped = function(context, scoped) {
+    var scopeSize, theme1, theme2;
+    scopeSize = (scoped.isVariant()) ? scoped.getScope().length : 0;
+    context.assertEqual(scopeSize, scoped.getScope().length);
+
+    theme1 = context.createTopic();
+    scoped.addTheme(theme1);
+    scopeSize++;
+    context.assertEqual(scopeSize, scoped.getScope().length);
+    context.assert(scoped.getScope().contains(theme1));
+    theme2 = context.createTopic();
+    context.assert(!scoped.getScope().contains(theme2));
+    scoped.addTheme(theme2);
+    scopeSize++;
+    context.assertEqual(scopeSize, scoped.getScope().length);
+    context.assert(scoped.getScope().contains(theme1));
+    context.assert(scoped.getScope().contains(theme2));
+    scoped.removeTheme(theme2);
+    scopeSize--;
+    context.assertEqual(scopeSize, scoped.getScope().length);
+    context.assert(scoped.getScope().contains(theme1));
+    context.assert(!scoped.getScope().contains(theme2));
+    scoped.removeTheme(theme1);
+    scopeSize--;
+    context.assertEqual(scopeSize, scoped.getScope().length);
+    context.assertRaise('ModelConstraintException', function() {
+        scoped.addTheme(null);
+    }, "addTheme(null) is illegal");
+};
+
+var tmp = new Test.Unit.Runner({
+    setup: function() {
+        TMUnitTest.addCommonSetupFunctions(this);
+    },
+
+    teardown: function () {
+        TMUnitTest.addCommonTeardownFunctions(this);
+    },
+
+    testAssociation: function () {
+        _testScoped(this, this.createAssociation());
+    },
+
+    testOccurrence: function () {
+        _testScoped(this, this.createOccurrence());
+    },
+
+    testName: function () {
+        _testScoped(this, this.createName());
+    },
+
+    testVariant: function () {
+        _testScoped(this, this.createVariant());
+    },
+});
+
+
+// ]]>
+</script>
+</body>
+</html>

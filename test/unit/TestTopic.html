@@ -1,0 +1,269 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>TopicTest</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <script type="text/javascript" src="../assets/jsunittest.js"></script>
+  <script type="text/javascript" src="../../src/tm-src.js"></script>
+  <script type="text/javascript" src="datatypeaware.js"></script>
+  <script type="text/javascript" src="tmunittest.js"></script>
+  <link type="text/css" rel="stylesheet" href="../assets/unittest.css" />
+</head>
+<body>
+
+<!-- Log output -->
+<div id="testlog"> </div>
+
+<!-- Tests -->
+<script type="text/javascript" language="javascript">
+// <![CDATA[
+
+var tmp = new Test.Unit.Runner({
+    setup: function() {
+        TMUnitTest.addCommonSetupFunctions(this);
+    },
+
+    teardown: function() {
+        TMUnitTest.addCommonTeardownFunctions(this);
+    },
+
+    // test cases follow, each method which starts 
+    // with "test" is considered a test case
+    testParent: function() { with(this) {
+        var parent = createTopicMap("http://www.tmapi.org/test/topic/parent");
+        assertEqual(0, parent.getTopics().length,
+            'Exptected new topic map to be created with no topics');
+        var topic = parent.createTopic();
+        assertEqual(parent, topic.getParent(),
+                "Unexpected topic parent after creation");
+        assertEqual(1, parent.getTopics().length,
+                "Expected topic set size to increment for topic map");
+        assert(parent.getTopics().contains(topic),
+                "Topic is not part of getTopics()");
+        topic.remove();
+        assertEqual(0, parent.getTopics().length,
+                "Expected topic set size to decrement for topic map.");
+    }},
+
+    testAddSubjectIdentifierIllegal: function() { with(this) {
+        var topic = createTopic();
+        assertRaise('ModelConstraintException', function() {
+            topic.addSubjectIdentifier(null);
+        }, "addSubjectIdentifier(null) is illegal");
+    }},
+
+    testAddSubjectLocatorIllegal: function() { with(this) {
+        var topic = createTopic();
+        assertRaise('ModelConstraintException', function() {
+            topic.addSubjectLocator(null);
+        }, "addSubjectLocator(null) is illegal");
+    }},
+
+    testSubjectIdentifiers: function() { with(this) {
+        var loc1 = createLocator("http://www.example.org/1");
+        var loc2 = createLocator("http://www.example.org/2");
+        var topic = _tm.createTopicBySubjectIdentifier(loc1);
+        assertEqual(1, topic.getSubjectIdentifiers().length);
+        assert(topic.getSubjectIdentifiers().contains(loc1));
+        topic.addSubjectIdentifier(loc2);
+        assertEqual(2, topic.getSubjectIdentifiers().length);
+        assert(topic.getSubjectIdentifiers().contains(loc2));
+        topic.removeSubjectIdentifier(loc1);
+        assertEqual(1, topic.getSubjectIdentifiers().length);
+        assert(topic.getSubjectIdentifiers().contains(loc2));
+    }},
+
+    testSubjectLocators: function() { with(this) {
+        var loc1 = createLocator("http://www.example.org/1");
+        var loc2 = createLocator("http://www.example.org/2");
+        var topic = _tm.createTopicBySubjectLocator(loc1);
+        assertEqual(1, topic.getSubjectLocators().length);
+        assert(topic.getSubjectLocators().contains(loc1));
+        topic.addSubjectLocator(loc2);
+        assertEqual(2, topic.getSubjectLocators().length);
+        assert(topic.getSubjectLocators().contains(loc2));
+        topic.removeSubjectLocator(loc1);
+        assertEqual(1, topic.getSubjectLocators().length);
+        assert(topic.getSubjectLocators().contains(loc2));
+    }},
+
+    testTopicTypes: function() { with(this) {
+        var topic = createTopic();
+        var type1 = createTopic();
+        var type2 = createTopic();
+        assertEqual(0, topic.getTypes().length);
+        topic.addType(type1);
+        assertEqual(1, topic.getTypes().length);
+        assert(topic.getTypes().contains(type1));
+        topic.addType(type2);
+        assertEqual(2, topic.getTypes().length);
+        assert(topic.getTypes().contains(type2));
+        topic.removeType(type1);
+        assertEqual(1, topic.getTypes().length);
+        assert(topic.getTypes().contains(type2));
+        topic.removeType(type2);
+        assertEqual(0, topic.getTypes().length);
+    }},
+
+    testAddTypeIllegal: function() { with(this) {
+        var topic = createTopic();
+        assertRaise('ModelConstraintException', function() {
+            topic.addType(null);
+        }, "addType(null) is illegal");
+    }},
+
+    testRoleFilter: function() { with(this) {
+        var player = createTopic();
+        var type1 = createTopic();
+        var type2 = createTopic();
+        var unusedType = createTopic();
+        var assoc = createAssociation();
+        assertEqual(0, player.getRolesPlayed(type1).length);
+        assertEqual(0, player.getRolesPlayed(type2).length);
+        assertEqual(0, player.getRolesPlayed(unusedType).length);
+        var role = assoc.createRole(type1, player);
+        assertEqual(1, player.getRolesPlayed(type1).length);
+        assert(player.getRolesPlayed(type1).contains(role));
+        assertEqual(0, player.getRolesPlayed(type2).length);
+        assertEqual(0, player.getRolesPlayed(unusedType).length);
+        role.setType(type2);
+        assertEqual(1, player.getRolesPlayed(type2).length);
+        assert(player.getRolesPlayed(type2).contains(role));
+        assertEqual(0, player.getRolesPlayed(type1).length);
+        assertEqual(0, player.getRolesPlayed(unusedType).length);
+        role.remove();
+        assertEqual(0, player.getRolesPlayed(type1).length);
+        assertEqual(0, player.getRolesPlayed(type2).length);
+        assertEqual(0, player.getRolesPlayed(unusedType).length);
+    }},
+
+    testRoleFilterIllegal: function() { with(this) {
+        var role = createRole();
+        var player = role.getPlayer();
+        assertRaise('IllegalArgumentException', function() {
+            player.getRolesPlayed(null);
+        }, "topic.getRolesPlayed(null) is illegal");
+    }},
+
+    testRoleAssociationFilter: function() { with(this) {
+        var player = createTopic();
+        var assocType1 = createTopic();
+        var assocType2 = createTopic();
+        var roleType1 = createTopic();
+        var roleType2 = createTopic();
+        var assoc = _tm.createAssociation(assocType1);
+        assertEqual(0, player.getRolesPlayed(roleType1, assocType1).length);
+        assertEqual(0, player.getRolesPlayed(roleType1, assocType2).length);
+        assertEqual(0, player.getRolesPlayed(roleType2, assocType1).length);
+        assertEqual(0, player.getRolesPlayed(roleType2, assocType2).length);
+        var role1 = assoc.createRole(roleType1, player);
+        assertEqual(1, player.getRolesPlayed(roleType1, assocType1).length);
+        assert(player.getRolesPlayed(roleType1, assocType1).contains(role1));
+        assertEqual(0, player.getRolesPlayed(roleType1, assocType2).length);
+        assertEqual(0, player.getRolesPlayed(roleType2, assocType1).length);
+        assertEqual(0, player.getRolesPlayed(roleType2, assocType2).length);
+        var role2 = assoc.createRole(roleType2, player);
+        assertEqual(1, player.getRolesPlayed(roleType1, assocType1).length);
+        assert(player.getRolesPlayed(roleType1, assocType1).contains(role1));
+        assertEqual(0, player.getRolesPlayed(roleType1, assocType2).length);
+        assertEqual(1, player.getRolesPlayed(roleType2, assocType1).length);
+        assert(player.getRolesPlayed(roleType2, assocType1).contains(role2));
+        assertEqual(0, player.getRolesPlayed(roleType2, assocType2).length);
+        role2.setType(roleType1);
+        assertEqual(2, player.getRolesPlayed(roleType1, assocType1).length);
+        assert(player.getRolesPlayed(roleType1, assocType1).contains(role1));
+        assert(player.getRolesPlayed(roleType1, assocType1).contains(role2));
+        assertEqual(0, player.getRolesPlayed(roleType1, assocType2).length);
+        assertEqual(0, player.getRolesPlayed(roleType2, assocType1).length);
+        assertEqual(0, player.getRolesPlayed(roleType2, assocType2).length);
+        role1.remove();
+        assertEqual(1, player.getRolesPlayed(roleType1, assocType1).length);
+        assert(player.getRolesPlayed(roleType1, assocType1).contains(role2));
+        assertEqual(0, player.getRolesPlayed(roleType1, assocType2).length);
+        assertEqual(0, player.getRolesPlayed(roleType2, assocType1).length);
+        assertEqual(0, player.getRolesPlayed(roleType2, assocType2).length);
+        assoc.remove();
+        assertEqual(0, player.getRolesPlayed(roleType1, assocType1).length);
+        assertEqual(0, player.getRolesPlayed(roleType1, assocType2).length);
+        assertEqual(0, player.getRolesPlayed(roleType2, assocType1).length);
+        assertEqual(0, player.getRolesPlayed(roleType2, assocType2).length);
+    }},
+
+    testRoleAssociationFilterIllegalAssociation: function() { with(this) {
+        var role = createRole();
+        var player = role.getPlayer();
+        assertRaise('IllegalArgumentException', function() {
+            player.getRolesPlayed(role.getType(), null);
+        }, "topic.getRolesPlayed(type, null) is illegal");
+    }},
+
+    testRoleAssociationFilterIllegalRole: function() { with(this) {
+        var role = createRole();
+        var player = role.getPlayer();
+        assertRaise('IllegalArgumentException', function() {
+            player.getRolesPlayed(null, role.getParent().getType());
+        }, "topic.getRolesPlayed(null, type) is illegal");
+    }},
+
+    testOccurrenceFilter: function() { with(this) {
+        var topic = createTopic();
+        var type = createTopic();
+        var type2 = createTopic();
+        var unusedType = createTopic();
+        assertEqual(0, topic.getOccurrences(type).length);
+        assertEqual(0, topic.getOccurrences(type2).length);
+        assertEqual(0, topic.getOccurrences(unusedType).length);
+        var occ = topic.createOccurrence(type, "Occurrence");
+        assertEqual(1, topic.getOccurrences(type).length);
+        assert(topic.getOccurrences(type).contains(occ));
+        assertEqual(0, topic.getOccurrences(type2).length);
+        assertEqual(0, topic.getOccurrences(unusedType).length);
+        occ.setType(type2);
+        assertEqual(1, topic.getOccurrences(type2).length);
+        assert(topic.getOccurrences(type2).contains(occ));
+        assertEqual(0, topic.getOccurrences(type).length);
+        assertEqual(0, topic.getOccurrences(unusedType).length);
+        occ.remove();
+        assertEqual(0, topic.getOccurrences(type).length);
+        assertEqual(0, topic.getOccurrences(type2).length);
+        assertEqual(0, topic.getOccurrences(unusedType).length);
+    }},
+
+    testOccurrenceFilterIllegal: function() { with(this) {
+        var occ = createOccurrence();
+        var parent = occ.getParent();
+        assertRaise('IllegalArgumentException', function() {
+            parent.getOccurrences(null);
+        }, "topic.getOccurrences(null) is illegal");
+    }},
+
+    testNameFilter: function () { with(this) {
+        var topic, type, type2, unusedType, occ;
+        topic = createTopic();
+        type = createTopic();
+        type2 = createTopic();
+        unusedType = createTopic();
+        assertEqual(0, topic.getNames(type).length);
+        assertEqual(0, topic.getNames(type2).length);
+        assertEqual(0, topic.getNames(unusedType).length);
+        occ = topic.createName(type, "Name");
+        assertEqual(1, topic.getNames(type).length);
+        assert(topic.getNames(type).contains(occ));
+        assertEqual(0, topic.getNames(type2).length);
+        assertEqual(0, topic.getNames(unusedType).length);
+        occ.setType(type2);
+        assertEqual(1, topic.getNames(type2).length);
+        assert(topic.getNames(type2).contains(occ));
+        assertEqual(0, topic.getNames(type).length);
+        assertEqual(0, topic.getNames(unusedType).length);
+        occ.remove();
+        assertEqual(0, topic.getNames(type).length);
+        assertEqual(0, topic.getNames(type2).length);
+        assertEqual(0, topic.getNames(unusedType).length);
+    }}
+});
+// ]]>
+</script>
+</body>
+</html>

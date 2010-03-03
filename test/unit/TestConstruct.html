@@ -1,0 +1,98 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>TestConstruct</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <script type="text/javascript" src="../assets/jsunittest.js"></script>
+  <script type="text/javascript" src="../../src/tm-src.js"></script>
+  <script type="text/javascript" src="datatypeaware.js"></script>
+  <script type="text/javascript" src="tmunittest.js"></script>
+  <link type="text/css" rel="stylesheet" href="../assets/unittest.css" />
+</head>
+<body>
+
+<!-- Log output -->
+<div id="testlog"> </div>
+
+<!-- Tests -->
+<script type="text/javascript" language="javascript">
+// <![CDATA[
+
+var _testConstruct = function(context, construct) {
+    return function() { with(context) {
+        assertEqual(0, construct.getItemIdentifiers().length,
+            "Unexpected item identifiers");
+        var iid = _tm.createLocator("http://www.tmapi.org/test#test");
+        construct.addItemIdentifier(iid);
+        assertEqual(1, construct.getItemIdentifiers().length,
+            "Expected a item identifier");
+        assert(construct.getItemIdentifiers().contains(iid),
+            "Unexpected item identifier in item identifier property");
+        assertEqual(construct, _tm.getConstructByItemIdentifier(iid),
+            "Unexpected construct retrieved");
+        construct.removeItemIdentifier(iid);
+        assertEqual(0, construct.getItemIdentifiers().length,
+            "Item identifier was not removed");
+        assert(!construct.getItemIdentifiers().contains(iid));
+        assertNull(_tm.getConstructByItemIdentifier(iid),
+            "Got an construct even if the item identifier is unassigned");
+        assertRaise('ModelConstraintException', function() {
+            construct.addItemIdentifier(null);
+        }, "addItemIdentifier(null) is illegal");
+        if (construct.isTopicMap()) {
+            assertNull(construct.getParent());
+        } else {
+            assertNotNull(construct.getParent());
+        }
+        assertEqual(_tm, construct.getTopicMap());
+        var id = construct.getId();
+        assertEqual(construct, _tm.getConstructById(id), "Unexpected result");
+    }};
+};
+
+new Test.Unit.Runner({
+    setup: function() {
+        TMUnitTest.addCommonSetupFunctions(this);
+    },
+
+    teardown: function() {
+        TMUnitTest.addCommonTeardownFunctions(this);
+    },
+
+    testTopicMap: function() {
+        _testConstruct(this, this._tm)();
+    },
+
+    testTopic: function() {
+        var topic = this._tm.createTopicBySubjectLocator(
+            this._tm.createLocator("http://www.tmapi.org/"));
+        _testConstruct(this, topic)();
+    },
+
+    testAssociation: function() {
+        _testConstruct(this, this.createAssociation())();
+    },
+
+    testRole: function() {
+        _testConstruct(this, this.createRole())();
+    },
+
+    testOccurrence: function() {
+        _testConstruct(this, this.createOccurrence())();
+    },
+
+    testName: function() {
+        _testConstruct(this, this.createName())();
+    },
+
+    testVariant: function() {
+        _testConstruct(this, this.createVariant())();
+    }
+});
+
+
+// ]]>
+</script>
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>TestScoped</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <script type="text/javascript" src="../assets/jsunittest.js"></script>
+  <script type="text/javascript" src="../../src/tm-src.js"></script>
+  <script type="text/javascript" src="datatypeaware.js"></script>
+  <script type="text/javascript" src="tmunittest.js"></script>
+  <link type="text/css" rel="stylesheet" href="../assets/unittest.css" />
+</head>
+<body>
+
+<!-- Log output -->
+<div id="testlog"> </div>
+
+<!-- Tests -->
+<script type="text/javascript" language="javascript">
+// <![CDATA[
+
+var tmp = new Test.Unit.Runner({
+    setup: function() {
+        TMUnitTest.addCommonSetupFunctions(this);
+    },
+
+    teardown: function () {
+        TMUnitTest.addCommonTeardownFunctions(this);
+    },
+
+    testLoad: function () {
+        var tm = this._tms.getTopicMap(this._defaultLocator);
+        this.assertNotNull(tm, "TopicMap was not created");
+        this.assertNotNull(tm.getId(), "There is no identifier for TopicMap");
+        this.assertEqual(this._tm.getId(), tm.getId());
+    },
+    
+    testSameLocator: function () {
+        var that = this;
+        this.assertRaise('TopicMapExistsException', function() {
+            that._tms.createTopicMap(that._defaultLocator);
+        }, "A topic map under the same IRI exists already.");
+    },
+
+    testSet: function () {
+        var BASE, tm1, tm2, tm3;
+        BASE = "http://www.tmapi.org/test-tm-system/";
+        tm1 = this.createTopicMap(BASE + "test1");
+        tm2 = this.createTopicMap(BASE + "test2");
+        tm3 = this.createTopicMap(BASE + "test3");
+        this.assertNotNull(tm1);
+        this.assertNotNull(tm2);
+        this.assertNotNull(tm3);
+    },
+
+    testRemoveTopicMaps: function () {
+        var BASE, tm1, tm2, tm3, tmcount;
+        BASE = "http://www.tmapi.org/test-tm-system-removal/";
+        tm1 = this.createTopicMap(BASE + "test1");
+        tm2 = this.createTopicMap(BASE + "test2");
+        tm3 = this.createTopicMap(BASE + "test3");
+        this.assertNotNull(tm1);
+        this.assertNotNull(tm2);
+        this.assertNotNull(tm3);
+        tmcount = this._tms.getLocators().length;
+        tm3.remove();
+        this.assertEqual(tmcount-1, this._tms.getLocators().length);
+    },
+
+    testLocatorCreation: function () {
+        var ref, loc;
+        ref = "http://www.tmapi.org";
+        loc = this._tms.createLocator(ref);
+        this.assertEqual(ref, loc.getReference());
+    }
+});
+
+
+// ]]>
+</script>
+</body>
+</html>

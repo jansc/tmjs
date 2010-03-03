@@ -1,0 +1,201 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>TestScoped</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <script type="text/javascript" src="../assets/jsunittest.js"></script>
+  <script type="text/javascript" src="../../src/tm-src.js"></script>
+  <script type="text/javascript" src="datatypeaware.js"></script>
+  <script type="text/javascript" src="tmunittest.js"></script>
+  <link type="text/css" rel="stylesheet" href="../assets/unittest.css" />
+</head>
+<body>
+
+<!-- Log output -->
+<div id="testlog"> </div>
+
+<!-- Tests -->
+<script type="text/javascript" language="javascript">
+// <![CDATA[
+var _testTyped = function(context, typed) {
+    var topicCount, oldType, topic;
+    topicCount = context._tm.getTopics().length;
+    oldType = typed.getType();
+    topic = context.createTopic();
+    context.assertEqual(topicCount+1, context._tm.getTopics().length);
+    typed.setType(topic);
+    try {
+        topic.remove();
+        context.fail("The topic is used as type");
+    } catch (e) {
+        if (e.name === 'TopicInUseException') {
+            assert(topic.equals(e.reporter));
+        }
+    }
+    context.assertEqual(topicCount+1, context._tm.getTopics().length);
+    typed.setType(oldType);
+    topic.remove();
+    context.assertEqual(topicCount, context._tm.getTopics().length);
+};
+
+var _testReifiable = function(context, reifiable) {
+    var topicCount, topic;
+    context.assertNull(reifiable.getReifier());
+    topicCount = context._tm.getTopics().length;
+    topic = context.createTopic();
+    context.assertEqual(topicCount+1, context._tm.getTopics().length);
+    reifiable.setReifier(topic);
+    try {
+        topic.remove();
+        context.fail("The topic is used as reifier");
+    } catch (e) {
+        if (e.name === 'TopicInUseException') {
+        //console.dir(e.reporter);
+        //console.dir(topic);
+            context.assertEqual(topic, e.reporter);
+        }
+    }
+    context.assertEqual(topicCount+1, context._tm.getTopics().length);
+    reifiable.setReifier(null);
+    topic.remove();
+    context.assertEqual(topicCount, context._tm.getTopics().length);
+};
+
+var _testScoped = function(context, scoped) {
+    var topicCount, topic;
+    topicCount = context._tm.getTopics().length;
+    topic = context.createTopic();
+    context.assertEqual(topicCount+1, context._tm.getTopics().length);
+    scoped.addTheme(topic);
+    try {
+        topic.remove();
+        context.fail("The topic is used as theme");
+    } catch (e) {
+        context.assertEqual(topic, e.reporter);
+    }
+    context.assertEqual(topicCount+1, context._tm.getTopics().length);
+    scoped.removeTheme(topic);
+    topic.remove();
+    context.assertEqual(topicCount, context._tm.getTopics().length);
+};
+
+var tmp = new Test.Unit.Runner({
+    setup: function() {
+        TMUnitTest.addCommonSetupFunctions(this);
+    },
+
+    teardown: function () {
+        TMUnitTest.addCommonTeardownFunctions(this);
+    },
+
+    testUsedAsTopicMapReifier: function() {
+        _testReifiable(this, this._tm);
+    },
+    
+    testUsedAsAssociationType: function () {
+        _testTyped(this, this.createAssociation());
+    },
+
+    testUsedAsAssociationTheme: function () {
+        _testScoped(this, this.createAssociation());
+    },
+
+    testUsedAsAssociationReifier: function () {
+        _testReifiable(this, this.createAssociation());
+    },
+
+    testUsedAsRoleType: function () {
+        _testTyped(this, this.createRole());
+    },
+
+    testUsedAsRoleReifier: function () {
+        _testReifiable(this, this.createRole());
+    },
+
+    testUsedAsOccurrenceType: function () {
+        _testTyped(this, this.createOccurrence());
+    },
+
+    testUsedAsOccurrenceTheme: function () {
+        _testScoped(this, this.createOccurrence());
+    },
+
+    testUsedAsOccurrenceReifier: function () {
+        _testReifiable(this, this.createOccurrence());
+    },
+
+    testUsedAsNameType: function () {
+        _testTyped(this, this.createName());
+    },
+
+    testUsedAsNameTheme: function () {
+        _testScoped(this, this.createName());
+    },
+
+    testUsedAsNameReifier: function () {
+        _testReifiable(this, this.createName());
+    },
+
+    testUsedAsVariantTheme: function () {
+        _testScoped(this, this.createVariant());
+    },
+
+    testUsedAsVariantReifier: function () {
+        _testReifiable(this, this.createVariant());
+    },
+
+    testUsedAsTopicType: function () {
+        var topic, topic2;
+        topic = this.createTopic();
+        topic2 = this.createTopic();
+        this.assertEqual(2, this._tm.getTopics().length);
+        topic2.addType(topic);
+        try {
+            topic.remove();
+            this.fail("The topic is used as topic type");
+        }
+        catch (e) {
+            if (e.name === 'TopicInUseException') {
+                assertEqual(topic, e.reporter);
+            }
+        }
+        this.assertEqual(2, this._tm.getTopics().length);
+        topic2.removeType(topic);
+        topic.remove();
+        this.assertEqual(1, this._tm.getTopics().length);
+    },
+
+    testUsedAsPlayer: function() {
+        var topic, role, assoc;
+        topic = this.createTopic();
+        this.assertEqual(1, this._tm.getTopics().length);
+        topic.remove();
+        this.assertEqual(0, this._tm.getTopics().length);
+        topic = this.createTopic();
+        this.assertEqual(1, this._tm.getTopics().length);
+        assoc = this.createAssociation();
+        this.assertEqual(2, this._tm.getTopics().length);
+        role = assoc.createRole(this._tm.createTopic(), topic);
+        this.assertEqual(3, this._tm.getTopics().length);
+        try {
+            topic.remove();
+            this.fail("The topic is used as player");
+        }
+        catch (e) {
+            if (e.name === 'TopicInUseException') {
+                this.assertEqual(topic, e.reporter);
+            }
+        }
+        role.setPlayer(this.createTopic());
+        this.assertEqual(4, this._tm.getTopics().length);
+        topic.remove();
+        this.assertEqual(3, this._tm.getTopics().length);
+    }
+});
+
+
+// ]]>
+</script>
+</body>
+</html>

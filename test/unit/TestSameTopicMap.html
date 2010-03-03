@@ -1,0 +1,180 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>TestSameTopicMap</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <script type="text/javascript" src="../assets/jsunittest.js"></script>
+  <script type="text/javascript" src="../../src/tm-src.js"></script>
+  <script type="text/javascript" src="datatypeaware.js"></script>
+  <script type="text/javascript" src="tmunittest.js"></script>
+  <link type="text/css" rel="stylesheet" href="../assets/unittest.css" />
+</head>
+<body>
+
+<!-- Log output -->
+<div id="testlog"> </div>
+
+<!-- Tests -->
+<script type="text/javascript" language="javascript">
+// <![CDATA[
+
+var _testIllegalTheme = function(context, scoped) {
+    context.assertRaise('ModelConstraintException', function() {
+        scoped.addTheme(context._tm2.createTopic());
+    }, "Adding a theme from another topic map shouldn't be allowed");
+};
+
+var _testIllegalType = function(context, typed) {
+    context.assertRaise('ModelConstraintException', function() {
+        typed.setType(context._tm2.createTopic());
+    }, "Setting the type to a topic from another topic map shouldn't be allowed");
+};
+
+var _testIllegalReifier = function(context, reifiable) {
+    context.assertRaise('ModelConstraintException', function() {
+        reifiable.setReifier(context._tm2.createTopic());
+    }, "Setting the reifier to a topic of another topic map shouldn't be allowed");
+};
+
+var tmp = new Test.Unit.Runner({
+    setup: function() {
+        TMUnitTest.addCommonSetupFunctions(this);
+        this._tm2 = this._tms.createTopicMap(
+            this._tms.createLocator('http://www.tmapi.org/same-topicmap'));
+    },
+
+    teardown: function () {
+        TMUnitTest.addCommonTeardownFunctions(this);
+    },
+
+    testAssociationCreationIllegalType: function () {
+        var that = this;
+        this.assertRaise('ModelConstraintException', function() {
+            that._tm.createAssociation(that._tm2.createTopic());
+        }, "Expected a model contraint violation");
+    },
+
+    testAssociationCreationIllegalScopeArray: function () {
+        var that = this;
+        this.assertRaise('ModelConstraintException', function() {
+            that._tm.createAssociation(that.createTopic(),
+                [that.createTopic(), that._tm2.createTopic()]);
+        }, "Expected a model contraint violation");
+    },
+
+    testNameCreationIllegalType: function () {
+        var that = this;
+        this.assertRaise('ModelConstraintException', function() {
+            that.createTopic().createName(that._tm2.createTopic(), "value");
+        }, "Expected a model contraint violation");
+    },
+
+    testOccurrenceCreationIllegalType: function () {
+        var that = this;
+        this.assertRaise('ModelConstraintException', function() {
+            that.createTopic().createOccurrence(that._tm2.createTopic(), "value");
+        }, "Expected a model contraint violation");
+    },
+
+    testOccurrenceCreationIllegalScopeArray: function () {
+        var that = this;
+        this.assertRaise('ModelConstraintException', function() {
+            that.createTopic().createOccurrence(that.createTopic(),
+               "value", null, [that.createTopic(), that._tm2.createTopic()]);
+        }, "Expected a model contraint violation");
+    },
+
+    testRoleCreationIllegalType: function () {
+        var that = this;
+        this.assertRaise('ModelConstraintException', function() {
+            that.createAssociation().createRole(that._tm2.createTopic(),
+                that.createTopic());
+        }, "Expected a model contraint violation");
+    },
+
+    testRoleCreationIllegalPlayer: function () {
+        var that = this;
+        this.assertRaise('ModelConstraintException', function() {
+            that.createAssociation().createRole(that.createTopic(),
+                that._tm2.createTopic());
+        }, "Expected a model contraint violation");
+    },
+
+    testAssociationIllegalTheme: function () {
+        _testIllegalTheme(this, this.createAssociation());
+    },
+
+    testOccurrenceIllegalTheme: function () {
+        _testIllegalTheme(this, this.createOccurrence());
+    },
+
+    testNameIllegalTheme: function () {
+        _testIllegalTheme(this, this.createName());
+    },
+
+    testVariantIllegalTheme: function () {
+        _testIllegalTheme(this, this.createVariant());
+    },
+
+    testAssociationIllegalType: function () {
+        _testIllegalType(this, this.createAssociation());
+    },
+
+    testRoleIllegalType: function () {
+        _testIllegalType(this, this.createRole());
+    },
+
+    testOccurrenceIllegalType: function () {
+        _testIllegalType(this, this.createOccurrence());
+    },
+
+    testNameIllegalType: function () {
+        _testIllegalType(this, this.createName());
+    },
+
+    testRoleIllegalPlayer: function () {
+        var that = this;
+        this.assertRaise('ModelConstraintException', function() {
+            that.createRole().setPlayer(that._tm2.createTopic());
+        }, "Setting the player to a topic of another topic map shouldn't be allowed.");
+    },
+
+    testTopicMapIllegalReifier: function () {
+        _testIllegalReifier(this, this._tm);
+    },
+
+    testAssociationIllegalReifier: function () {
+        _testIllegalReifier(this, this.createAssociation());
+    },
+
+    testRoleIllegalReifier: function () {
+        _testIllegalReifier(this, this.createRole());
+    },
+
+    testOccurrenceIllegalReifier: function () {
+        _testIllegalReifier(this, this.createOccurrence());
+    },
+
+    testNameIllegalReifier: function () {
+        _testIllegalReifier(this, this.createName());
+    },
+
+    testVariantIllegalReifier: function () {
+        _testIllegalReifier(this, this.createVariant());
+    },
+
+    testIllegalTopicType: function () {
+        var that = this;
+        this.assertRaise('ModelConstraintException', function() {
+            that.createTopic().addType(that._tm2.createTopic());
+        }, "The type is not from the same topic map. Disallowed.");
+    },
+
+});
+
+
+// ]]>
+</script>
+</body>
+</html>

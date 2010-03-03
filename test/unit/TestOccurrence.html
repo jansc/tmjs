@@ -1,0 +1,55 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>OccurrenceTest</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <script type="text/javascript" src="../assets/jsunittest.js"></script>
+  <script type="text/javascript" src="../../src/tm-src.js"></script>
+  <script type="text/javascript" src="datatypeaware.js"></script>
+  <script type="text/javascript" src="tmunittest.js"></script>
+  <link type="text/css" rel="stylesheet" href="../assets/unittest.css" />
+</head>
+<body>
+
+<!-- Log output -->
+<div id="testlog"> </div>
+
+<!-- Tests -->
+<script type="text/javascript" language="javascript">
+// <![CDATA[
+
+var tests = datatypeAware;
+
+tests.setup = function() {
+    TMUnitTest.addCommonSetupFunctions(this);
+};
+
+tests.teardown = function() {
+    TMUnitTest.addCommonTeardownFunctions(this);
+};
+
+// test cases follow, each method which starts 
+// with "test" is considered a test case
+tests.testParent = function() { with(this) {
+    var parent = createTopic();
+    assertEqual(0, parent.getOccurrences().length,
+            "Expected new topics to be created with no occurrences");
+    var occ = parent.createOccurrence(createTopic(), "Occurrence");
+    assertIdentical(parent, occ.getParent(),
+            "Unexpected occurrence parent after creation");
+    assertEqual(1, parent.getOccurrences().length,
+            "Expected occurrence set size to increment for topic");
+    assert(parent.getOccurrences().contains(occ),
+            "Occurrence is not part of getOccurrences()");
+    occ.remove();
+    assertEqual(0, parent.getOccurrences().length,
+            "Expected occurrence set size to decrement for topic.");
+}};
+
+new Test.Unit.Runner(tests);
+
+// ]]>
+</script>
+</body>
+</html>

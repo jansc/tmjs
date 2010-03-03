@@ -1,0 +1,138 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>TestReifiable</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <script type="text/javascript" src="../assets/jsunittest.js"></script>
+  <script type="text/javascript" src="../../src/tm-src.js"></script>
+  <script type="text/javascript" src="datatypeaware.js"></script>
+  <script type="text/javascript" src="tmunittest.js"></script>
+  <link type="text/css" rel="stylesheet" href="../assets/unittest.css" />
+</head>
+<body>
+
+<!-- Log output -->
+<div id="testlog"> </div>
+
+<!-- Tests -->
+<script type="text/javascript" language="javascript">
+// <![CDATA[
+
+var _testReification = function(context, reifiable) {
+    return  function() { with(context) {
+        assertNull(reifiable.getReifier(), "Unexpected reifier property");
+        var reifier = createTopic();
+        assertNull(reifier.getReified());
+        reifiable.setReifier(reifier);
+        assert(reifier.equals(reifiable.getReifier()),
+            "Unexpected reifier property");
+        assert(reifiable.equals(reifier.getReified()),
+            "Unexpected reified property");
+        reifiable.setReifier(null);
+        assertNull(reifiable.getReifier(), "Reifier should be null");
+        assertNull(reifier.getReified(), "Unexpected reified property");
+        reifiable.setReifier(reifier);
+        assert(reifier.equals(reifiable.getReifier()),
+            "Unexpected reifier property");
+        assert(reifiable.equals(reifier.getReified()),
+            "Unexpected reified property");
+        assertRaise('ModelConstraintException', function() {
+            // Assigning the *same* reifier is allowed, the TM processor MUST NOT
+            // raise an exception
+            reifiable.setReifier(reifier);
+        }, "Unexpected exception while setting the reifier to the same value");
+    }};
+};
+
+var _testReificationCollision = function(context, reifiable) {
+   return function() { with(context) {
+        assertNull(reifiable.getReifier(), "Unexpected reifier property");
+        var reifier = createTopic();
+        assertNull(reifier.getReified());
+        var otherReifiable = createAssociation();
+        otherReifiable.setReifier(reifier);
+        assertEqual(reifier, otherReifiable.getReifier(),
+            "Expected a reifier property");
+        assertEqual(otherReifiable, reifier.getReified(),
+            "Unexpected reified property");
+        assertRaise('ModelConstraintException', function() {
+            reifiable.setReifier(reifier);
+        }, "The reifier reifies already another construct");
+            // catch: assertEquals(reifiable, ex.getReporter());
+        otherReifiable.setReifier(null);
+        assertNull(otherReifiable.getReifier(),
+            "Reifier property should be null");
+        assertNull(reifier.getReified(),
+            "Reified property should be null");
+        reifiable.setReifier(reifier);
+        assertEqual(reifier, reifiable.getReifier(),
+            "Reifier property should have been changed");
+        assertEqual(reifiable, reifier.getReified(),
+            "Reified property should have been changed");
+    }};
+};
+
+new Test.Unit.Runner({
+    setup: function() {
+        TMUnitTest.addCommonSetupFunctions(this);
+    },
+
+    teardown: function() {
+        TMUnitTest.addCommonTeardownFunctions(this);
+    },
+
+    testTopicMapReification: function() {
+        _testReification(this, this._tm)();
+    },
+
+    testTopicMapReificationCollision: function() {
+        _testReificationCollision(this, this._tm)();
+    },
+
+    testAssociationReification: function() {
+        _testReification(this, this.createAssociation())();
+    },
+
+    testAssociationReificationCollision: function() {
+        _testReificationCollision(this, this.createAssociation())();
+    },
+
+    testRoleReification: function() {
+        _testReification(this, this.createRole())();
+    },
+
+    testRoleReificationCollision: function() {
+        _testReificationCollision(this, this.createRole())();
+    },
+
+    testOccurrenceReification: function() {
+        _testReification(this, this.createOccurrence())();
+    },
+
+    testOccurrenceReificationCollision: function() {
+        _testReificationCollision(this, this.createOccurrence())();
+    },
+
+    testNameReification: function() {
+        _testReification(this, this.createName())();
+    },
+
+    testNameReificationCollision: function() {
+        _testReificationCollision(this, this.createName())();
+    },
+
+    testVariantReification: function() {
+        _testReification(this, this.createVariant())();
+    },
+
+    testVariantReificationCollision: function() {
+        _testReificationCollision(this, this.createVariant())();
+    },
+});
+
+
+// ]]>
+</script>
+</body>
+</html>

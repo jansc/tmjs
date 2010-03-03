@@ -1,0 +1,142 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>TestName</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <script type="text/javascript" src="../assets/jsunittest.js"></script>
+  <script type="text/javascript" src="../../src/tm-src.js"></script>
+  <script type="text/javascript" src="datatypeaware.js"></script>
+  <script type="text/javascript" src="tmunittest.js"></script>
+  <link type="text/css" rel="stylesheet" href="../assets/unittest.css" />
+</head>
+<body>
+
+<!-- Log output -->
+<div id="testlog"> </div>
+
+<!-- Tests -->
+<script type="text/javascript" language="javascript">
+// <![CDATA[
+
+new Test.Unit.Runner({
+    setup: function() {
+        TMUnitTest.addCommonSetupFunctions(this);
+    },
+
+    teardown: function() {
+        TMUnitTest.addCommonTeardownFunctions(this);
+    },
+
+    testParent: function () { with(this) {
+        var parent = createTopic();
+        assertEqual(0, parent.getNames().length, 
+            "Expected new topics to be created with no names");
+        var name = parent.createName("Name");
+        assert(parent.equals(name.getParent()),
+            "Unexpected name parent after creation");
+        assertEqual(1, parent.getNames().length,
+            "Expected name set size to increment for topic");
+        assert(parent.getNames().contains(name),
+            "Name is not part of getNames()");
+        name.remove();
+        assertEqual(0, parent.getNames().length,
+            "Expected name set size to decrement for topic.");
+    }},
+
+    testValue: function () { with(this) {
+        var value1 = "TMAPI Name";
+        var value2 = "A name";
+        var name = createName();
+        name.setValue(value1);
+        assertEqual(value1, name.getValue());
+        name.setValue(value2);
+        assertEqual(value2, name.getValue());
+        assertRaise('ModelConstraintException', function() {
+            name.setValue(null);
+        }, "setValue(null) is not allowed");
+        assertEqual(value2, name.getValue());
+    }},
+
+    testVariantCreationString: function () { with(this) {
+        var name = createName();
+        var theme = createTopic();
+        var xsdString = createLocator("http://www.w3.org/2001/XMLSchema#string");
+        var variant = name.createVariant("Variant", theme);
+        assertEqual("Variant", variant.getValue());
+        assert(xsdString.equals(variant.getDatatype()));
+        assertEqual(1, variant.getScope().length);
+        assert(variant.getScope().contains(theme));
+    }},
+
+    testVariantCreationURI: function () { with(this) {
+        var name = createName();
+        var theme = createTopic();
+        var xsdAnyURI = createLocator("http://www.w3.org/2001/XMLSchema#anyURI");
+        var value = createLocator("http://www.example.org/");
+        var variant = name.createVariant(value, theme);
+        assertEqual(value.getReference(), variant.getValue());
+        assertEqual(value, variant.locatorValue());
+        assert(xsdAnyURI.equals(variant.getDatatype()));
+        assertEqual(1, variant.getScope().length);
+        assert(variant.getScope().contains(theme));
+    }},
+
+    testVariantCreationExplicitDatatype: function () { with(this) {
+        var name = createName();
+        var theme = createTopic();
+        var dt = createLocator("http://www.example.org/datatype");
+        var variant = name.createVariant("Variant", dt, theme);
+        assertEqual("Variant", variant.getValue());
+        assertEqual(dt, variant.getDatatype());
+        assertEqual(1, variant.getScope().length);
+        assert(variant.getScope().contains(theme));
+    }},
+
+    testVariantCreationIllegalString: function () { with(this) {
+        var name = createName();
+        var theme = createTopic();
+        assertRaise('ModelConstraintException', function() {
+            name.createVariant(null, theme);
+        }, "Creation of a variant with null value is not allowed");
+    }},
+
+    testVariantCreationIllegalDatatype: function () { with(this) {
+        var name = createName();
+        var theme = createTopic();
+        assertRaise('ModelConstraintException', function() {
+            name.createVariant("Variant", null, theme);
+        }, "Creation of a variant with datatype == null is not allowed");
+    }},
+    
+    testVariantCreationIllegalScope: function () { with(this) {
+        var name = createName();
+        var theme = createTopic();
+        name.addTheme(theme);
+        assertEqual(1, name.getScope().length);
+        assert(name.getScope().contains(theme));
+        assertRaise('ModelConstraintException', function() {
+            name.createVariant("Variant", theme);
+        }, "The variant would be in the same scope as the parent");
+    }},
+
+    testVariantCreationIllegalEmptyScope: function () { with(this) {
+        var name = createName();
+        assertRaise('ModelConstraintException', function() {
+            name.createVariant("Variant", []);
+        }, "The variant would be in the same scope as the parent");
+    }},
+
+    testVariantCreationIllegalNullScope: function () { with(this) {
+        var name = createName();
+        assertRaise('ModelConstraintException', function() {
+            name.createVariant("Variant", null);
+        }, "Creation of a variant with a null scope is not allowed");
+    }}
+});
+
+
+// ]]>
+</script>
+</body>
+</html>

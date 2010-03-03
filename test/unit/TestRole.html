@@ -1,0 +1,87 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>TestRole</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <script type="text/javascript" src="../assets/jsunittest.js"></script>
+  <script type="text/javascript" src="../../src/tm-src.js"></script>
+  <script type="text/javascript" src="datatypeaware.js"></script>
+  <script type="text/javascript" src="tmunittest.js"></script>
+  <link type="text/css" rel="stylesheet" href="../assets/unittest.css" />
+</head>
+<body>
+
+<!-- Log output -->
+<div id="testlog"> </div>
+
+<!-- here go any elements you do the testing on -->
+<div id="sample"></div>
+
+<!-- Tests -->
+<script type="text/javascript" language="javascript">
+// <![CDATA[
+
+new Test.Unit.Runner({
+    setup: function() {
+        TMUnitTest.addCommonSetupFunctions(this);
+    },
+
+    teardown: function() {
+        TMUnitTest.addCommonTeardownFunctions(this);
+    },
+
+    testParent: function() { with(this) {
+        var parent = createAssociation();
+        assertEqual(0, parent.getRoles().length,
+            "Expected no roles in a newly created association");
+        var role = parent.createRole(createTopic(), createTopic());
+        assert(parent.equals(role.getParent()),
+            "Unexpected role parent after creation");
+        assertEqual(1, parent.getRoles().length, 
+            "Expected role set size to increment for association");
+        assert(parent.getRoles().contains(role),
+            "Role is not part of getRoles()");
+        role.remove();
+        assertEqual(0, parent.getRoles().length,
+            "Expected role set size to decrement for association");
+    }},
+
+    testRolePlayerSetGet: function() { with(this) {
+        var assoc = createAssociation();
+        assertEqual(0, assoc.getRoles().length,
+            "Expected no roles in a newly created association");
+        var roleType = createTopic();
+        var player = createTopic();
+        var role = assoc.createRole(roleType, player);
+        assert(roleType.equals(role.getType()), "Unexpected role type");
+        assert(player.equals(role.getPlayer()),
+            "Unexpected role player");
+        assert(player.getRolesPlayed().contains(role),
+            "Role is not reported in getRolesPlayed()");
+        var player2 = createTopic();
+        role.setPlayer(player2);
+        assert(player2.equals(role.getPlayer()),
+            "Unexpected role player after setting to player2");
+        assert(player2.getRolesPlayed().contains(role),
+            "Role is not reported in getRolesPlayed()");
+        assertEqual(0, player.getRolesPlayed().length,
+            "'player' should not play the role anymore");
+        role.setPlayer(player);
+        assert(player.equals(role.getPlayer()),
+            "Unexpected role player after setting to 'player'");
+    }},
+
+    testIllegalPlayer: function() { with(this) {
+        var role = createRole();
+        assertRaise('ModelConstraintException', function() {
+            role.setPlayer(null);
+        }, "Setting the role player to null is not allowed");
+    }}
+});
+
+
+// ]]>
+</script>
+</body>
+</html>

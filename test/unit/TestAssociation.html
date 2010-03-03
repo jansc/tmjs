@@ -1,0 +1,149 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>TestAssociation</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <script type="text/javascript" src="../assets/jsunittest.js"></script>
+  <script type="text/javascript" src="../../src/tm-src.js"></script>
+  <script type="text/javascript" src="datatypeaware.js"></script>
+  <script type="text/javascript" src="tmunittest.js"></script>
+  <link type="text/css" rel="stylesheet" href="../assets/unittest.css" />
+</head>
+<body>
+
+<!-- Log output -->
+<div id="testlog"> </div>
+
+<!-- Tests -->
+<script type="text/javascript" language="javascript">
+// <![CDATA[
+
+var tmp = new Test.Unit.Runner({
+    setup: function() {
+        TMUnitTest.addCommonSetupFunctions(this);
+    },
+    teardown: function() {
+        TMUnitTest.addCommonTeardownFunctions(this);
+    },
+
+    // test cases follow, each method which starts 
+    // with "test" is considered a test case
+    testParent: function() { with(this) {
+        var parent = createTopicMap("http://www.tmapi.org/test/assoc/parent");
+        assertEqual(0, parent.getAssociations().length,
+            "Expected new topic maps to be created with no associations");
+        var assoc = parent.createAssociation(parent.createTopic());
+        assertIdentical(parent, assoc.getParent(),
+            "Unexpected association parent after creation");
+        assertEqual(1, parent.getAssociations().length,
+            "Expected association set size to increment for topic map");
+        assert(parent.getAssociations().contains(assoc),
+            "Association is not part of getAssociations()");
+        assoc.remove();
+        assertEqual(0, parent.getAssociations().length,
+            "Expected association set size to decrement for topic map.");
+    }},
+
+    testRoleCreation: function() { with(this) {
+        var assoc = createAssociation();
+        assertEqual(0, assoc.getRoles().length,
+            "Expected no roles in a newly created association");
+        var roleType = createTopic();
+        var player = createTopic();
+        assertEqual(0, player.getRolesPlayed().length);
+        var role = assoc.createRole(roleType, player);
+        assertEqual(roleType, role.getType(), "Unexpected role type");
+        assertEqual(player, role.getPlayer(), "Unexpected role player");
+        assertEqual(1, player.getRolesPlayed().length);
+        assert(player.getRolesPlayed().contains(role));
+    }},
+
+    testRoleTypes: function() { with(this) {
+        var assoc = createAssociation();
+        var type1 = createTopic();
+        var type2 = createTopic();
+        assertEqual(0, assoc.getRoleTypes().length);
+        var role1 = assoc.createRole(type1, createTopic());
+        assertEqual(1, assoc.getRoleTypes().length);
+        assert(assoc.getRoleTypes().contains(type1));
+        var role2 = assoc.createRole(type2, createTopic());
+        assertEqual(2, assoc.getRoleTypes().length);
+        assert(assoc.getRoleTypes().contains(type1));
+        assert(assoc.getRoleTypes().contains(type2));
+        var role3 = assoc.createRole(type2, createTopic());
+        assertEqual(2, assoc.getRoleTypes().length);
+        assert(assoc.getRoleTypes().contains(type1));
+        assert(assoc.getRoleTypes().contains(type2));
+        role3.remove();
+        assertEqual(2, assoc.getRoleTypes().length);
+        assert(assoc.getRoleTypes().contains(type1));
+        assert(assoc.getRoleTypes().contains(type2));
+        role2.remove();
+        assertEqual(1, assoc.getRoleTypes().length);
+        assert(assoc.getRoleTypes().contains(type1));
+        assert(!assoc.getRoleTypes().contains(type2));
+        role1.remove();
+        assertEqual(0, assoc.getRoleTypes().length);
+    }},
+
+    testRoleFilter: function() { with(this) {
+        var assoc = createAssociation();
+        var type1 = createTopic();
+        var type2 = createTopic();
+        var unusedType = createTopic();
+        assertEqual(0, assoc.getRoles(type1).length);
+        assertEqual(0, assoc.getRoles(type2).length);
+        assertEqual(0, assoc.getRoles(unusedType).length);
+        var role1 = assoc.createRole(type1, createTopic());
+        assertEqual(1, assoc.getRoles(type1).length);
+        assert(assoc.getRoles(type1).contains(role1));
+        assertEqual(0, assoc.getRoles(type2).length);
+        assertEqual(0, assoc.getRoles(unusedType).length);
+        var role2 = assoc.createRole(type2, createTopic());
+        assertEqual(1, assoc.getRoles(type2).length);
+        assert(assoc.getRoles(type2).contains(role2));
+        var role3 = assoc.createRole(type2, createTopic());
+        assertEqual(2, assoc.getRoles(type2).length);
+        assert(assoc.getRoles(type2).contains(role2));
+        assert(assoc.getRoles(type2).contains(role3));
+        assertEqual(0, assoc.getRoles(unusedType).length);
+        role3.remove();
+        assertEqual(1, assoc.getRoles(type2).length);
+        assert(assoc.getRoles(type2).contains(role2));
+        role2.remove();
+        assertEqual(0, assoc.getRoles(type2).length);
+        role1.remove();
+        assertEqual(0, assoc.getRoles(type1).length);
+        assertEqual(0, assoc.getRoles(unusedType).length);
+    }},
+
+    testRoleFilterIllegal: function() { with(this) {
+        var assoc = createAssociation();
+        assertRaise('IllegalArgumentException', function() {
+            assoc.getRoles(null);
+        }, "getRoles(null) is illegal");
+    }},
+
+    testRoleCreationInvalidPlayer: function() { with(this) {
+        var assoc = createAssociation();
+        assertEqual(0, assoc.getRoles().length,
+                "Expected no roles in a newly created association");
+        assertRaise('ModelConstraintException', function() {
+            assoc.createRole(createTopic(), null);
+        }, "Role creation where player is null shouldn't be allowed");
+    }},
+
+    testRoleCreationInvalidType: function() { with(this) {
+        var assoc = createAssociation();
+        assertEqual(0, assoc.getRoles().length,
+            "Expected no roles in a newly created association");
+        assertRaise('ModelConstraintException', function() {
+            assoc.createRole(null, createTopic());
+        }, "Role creation where type is null shouldn't be allowed");
+    }}
+});
+// ]]>
+</script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>TestItemIdentifierConstraint</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <script type="text/javascript" src="../assets/jsunittest.js"></script>
+  <script type="text/javascript" src="../../src/tm-src.js"></script>
+  <script type="text/javascript" src="datatypeaware.js"></script>
+  <script type="text/javascript" src="tmunittest.js"></script>
+  <link type="text/css" rel="stylesheet" href="../assets/unittest.css" />
+</head>
+<body>
+
+<!-- Log output -->
+<div id="testlog"> </div>
+
+<!-- here go any elements you do the testing on -->
+<div id="sample"></div>
+
+<!-- Tests -->
+<script type="text/javascript" language="javascript">
+// <![CDATA[
+
+var _testConstraint = function(context, construct) {
+    return function() { with(context) {
+        assertEqual(0, construct.getItemIdentifiers().length);
+        var iid = createLocator("http://sf.net/projects/tinytim");
+        var iid2 = createLocator("http://sf.net/projects/tinytim2");
+        var assoc = createAssociation();
+        assoc.addItemIdentifier(iid);
+        assert(!construct.getItemIdentifiers().contains(iid));
+        try {
+            construct.addItemIdentifier(iid);
+            fail("Topic Maps constructs with the same item identifier are not allowed");
+        }
+        catch (e) {
+            if (e.name === 'IdentityConstraintException') {
+                assert(construct.equals(e.reporter));
+                assert(assoc.equals(e.existing));
+                assert(iid.equals(e.locator));
+            } else {
+                fail('Unexpected exception: '+e.name);
+            }
+        }
+        construct.addItemIdentifier(iid2);
+        assert(construct.getItemIdentifiers().contains(iid2));
+        construct.removeItemIdentifier(iid2);
+        assoc.removeItemIdentifier(iid);
+        assert(!assoc.getItemIdentifiers().contains(iid));
+        construct.addItemIdentifier(iid);
+        assert(construct.getItemIdentifiers().contains(iid));
+        if (!(construct.isTopicMap())) {
+            // Removal should 'free' the item identifier
+            construct.remove();
+            assoc.addItemIdentifier(iid);
+            assert(assoc.getItemIdentifiers().contains(iid));
+        }
+    }};
+};
+
+new Test.Unit.Runner({
+    setup: function() {
+        TMUnitTest.addCommonSetupFunctions(this);
+    },
+
+    teardown: function() {
+        TMUnitTest.addCommonTeardownFunctions(this);
+    },
+
+    testTopicMap: function() {
+        _testConstraint(this, this._tm)();
+    },
+
+    testTopic: function() {
+        var topic = this._tm.createTopicBySubjectLocator(
+            this._tm.createLocator("http://www.semanticheadache.com/"));
+        _testConstraint(this, topic)();
+    },
+
+    testAssociation: function() {
+        _testConstraint(this, this.createAssociation())();
+    },
+
+    testRole: function() {
+        _testConstraint(this, this.createRole())();
+    },
+
+    testOccurrence: function() {
+        _testConstraint(this, this.createOccurrence())();
+    },
+
+    testName: function() {
+        _testConstraint(this, this.createName())();
+    },
+
+    testVariant: function() {
+        _testConstraint(this, this.createVariant())();
+    }
+});
+
+
+// ]]>
+</script>
+</body>
+</html>
