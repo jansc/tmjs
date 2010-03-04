@@ -1,4 +1,8 @@
-== 0.2.0 2010-03-20
+== 0.2.1 2010-03-03
+
+* Bugfix in make rule for building the API docs
+
+== 0.2.0 2010-03-03
 
 * Initial public release
 * Changed build-system from rake to make
