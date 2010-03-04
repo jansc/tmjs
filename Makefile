@@ -34,13 +34,10 @@ all: tmjs lint min
 ${DIST_DIR}:
 	@@mkdir -p ${DIST_DIR}
 
-init:
-	@@echo "Grabbing external dependencies..."
-
 tmjs: ${DIST_DIR} ${TM}
 tm: ${DIST_DIR} ${TM}
 
-${TM}: ${DIST_DIR} init ${MODULES}
+${TM}: ${DIST_DIR} ${MODULES}
 	@@echo "Building" ${TM}
 
 	@@mkdir -p ${DIST_DIR}
