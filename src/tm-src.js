@@ -12,12 +12,11 @@ var TM, TopicMapSystemFactory;
  * Date: 
  */
 TM = (function () {
-    var Version, Hash, Locator, TopicMemImpl, AssociationMemImpl, ScopedMemImpl,
-        ConstructMemImpl, TypedMemImpl, ReifiableMemImpl, DatatypeAwareMemImpl,
-        TopicMapMemImpl, RoleMemImpl, NameMemImpl, VariantMemImpl,
-        OccurrenceMemImpl, TopicMapSystemMemImpl,
-        IndexMemImpl, TypeInstanceIndexMemImpl, 
-        SameTopicMapHelper;
+    var Version, Hash, Locator, EventType, TopicMemImpl, AssociationMemImpl,
+        ScopedMemImpl, ConstructMemImpl, TypedMemImpl, ReifiableMemImpl,
+        DatatypeAwareMemImpl, TopicMapMemImpl, RoleMemImpl, NameMemImpl,
+        VariantMemImpl, OccurrenceMemImpl, TopicMapSystemMemImpl,
+        IndexMemImpl, TypeInstanceIndexMemImpl, SameTopicMapHelper;
 
     Version = '@VERSION';
 
@@ -37,6 +36,7 @@ TM = (function () {
     // Simple hash table for lookup tables
     Hash = function () {
         this.hash = {};
+        this.length = 0;
     };
 
     // Simple hash implementation
@@ -50,12 +50,16 @@ TM = (function () {
         },
 
         put: function (key, val) {
-             this.hash[key] = val;
+            if (!this.hash[key]) {
+                this.length += 1;
+            }
+            this.hash[key] = val;
             return val;
         },
 
         remove: function (key) {
             delete this.hash[key];
+            this.length -= 1;
             return this;
         },
 
@@ -69,10 +73,33 @@ TM = (function () {
             return ret;
         },
 
+        values: function () {
+            var ret = [], key;
+            for (key in this.hash) {
+                if (this.hash.hasOwnProperty(key)) {
+                    ret.push(this.hash[key]);
+                }
+            }
+            return ret;
+        },
+
         empty: function () {
             this.hash = {};
+            this.length = 0;
+        },
+
+        size: function () {
+            return this.length;
         }
     };
+
+    // -----------------------------------------------------------------------
+    // Internal event handling system
+    EventType = {};
+    EventType.ADD_TOPIC = 1;
+    EventType.ADD_TYPE = 2;
+    EventType.REMOVE_TOPIC = 3;
+
     // -----------------------------------------------------------------------
     // TODO: The locator functions need some more work. Implement resolve()
     // and toExternalForm()
@@ -428,18 +455,18 @@ TM = (function () {
         this.features[featureName] = enable;
     };
     
-        // Sets a property in the underlying implementation of TopicMapSystem.
-        TopicMapSystemFactory.prototype.setProperty = function (propertyName, value) {
-            this.property[propertyName] = value;
-        };
+    // Sets a property in the underlying implementation of TopicMapSystem.
+    TopicMapSystemFactory.prototype.setProperty = function (propertyName, value) {
+        this.property[propertyName] = value;
+    };
     
-        /**
-        * Creates a new instance of TopicMamSystemMemImpl.
-        * @class Implementation of the TopicMapSystem interface.
-        */
-        TopicMapSystemMemImpl = function () {
-            this.topicmaps = {};
-        };
+    /**
+    * Creates a new instance of TopicMamSystemMemImpl.
+    * @class Implementation of the TopicMapSystem interface.
+    */
+    TopicMapSystemMemImpl = function () {
+        this.topicmaps = {};
+    };
     
     TopicMapSystemMemImpl.prototype.createTopicMap = function (locator) {
         if (this.topicmaps[locator.getReference()]) {
@@ -508,11 +535,54 @@ TM = (function () {
         this._sl2topic = new Hash(); // Index for subject locators
         this._ii2construct = new Hash(); // Index for item identifiers
         this._id2construct = new Hash(); // Index for object ids
-        this._id2construct.put(0, this);
+
+        // The topic map object always get the id 0
         this.id = 0;
+        this._id2construct.put(this.id, this);
+
         this.reifier = null;
+        this.handlers = [];
+
+        // Our own event handling mechanism
+        var EventHandler = function (eventtype) {
+            this.eventtype = eventtype;
+            this.handlers = [];
+        };
+        EventHandler.prototype = {
+            registerHandler: function (handler) {
+               this.handlers.push(handler);
+            },
+            removeHandler: function (handler) {
+                for (var i = 0; i<this.handlers.length; i+=1) {
+                    if (handler.toString() ===
+                        this.handlers[i].toString()) {
+                        this.handlers.splice(i, 1);
+                    }
+                }
+            },
+            fire: function (source, obj) {
+                obj = obj || {};
+                for (var i = 0; i<this.handlers.length; i+=1) {
+                    this.handlers[i](this.eventtype, source, obj);
+                }
+            }
+        };
+        this.addTopicEvent = new EventHandler(EventType.ADD_TOPIC); 
+        this.addTypeEvent = new EventHandler(EventType.ADD_TYPE); 
+        this.removeTopicEvent = new EventHandler(EventType.REMOVE_TOPIC);
     };
-    
+
+    TopicMapMemImpl.prototype.register_event_handler = function(type, handler) {
+        switch (type) {
+            case EventType.ADD_TOPIC:
+                this.addTopicEvent.registerHandler(handler); break;
+            case EventType.ADD_TYPE:
+                this.addTypeEvent.registerHandler(handler); break;
+            case EventType.REMOVE_TOPIC:
+                this.removeTopicEvent.registerHandler(handler); break;
+        }
+    };
+
     TopicMapMemImpl.swiss(ReifiableMemImpl, 'getReifier', 'setReifier');
     TopicMapMemImpl.swiss(ConstructMemImpl, 'addItemIdentifier', 'getItemIdentifiers',
         'removeItemIdentifier', 'isTopic', 'isAssociation', 'isRole',
@@ -578,6 +648,7 @@ TM = (function () {
     
     TopicMapMemImpl.prototype._createEmptyTopic = function () {
         var t = new TopicMemImpl(this);
+        this.addTopicEvent.fire(t);
         this.topics.push(t);
         return t;
     };
@@ -645,6 +716,11 @@ TM = (function () {
     };
     
     TopicMapMemImpl.prototype.getIndex = function (className) {
+        var index;
+        if (className === 'TypeInstanceIndex') {
+            index = new TypeInstanceIndexMemImpl(this);
+            return index;
+        }
         throw {name: 'UnsupportedOperationException', 
             message: 'getIndex ist not (yet) supported'};
     };
@@ -806,6 +882,7 @@ TM = (function () {
         if (!type) { throw {name: 'ModelConstraintException',
             message: 'addType() needs type'}; }
         SameTopicMapHelper.assertBelongsTo(this.parnt, type);
+        this.parnt.addTypeEvent.fire(this, {type: type});
         this.types.push(type);
     };
     
@@ -959,8 +1036,9 @@ TM = (function () {
         //    throw {name: 'TopicInUseException',
         //        message: '', reporter: this};
         //}
-        this.getTopicMap()._removeTopic(this);
-        this.getTopicMap()._id2construct.remove(this.id);
+        this.parnt._removeTopic(this);
+        this.parnt._id2construct.remove(this.id);
+        this.parnt.removeTopicEvent.fire(this);
         this.id = null;
     };
     
@@ -1360,12 +1438,63 @@ TM = (function () {
     * Creates a new instance of TypeInstanceIndexMemImpl.
     * @class Implementation of the TypeInstanceIndex interface.
     */
-    TypeInstanceIndexMemImpl = function () {
+    TypeInstanceIndexMemImpl = function (tm) {
+        var eventHandler, that = this;
+        this.tm = tm;
         this.type2topics = new Hash();
         this.type2associations = new Hash();
         this.type2roles = new Hash();
         this.type2occurrences = new Hash();
         this.type2variants = new Hash();
+
+        eventHandler = function (eventtype, source, obj) {
+            var existing, untyped, types, i;
+            switch (eventtype) {
+                case EventType.ADD_TOPIC:
+                    existing = that.type2topics.get('null');
+                    if (typeof existing === 'undefined') {
+                        existing = new Hash();
+                    }
+                    existing.put(source.getId(), source);
+                    that.type2topics.put('null', existing);
+                    break;
+                case EventType.ADD_TYPE:
+                    // check if source exists with type null, remove it there
+                    untyped = that.type2topics.get('null');
+                    if (untyped && untyped.get(source.getId())) {
+                        untyped.remove(source.getId());
+                    }
+                    
+                    existing = that.type2topics.get(obj.type.getId());
+                    if (typeof existing === 'undefined') {
+                        existing = new Hash();
+                    }
+                    existing.put(source.getId(), source);
+                    that.type2topics.put(obj.type.getId(), existing);
+                    break;
+                case EventType.REMOVE_TOPIC:
+                    // two cases:
+                    //  topic has types
+                    types = source.getTypes();
+                    for (i=0; i<types.length; i+=1) {
+                        existing = that.type2topics.get(types[i].getId());
+                        existing.remove(source.getId());
+                        if (!existing.size()) {
+                            that.type2topics.remove(types[i].getId());
+                        }
+                    }
+                    // topic used as type 
+                    that.type2topics.remove(source.getId());
+                    that.type2associations.remove(source.getId());
+                    that.type2roles.remove(source.getId());
+                    that.type2occurrences.remove(source.getId());
+                    that.type2variants.remove(source.getId());
+                    break;
+            }
+        };
+        tm.addTopicEvent.registerHandler(eventHandler);
+        tm.removeTopicEvent.registerHandler(eventHandler);
+        tm.addTypeEvent.registerHandler(eventHandler);
     };
 
     TypeInstanceIndexMemImpl.swiss(IndexMemImpl, 'close', 'isAutoUpdated',
@@ -1378,7 +1507,7 @@ TM = (function () {
     * @returns {Array} A list of all associations in the topic map with the given type.
     */
     TypeInstanceIndexMemImpl.prototype.getAssociations = function (type) {
-        return this.type2associations[type.getId()];
+        return this.type2associations[type.getId()].values();
     };
 
     /**
@@ -1460,9 +1589,55 @@ TM = (function () {
     * Returns the topics which are an instance of the specified type.
     */
     TypeInstanceIndexMemImpl.prototype.getTopics = function (type) {
-        var ret = this.type2topics.get(type.getId());
+        var ret = this.type2topics.get((type ? type.getId() : 'null'));
         if (!ret) { return []; }
-        return ret;
+        return ret.values();
+    };
+
+    /**
+    * Returns the topics which are an instance of the specified types.
+    * If matchall is true only topics that have all of the listed types
+    * are returned.
+    * @returns {Array} A list of Topic objects
+    */
+    TypeInstanceIndexMemImpl.prototype.getTopicsByTypes = function (types, matchall) {
+        var instances, instance_keys, hash = new Hash(), i, j, ret, contains;
+        for (i=0;i<types.length;i+=1) {
+            instances = this.type2topics.get(types[i].getId());
+            if (instances) {
+                instance_keys = instances.keys();
+                // we use a hash to store instances to avoid duplicates
+                for (j=0; j<instance_keys.length; j+=1) {
+                    hash.put(instances.get(instance_keys[j]).getId(),
+                            instances.get(instance_keys[j]));
+                }
+            }
+        }
+        if (!matchall) {
+            return hash.values();
+        }
+        // If matchall is true, we check all values for all types in {types}
+        // It's a hack, but will do for now
+        instances = hash.values();
+        // Helper function: TODO: Should be available in the whole TM namespace
+        contains = function (arr, elem) {
+            for (var key in arr) {
+                if (arr.hasOwnProperty(key)) {
+                    if (arr[key].equals(elem)) { return true; }
+                }
+            }
+            return false;
+        };
+        for (i=0; i<instances.length; i+=1) {
+            for (j=0; j<types.length; j+=1) {
+                if (!contains(instances[i].getTypes(), types[j])) {
+                    instances.splice(i, 1);
+                    i -= 1;
+                    break;
+                }
+            }
+        }
+        return instances;
     };
 
     /**
@@ -1470,7 +1645,13 @@ TM = (function () {
     * "type-instance"-relationship.
     */
     TypeInstanceIndexMemImpl.prototype.getTopicTypes = function () {
-        return this.type2topics.keys();
+        var ret = [], keys = this.type2topics.keys(), key, i, j, values;
+        for (i=0; i<keys.length; i+=1) {
+            if (keys[i] !== 'null') {
+                ret.push(this.tm.getConstructById(keys[i]));
+            }
+        }
+        return ret;
     };
 
     TypeInstanceIndexMemImpl.prototype.close = function () {
