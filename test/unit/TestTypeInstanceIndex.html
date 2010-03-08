@@ -123,6 +123,35 @@ var tmp = new Test.Unit.Runner({
         this.assertEqual(0, this._typeInstanceIdx.getTopicsByTypes([type1, type2], false).length);
         this.assertEqual(0, this._typeInstanceIdx.getTopicsByTypes([type1, type2], true).length);
     },
+
+    testAssociation: function () {
+        var type, typed;
+        type = this.createTopic();
+        this._updateIndex();
+        this.assertEqual(0, this._typeInstanceIdx.getAssociations(type).length);
+        this.assertEqual(0, this._typeInstanceIdx.getAssociationTypes().length);
+        typed = this.createAssociation();
+        this._updateIndex();
+        this.assertEqual(0, this._typeInstanceIdx.getAssociations(type).length);
+        this.assert(!this._typeInstanceIdx.getAssociationTypes().contains(type));
+        this.assertEqual(1, this._typeInstanceIdx.getAssociationTypes().length);
+        typed.setType(type);
+        this._updateIndex();
+        this.assertNotEqual(0, this._typeInstanceIdx.getAssociationTypes().length);
+        this.assertEqual(1, this._typeInstanceIdx.getAssociations(type).length);
+        this.assert(this._typeInstanceIdx.getAssociations(type).contains(typed));
+        this.assert(this._typeInstanceIdx.getAssociationTypes().contains(type));
+console.dir(this._typeInstanceIdx);
+        typed.setType(this.createTopic());
+console.dir(this._typeInstanceIdx);
+        this.assert(!this._typeInstanceIdx.getAssociationTypes().contains(type));
+        this.assertEqual(1, this._typeInstanceIdx.getAssociationTypes().length);
+        typed.setType(type);
+        typed.remove();
+        this._updateIndex();
+        this.assertEqual(0, this._typeInstanceIdx.getAssociations(type).length);
+        this.assertEqual(0, this._typeInstanceIdx.getAssociationTypes().length);
+    }
 });
 // ]]>
 </script>

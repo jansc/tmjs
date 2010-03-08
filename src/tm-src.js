@@ -96,9 +96,12 @@ TM = (function () {
     // -----------------------------------------------------------------------
     // Internal event handling system
     EventType = {};
-    EventType.ADD_TOPIC = 1;
-    EventType.ADD_TYPE = 2;
-    EventType.REMOVE_TOPIC = 3;
+    EventType.ADD_ASSOCIATION = 1;
+    EventType.ADD_TOPIC = 2;
+    EventType.ADD_TYPE = 3;
+    EventType.REMOVE_ASSOCIATION = 4;
+    EventType.REMOVE_TOPIC = 5;
+    EventType.SET_TYPE = 6;
 
     // -----------------------------------------------------------------------
     // TODO: The locator functions need some more work. Implement resolve()
@@ -247,6 +250,7 @@ TM = (function () {
         if (type === null) { throw {name: 'ModelConstraintException',
             message: 'Topic.getRolesPlayed cannot be called without type'}; }
         SameTopicMapHelper.assertBelongsTo(this.getTopicMap(), type);
+        this.getTopicMap().setTypeEvent.fire(this, {old: this.type, type: type});
         this.type = type;
     };
     
@@ -567,19 +571,28 @@ TM = (function () {
                 }
             }
         };
+        this.addAssociationEvent = new EventHandler(EventType.ADD_ASSOCIATION); 
         this.addTopicEvent = new EventHandler(EventType.ADD_TOPIC); 
         this.addTypeEvent = new EventHandler(EventType.ADD_TYPE); 
+        this.removeAssociationEvent = new EventHandler(EventType.REMOVE_ASSOCIATION);
         this.removeTopicEvent = new EventHandler(EventType.REMOVE_TOPIC);
+        this.setTypeEvent = new EventHandler(EventType.SET_TYPE);
     };
 
     TopicMapMemImpl.prototype.register_event_handler = function(type, handler) {
         switch (type) {
+            case EventType.ADD_ASSOCIATION:
+                this.addAssociationEvent.registerHandler(handler); break;
             case EventType.ADD_TOPIC:
                 this.addTopicEvent.registerHandler(handler); break;
             case EventType.ADD_TYPE:
                 this.addTypeEvent.registerHandler(handler); break;
+            case EventType.REMOVE_ASSOCIATION:
+                this.removeAssociationEvent.registerHandler(handler); break;
             case EventType.REMOVE_TOPIC:
                 this.removeTopicEvent.registerHandler(handler); break;
+            case EventType.SET_TYPE:
+                this.setTypeEvent.registerHandler(handler); break;
         }
     };
 
@@ -639,6 +652,7 @@ TM = (function () {
                 a.addTheme(scope[i]);
             }
         }
+        this.addAssociationEvent.fire(a);
         return a;
     };
     
@@ -1357,6 +1371,7 @@ TM = (function () {
     };
     
     AssociationMemImpl.prototype.remove = function () {
+        this.parnt.removeAssociationEvent.fire(this);
         for (var i=0; i<this.roles.length; i+=1) {
             this.roles[i].remove();
         }
@@ -1450,6 +1465,8 @@ TM = (function () {
         eventHandler = function (eventtype, source, obj) {
             var existing, untyped, types, i;
             switch (eventtype) {
+                case EventType.ADD_ASSOCIATION:
+                    break;
                 case EventType.ADD_TOPIC:
                     existing = that.type2topics.get('null');
                     if (typeof existing === 'undefined') {
@@ -1472,6 +1489,22 @@ TM = (function () {
                     existing.put(source.getId(), source);
                     that.type2topics.put(obj.type.getId(), existing);
                     break;
+                case EventType.REMOVE_ASSOCIATION:
+                    type = source.getType();
+                    existing = that.type2associations.get(type.getId());
+                    for (i=0; i<existing.length; i+=1) {
+                        if (existing[i].equals(source)) {
+                            existing.splice(i, 1);
+                            break;
+                        }    
+                    }
+                    if (existing.length > 0) {
+                        that.type2associations.put(type.getId(),
+                                existing);
+                    } else {
+                        that.type2associations.remove(type.getId());
+                    }
+                    break;
                 case EventType.REMOVE_TOPIC:
                     // two cases:
                     //  topic has types
@@ -1490,11 +1523,39 @@ TM = (function () {
                     that.type2occurrences.remove(source.getId());
                     that.type2variants.remove(source.getId());
                     break;
+                case EventType.SET_TYPE:
+                    if (source.isAssociation()) {
+                        // remove source from type2associations(obj.old.getId());
+                        if (obj.old) {
+                            existing = that.type2associations.get(obj.old.getId());
+                            for (i=0; i<existing.length; i+=1) {
+                                if (existing[i].equals(source)) {
+                                    existing.splice(i, 1);
+                                    break;
+                                }    
+                            }
+                            if (existing.length > 0) {
+                                that.type2associations.put(obj.old.getId(),
+                                        existing);
+                            } else {
+                                that.type2associations.remove(obj.old.getId());
+                            }
+                        }
+                        existing = that.type2associations.get(obj.type.getId());
+                        if (typeof existing === 'undefined') {
+                            existing = [];
+                        }
+                        existing.push(source);
+                        that.type2associations.put(obj.type.getId(), existing);
+                    }
             }
         };
+        tm.addAssociationEvent.registerHandler(eventHandler);
         tm.addTopicEvent.registerHandler(eventHandler);
-        tm.removeTopicEvent.registerHandler(eventHandler);
         tm.addTypeEvent.registerHandler(eventHandler);
+        tm.removeAssociationEvent.registerHandler(eventHandler);
+        tm.removeTopicEvent.registerHandler(eventHandler);
+        tm.setTypeEvent.registerHandler(eventHandler);
     };
 
     TypeInstanceIndexMemImpl.swiss(IndexMemImpl, 'close', 'isAutoUpdated',
@@ -1507,7 +1568,9 @@ TM = (function () {
     * @returns {Array} A list of all associations in the topic map with the given type.
     */
     TypeInstanceIndexMemImpl.prototype.getAssociations = function (type) {
-        return this.type2associations[type.getId()].values();
+        var ret = this.type2associations.get(type.getId());
+        if (!ret) { return []; }
+        return ret;
     };
 
     /**
@@ -1516,7 +1579,11 @@ TM = (function () {
     * @returns {Array} A list of all topics that are used as an association type.
     */
     TypeInstanceIndexMemImpl.prototype.getAssociationTypes = function () {
-        return this.type2associations.keys();
+        var ret = [], keys = this.type2associations.keys(), i;
+        for (i=0; i<keys.length; i+=1) {
+            ret.push(this.tm.getConstructById(keys[i]));
+        }
+        return ret;
     };
 
     /**
@@ -1645,7 +1712,7 @@ TM = (function () {
     * "type-instance"-relationship.
     */
     TypeInstanceIndexMemImpl.prototype.getTopicTypes = function () {
-        var ret = [], keys = this.type2topics.keys(), key, i, j, values;
+        var ret = [], keys = this.type2topics.keys(), i;
         for (i=0; i<keys.length; i+=1) {
             if (keys[i] !== 'null') {
                 ret.push(this.tm.getConstructById(keys[i]));
