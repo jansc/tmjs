@@ -141,9 +141,7 @@ var tmp = new Test.Unit.Runner({
         this.assertEqual(1, this._typeInstanceIdx.getAssociations(type).length);
         this.assert(this._typeInstanceIdx.getAssociations(type).contains(typed));
         this.assert(this._typeInstanceIdx.getAssociationTypes().contains(type));
-console.dir(this._typeInstanceIdx);
         typed.setType(this.createTopic());
-console.dir(this._typeInstanceIdx);
         this.assert(!this._typeInstanceIdx.getAssociationTypes().contains(type));
         this.assertEqual(1, this._typeInstanceIdx.getAssociationTypes().length);
         typed.setType(type);
@@ -151,6 +149,42 @@ console.dir(this._typeInstanceIdx);
         this._updateIndex();
         this.assertEqual(0, this._typeInstanceIdx.getAssociations(type).length);
         this.assertEqual(0, this._typeInstanceIdx.getAssociationTypes().length);
+    },
+
+    testRole: function () {
+        var type, parent, typed;
+        type = this.createTopic();
+        this._updateIndex();
+        this.assertEqual(0, this._typeInstanceIdx.getRoles(type).length);
+        this.assertEqual(0, this._typeInstanceIdx.getRoleTypes().length);
+        parent = this.createAssociation();
+        typed = parent.createRole(this.createTopic(), this.createTopic());
+        this._updateIndex();
+        this.assertEqual(1, this._typeInstanceIdx.getRoleTypes().length);
+        this.assert(!this._typeInstanceIdx.getRoleTypes().contains(type));
+        typed.setType(type);
+        this._updateIndex();
+        this.assertEqual(1, this._typeInstanceIdx.getRoleTypes().length);
+        this.assertEqual(1, this._typeInstanceIdx.getRoles(type).length);
+        this.assert(this._typeInstanceIdx.getRoles(type).contains(typed));
+        typed.setType(this.createTopic());
+        this.assertEqual(1, this._typeInstanceIdx.getRoleTypes().length);
+        this.assert(!this._typeInstanceIdx.getRoleTypes().contains(type));
+        typed.setType(type);
+        typed.remove();
+        this._updateIndex();
+        this.assertEqual(0, this._typeInstanceIdx.getRoles(type).length);
+        this.assertEqual(0, this._typeInstanceIdx.getRoleTypes().length);
+        // The same test, but the parent is removed
+        typed = parent.createRole(type, this.createTopic());
+        this._updateIndex();
+        this.assertEqual(1, this._typeInstanceIdx.getRoleTypes().length);
+        this.assertEqual(1, this._typeInstanceIdx.getRoles(type).length);
+        this.assert(this._typeInstanceIdx.getRoles(type).contains(typed));
+        parent.remove();
+        this._updateIndex();
+        this.assertEqual(0, this._typeInstanceIdx.getRoles(type).length);
+        this.assertEqual(0, this._typeInstanceIdx.getRoleTypes().length);
     }
 });
 // ]]>

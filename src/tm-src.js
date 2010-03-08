@@ -97,11 +97,13 @@ TM = (function () {
     // Internal event handling system
     EventType = {};
     EventType.ADD_ASSOCIATION = 1;
-    EventType.ADD_TOPIC = 2;
-    EventType.ADD_TYPE = 3;
-    EventType.REMOVE_ASSOCIATION = 4;
-    EventType.REMOVE_TOPIC = 5;
-    EventType.SET_TYPE = 6;
+    EventType.ADD_ROLE = 2;
+    EventType.ADD_TOPIC = 3;
+    EventType.ADD_TYPE = 4;
+    EventType.REMOVE_ASSOCIATION = 5;
+    EventType.REMOVE_ROLE = 6;
+    EventType.REMOVE_TOPIC = 7;
+    EventType.SET_TYPE = 8;
 
     // -----------------------------------------------------------------------
     // TODO: The locator functions need some more work. Implement resolve()
@@ -572,9 +574,11 @@ TM = (function () {
             }
         };
         this.addAssociationEvent = new EventHandler(EventType.ADD_ASSOCIATION); 
+        this.addRoleEvent = new EventHandler(EventType.ADD_ROLE); 
         this.addTopicEvent = new EventHandler(EventType.ADD_TOPIC); 
         this.addTypeEvent = new EventHandler(EventType.ADD_TYPE); 
         this.removeAssociationEvent = new EventHandler(EventType.REMOVE_ASSOCIATION);
+        this.removeRoleEvent = new EventHandler(EventType.REMOVE_ROLE);
         this.removeTopicEvent = new EventHandler(EventType.REMOVE_TOPIC);
         this.setTypeEvent = new EventHandler(EventType.SET_TYPE);
     };
@@ -583,12 +587,16 @@ TM = (function () {
         switch (type) {
             case EventType.ADD_ASSOCIATION:
                 this.addAssociationEvent.registerHandler(handler); break;
+            case EventType.ADD_ROLE:
+                this.addRoleEvent.registerHandler(handler); break;
             case EventType.ADD_TOPIC:
                 this.addTopicEvent.registerHandler(handler); break;
             case EventType.ADD_TYPE:
                 this.addTypeEvent.registerHandler(handler); break;
             case EventType.REMOVE_ASSOCIATION:
                 this.removeAssociationEvent.registerHandler(handler); break;
+            case EventType.REMOVE_ROLE:
+                this.removeRoleEvent.registerHandler(handler); break;
             case EventType.REMOVE_TOPIC:
                 this.removeTopicEvent.registerHandler(handler); break;
             case EventType.SET_TYPE:
@@ -1295,6 +1303,7 @@ TM = (function () {
     };
     
     RoleMemImpl.prototype.remove = function () {
+        this.parnt.parnt.removeRoleEvent.fire(this);
         this.parnt._removeRole(this);
         this.itemIdentifiers = null;
         this.parnt = null;
@@ -1356,6 +1365,7 @@ TM = (function () {
         var role = new RoleMemImpl(this, type, player);
         player.addRolePlayed(role);
         this.roles.push(role);
+        this.parnt.addRoleEvent.fire(role, {type: type, player: player});
         return role;
     };
     
@@ -1418,10 +1428,13 @@ TM = (function () {
 
     // ------ ----------------------------------------------------------------
     /** @class */
-    IndexMemImpl = function () {};
+    IndexMemImpl = function () {
+        this.opened = false;
+    };
 
     /** Close the index. */
     IndexMemImpl.prototype.close = function () {
+        return;
     };
 
     /** 
@@ -1429,12 +1442,14 @@ TM = (function () {
     * @returns {boolean}
     */
     IndexMemImpl.prototype.isAutoUpdated = function () {
+        return true;
     };
 
     /** Indicates if the index is open.
     * @returns {boolean} true if index is already opened, false otherwise.
     */
     IndexMemImpl.prototype.isOpen = function () {
+        return this.opened;
     };
 
     /**
@@ -1443,10 +1458,12 @@ TM = (function () {
     * interfaces.
     */
     IndexMemImpl.prototype.open = function () {
+        this.opened = true;
     };
 
     /** Synchronizes the index with data in the topic map. */
     IndexMemImpl.prototype.reindex = function () {
+        return;
     };
 
     /**
@@ -1461,11 +1478,20 @@ TM = (function () {
         this.type2roles = new Hash();
         this.type2occurrences = new Hash();
         this.type2variants = new Hash();
+        this.opened = false;
 
         eventHandler = function (eventtype, source, obj) {
-            var existing, untyped, types, i;
+            var existing, untyped, types, type, i;
             switch (eventtype) {
                 case EventType.ADD_ASSOCIATION:
+                    break;
+                case EventType.ADD_ROLE:
+                    existing = that.type2roles.get(obj.type.getId());
+                    if (typeof existing === 'undefined') {
+                        existing = new Hash();
+                    }
+                    existing.put(source.getId(), source);
+                    that.type2roles.put(obj.type.getId(), existing);
                     break;
                 case EventType.ADD_TOPIC:
                     existing = that.type2topics.get('null');
@@ -1505,6 +1531,16 @@ TM = (function () {
                         that.type2associations.remove(type.getId());
                     }
                     break;
+                case EventType.REMOVE_ROLE:
+                    type = source.getType();
+                    existing = that.type2roles.get(type.getId());
+                    existing.remove(source.getId());
+                    if (existing.length > 0) {
+                        that.type2roles.put(type.getId(), existing);
+                    } else {
+                        that.type2roles.remove(type.getId());
+                    }
+                    break;                   
                 case EventType.REMOVE_TOPIC:
                     // two cases:
                     //  topic has types
@@ -1547,13 +1583,32 @@ TM = (function () {
                         }
                         existing.push(source);
                         that.type2associations.put(obj.type.getId(), existing);
+                    } else if (source.isRole()) {
+                        existing = that.type2roles.get(obj.old.getId());
+                        if (existing) {
+                            existing.remove(source.getId());
+                            if (existing.length > 0) {
+                                that.type2roles.put(obj.old.getId(), existing);
+                            } else {
+                                that.type2roles.remove(obj.old.getId());
+                            }
+                        }
+                        existing = that.type2roles.get(obj.type.getId());
+                        if (typeof existing === 'undefined') {
+                            existing = new Hash();
+                        }
+                        existing.put(source.getId(), source);
+                        that.type2roles.put(obj.type.getId(), existing);
                     }
+                    break;
             }
         };
-        tm.addAssociationEvent.registerHandler(eventHandler);
+        //tm.addAssociationEvent.registerHandler(eventHandler);
+        tm.addRoleEvent.registerHandler(eventHandler);
         tm.addTopicEvent.registerHandler(eventHandler);
         tm.addTypeEvent.registerHandler(eventHandler);
         tm.removeAssociationEvent.registerHandler(eventHandler);
+        tm.removeRoleEvent.registerHandler(eventHandler);
         tm.removeTopicEvent.registerHandler(eventHandler);
         tm.setTypeEvent.registerHandler(eventHandler);
     };
@@ -1593,9 +1648,6 @@ TM = (function () {
     * @returns {Array}
     */
     TypeInstanceIndexMemImpl.prototype.getNames = function (type) {
-        var ret = this.type2names.get(type.getId());
-        if (ret) { return []; }
-        return ret;
     };
 
     /**
@@ -1605,7 +1657,6 @@ TM = (function () {
     * a reference to the actual topics, not copies of them.
     */
     TypeInstanceIndexMemImpl.prototype.getNameTypes = function () {
-        return this.type2names.keys();
     };
 
     /**
@@ -1614,9 +1665,6 @@ TM = (function () {
     * @returns {Array}
     */
     TypeInstanceIndexMemImpl.prototype.getOccurrences = function (type) {
-        var ret = this.type2occurrences.get(type.getId());
-        if (!ret) { return []; }
-        return ret;
     };
 
     /**
@@ -1627,7 +1675,6 @@ TM = (function () {
     * a reference to the actual topics, not copies of them.
     */
     TypeInstanceIndexMemImpl.prototype.getOccurrenceTypes = function () {
-        return this.type2occurrences.keys();
     };
 
 
@@ -1639,7 +1686,7 @@ TM = (function () {
     TypeInstanceIndexMemImpl.prototype.getRoles = function (type) {
         var ret = this.type2roles.get(type.getId());
         if (!ret) { return []; }
-        return ret;
+        return ret.values();
     };
 
     /**
@@ -1649,7 +1696,11 @@ TM = (function () {
     * a reference to the actual topics, not copies of them.
     */
     TypeInstanceIndexMemImpl.prototype.getRoleTypes = function () {
-        return this.type2roles.keys();
+        var ret = [], keys = this.type2roles.keys(), i;
+        for (i=0; i<keys.length; i+=1) {
+            ret.push(this.tm.getConstructById(keys[i]));
+        }
+        return ret;
     };
 
     /**
@@ -1728,11 +1779,6 @@ TM = (function () {
         this.type2occurrences.empty();
         this.type2variants.empty();
     };
-
-    /* TODO: Implement the other variant of getTopics():
-        java.util.Collection<Topic>    getTopics(Topic[] types, boolean matchAll) 
-        Returns the topics in the topic map whose type property equals one of those types at least.
-    */
 
     /**
     * @class Helper class that is used to check if constructs belong to
