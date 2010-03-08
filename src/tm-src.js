@@ -97,13 +97,15 @@ TM = (function () {
     // Internal event handling system
     EventType = {};
     EventType.ADD_ASSOCIATION = 1;
-    EventType.ADD_ROLE = 2;
-    EventType.ADD_TOPIC = 3;
-    EventType.ADD_TYPE = 4;
-    EventType.REMOVE_ASSOCIATION = 5;
-    EventType.REMOVE_ROLE = 6;
-    EventType.REMOVE_TOPIC = 7;
-    EventType.SET_TYPE = 8;
+    EventType.ADD_OCCURRENCE = 2;
+    EventType.ADD_ROLE = 3;
+    EventType.ADD_TOPIC = 4;
+    EventType.ADD_TYPE = 5;
+    EventType.REMOVE_ASSOCIATION = 6;
+    EventType.REMOVE_OCCURRENCE = 7;
+    EventType.REMOVE_ROLE = 8;
+    EventType.REMOVE_TOPIC = 9;
+    EventType.SET_TYPE = 10;
 
     // -----------------------------------------------------------------------
     // TODO: The locator functions need some more work. Implement resolve()
@@ -574,10 +576,12 @@ TM = (function () {
             }
         };
         this.addAssociationEvent = new EventHandler(EventType.ADD_ASSOCIATION); 
+        this.addOccurrenceEvent = new EventHandler(EventType.ADD_OCCURRENCE); 
         this.addRoleEvent = new EventHandler(EventType.ADD_ROLE); 
         this.addTopicEvent = new EventHandler(EventType.ADD_TOPIC); 
         this.addTypeEvent = new EventHandler(EventType.ADD_TYPE); 
         this.removeAssociationEvent = new EventHandler(EventType.REMOVE_ASSOCIATION);
+        this.removeOccurrenceEvent = new EventHandler(EventType.REMOVE_OCCURRENCE);
         this.removeRoleEvent = new EventHandler(EventType.REMOVE_ROLE);
         this.removeTopicEvent = new EventHandler(EventType.REMOVE_TOPIC);
         this.setTypeEvent = new EventHandler(EventType.SET_TYPE);
@@ -587,6 +591,8 @@ TM = (function () {
         switch (type) {
             case EventType.ADD_ASSOCIATION:
                 this.addAssociationEvent.registerHandler(handler); break;
+            case EventType.ADD_OCCURRENCE:
+                this.addOccurrenceEvent.registerHandler(handler); break;
             case EventType.ADD_ROLE:
                 this.addRoleEvent.registerHandler(handler); break;
             case EventType.ADD_TOPIC:
@@ -595,6 +601,8 @@ TM = (function () {
                 this.addTypeEvent.registerHandler(handler); break;
             case EventType.REMOVE_ASSOCIATION:
                 this.removeAssociationEvent.registerHandler(handler); break;
+            case EventType.REMOVE_OCCURRENCE:
+                this.removeOccurrenceEvent.registerHandler(handler); break;
             case EventType.REMOVE_ROLE:
                 this.removeRoleEvent.registerHandler(handler); break;
             case EventType.REMOVE_TOPIC:
@@ -934,6 +942,7 @@ TM = (function () {
         SameTopicMapHelper.assertBelongsTo(this.parnt, scope);
     
         occ = new OccurrenceMemImpl(this, type, value);
+        this.parnt.addOccurrenceEvent.fire(occ, {type: type, value: value});
         this.occurrences.push(occ);
         return occ;
     };
@@ -1143,6 +1152,7 @@ TM = (function () {
     };
     
     OccurrenceMemImpl.prototype.remove = function () {
+        this.parnt.parnt.removeOccurrenceEvent.fire(this);
         this.parnt._removeOccurrence(this);
         this.id = null;
     };
@@ -1485,6 +1495,14 @@ TM = (function () {
             switch (eventtype) {
                 case EventType.ADD_ASSOCIATION:
                     break;
+                case EventType.ADD_OCCURRENCE:
+                    existing = that.type2occurrences.get(obj.type.getId());
+                    if (typeof existing === 'undefined') {
+                        existing = new Hash();
+                    }
+                    existing.put(source.getId(), source);
+                    that.type2occurrences.put(obj.type.getId(), existing);
+                    break;
                 case EventType.ADD_ROLE:
                     existing = that.type2roles.get(obj.type.getId());
                     if (typeof existing === 'undefined') {
@@ -1531,6 +1549,16 @@ TM = (function () {
                         that.type2associations.remove(type.getId());
                     }
                     break;
+                case EventType.REMOVE_OCCURRENCE:
+                    type = source.getType();
+                    existing = that.type2occurrences.get(type.getId());
+                    existing.remove(source.getId());
+                    if (existing.length > 0) {
+                        that.type2occurrences.put(type.getId(), existing);
+                    } else {
+                        that.type2occurrences.remove(type.getId());
+                    }
+                    break;
                 case EventType.REMOVE_ROLE:
                     type = source.getType();
                     existing = that.type2roles.get(type.getId());
@@ -1540,7 +1568,7 @@ TM = (function () {
                     } else {
                         that.type2roles.remove(type.getId());
                     }
-                    break;                   
+                    break;
                 case EventType.REMOVE_TOPIC:
                     // two cases:
                     //  topic has types
@@ -1583,6 +1611,22 @@ TM = (function () {
                         }
                         existing.push(source);
                         that.type2associations.put(obj.type.getId(), existing);
+                    } else if (source.isOccurrence()) {
+                        existing = that.type2occurrences.get(obj.old.getId());
+                        if (existing) {
+                            existing.remove(source.getId());
+                            if (existing.length > 0) {
+                                that.type2occurrences.put(obj.old.getId(), existing);
+                            } else {
+                                that.type2occurrences.remove(obj.old.getId());
+                            }
+                        }
+                        existing = that.type2occurrences.get(obj.type.getId());
+                        if (typeof existing === 'undefined') {
+                            existing = new Hash();
+                        }
+                        existing.put(source.getId(), source);
+                        that.type2occurrences.put(obj.type.getId(), existing);
                     } else if (source.isRole()) {
                         existing = that.type2roles.get(obj.old.getId());
                         if (existing) {
@@ -1604,10 +1648,12 @@ TM = (function () {
             }
         };
         //tm.addAssociationEvent.registerHandler(eventHandler);
+        tm.addOccurrenceEvent.registerHandler(eventHandler);
         tm.addRoleEvent.registerHandler(eventHandler);
         tm.addTopicEvent.registerHandler(eventHandler);
         tm.addTypeEvent.registerHandler(eventHandler);
         tm.removeAssociationEvent.registerHandler(eventHandler);
+        tm.removeOccurrenceEvent.registerHandler(eventHandler);
         tm.removeRoleEvent.registerHandler(eventHandler);
         tm.removeTopicEvent.registerHandler(eventHandler);
         tm.setTypeEvent.registerHandler(eventHandler);
@@ -1648,6 +1694,7 @@ TM = (function () {
     * @returns {Array}
     */
     TypeInstanceIndexMemImpl.prototype.getNames = function (type) {
+        return [];
     };
 
     /**
@@ -1657,6 +1704,7 @@ TM = (function () {
     * a reference to the actual topics, not copies of them.
     */
     TypeInstanceIndexMemImpl.prototype.getNameTypes = function () {
+        return [];
     };
 
     /**
@@ -1665,6 +1713,9 @@ TM = (function () {
     * @returns {Array}
     */
     TypeInstanceIndexMemImpl.prototype.getOccurrences = function (type) {
+        var ret = this.type2occurrences.get(type.getId());
+        if (!ret) { return []; }
+        return ret.values();
     };
 
     /**
@@ -1675,6 +1726,11 @@ TM = (function () {
     * a reference to the actual topics, not copies of them.
     */
     TypeInstanceIndexMemImpl.prototype.getOccurrenceTypes = function () {
+        var ret = [], keys = this.type2occurrences.keys(), i;
+        for (i=0; i<keys.length; i+=1) {
+            ret.push(this.tm.getConstructById(keys[i]));
+        }
+        return ret;
     };
 
 

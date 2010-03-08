@@ -185,6 +185,35 @@ var tmp = new Test.Unit.Runner({
         this._updateIndex();
         this.assertEqual(0, this._typeInstanceIdx.getRoles(type).length);
         this.assertEqual(0, this._typeInstanceIdx.getRoleTypes().length);
+    },
+
+    testOccurrence: function () {
+        var type, typed, parent;
+        type = this.createTopic();
+        this._updateIndex();
+        this.assertEqual(0, this._typeInstanceIdx.getOccurrences(type).length);
+        this.assertEqual(0, this._typeInstanceIdx.getOccurrenceTypes().length);
+        parent = this.createTopic();
+        typed = parent.createOccurrence(this.createTopic(), "tmjs");
+        this._updateIndex();
+        this.assertEqual(0, this._typeInstanceIdx.getOccurrences(type).length);
+        this.assertEqual(1, this._typeInstanceIdx.getOccurrenceTypes().length);
+        this.assert(!this._typeInstanceIdx.getOccurrenceTypes().contains(type));
+        typed.setType(type);
+        this._updateIndex();
+        this.assertEqual(1, this._typeInstanceIdx.getOccurrenceTypes().length);
+        this.assertEqual(1, this._typeInstanceIdx.getOccurrences(type).length);
+        this.assert(this._typeInstanceIdx.getOccurrences(type).contains(typed));
+        this.assert(this._typeInstanceIdx.getOccurrenceTypes().contains(type));
+        typed.setType(this.createTopic());
+        this.assertEqual(0, this._typeInstanceIdx.getOccurrences(type).length);
+        this.assertEqual(1, this._typeInstanceIdx.getOccurrenceTypes().length);
+        this.assert(!this._typeInstanceIdx.getOccurrenceTypes().contains(type));
+        typed.setType(type);
+        typed.remove();
+        this._updateIndex();
+        this.assertEqual(0, this._typeInstanceIdx.getOccurrences(type).length);
+        this.assertEqual(0, this._typeInstanceIdx.getOccurrenceTypes().length);
     }
 });
 // ]]>
