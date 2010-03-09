@@ -97,15 +97,17 @@ TM = (function () {
     // Internal event handling system
     EventType = {};
     EventType.ADD_ASSOCIATION = 1;
-    EventType.ADD_OCCURRENCE = 2;
-    EventType.ADD_ROLE = 3;
-    EventType.ADD_TOPIC = 4;
-    EventType.ADD_TYPE = 5;
-    EventType.REMOVE_ASSOCIATION = 6;
-    EventType.REMOVE_OCCURRENCE = 7;
-    EventType.REMOVE_ROLE = 8;
-    EventType.REMOVE_TOPIC = 9;
-    EventType.SET_TYPE = 10;
+    EventType.ADD_NAME = 2;
+    EventType.ADD_OCCURRENCE = 3;
+    EventType.ADD_ROLE = 4;
+    EventType.ADD_TOPIC = 5;
+    EventType.ADD_TYPE = 6;
+    EventType.REMOVE_ASSOCIATION = 7;
+    EventType.REMOVE_NAME = 8;
+    EventType.REMOVE_OCCURRENCE = 9;
+    EventType.REMOVE_ROLE = 10;
+    EventType.REMOVE_TOPIC = 11;
+    EventType.SET_TYPE = 12;
 
     // -----------------------------------------------------------------------
     // TODO: The locator functions need some more work. Implement resolve()
@@ -576,11 +578,13 @@ TM = (function () {
             }
         };
         this.addAssociationEvent = new EventHandler(EventType.ADD_ASSOCIATION); 
+        this.addNameEvent = new EventHandler(EventType.ADD_NAME); 
         this.addOccurrenceEvent = new EventHandler(EventType.ADD_OCCURRENCE); 
         this.addRoleEvent = new EventHandler(EventType.ADD_ROLE); 
         this.addTopicEvent = new EventHandler(EventType.ADD_TOPIC); 
         this.addTypeEvent = new EventHandler(EventType.ADD_TYPE); 
         this.removeAssociationEvent = new EventHandler(EventType.REMOVE_ASSOCIATION);
+        this.removeNameEvent = new EventHandler(EventType.REMOVE_NAME);
         this.removeOccurrenceEvent = new EventHandler(EventType.REMOVE_OCCURRENCE);
         this.removeRoleEvent = new EventHandler(EventType.REMOVE_ROLE);
         this.removeTopicEvent = new EventHandler(EventType.REMOVE_TOPIC);
@@ -591,6 +595,8 @@ TM = (function () {
         switch (type) {
             case EventType.ADD_ASSOCIATION:
                 this.addAssociationEvent.registerHandler(handler); break;
+            case EventType.ADD_NAME:
+                this.addNameEvent.registerHandler(handler); break;
             case EventType.ADD_OCCURRENCE:
                 this.addOccurrenceEvent.registerHandler(handler); break;
             case EventType.ADD_ROLE:
@@ -601,6 +607,8 @@ TM = (function () {
                 this.addTypeEvent.registerHandler(handler); break;
             case EventType.REMOVE_ASSOCIATION:
                 this.removeAssociationEvent.registerHandler(handler); break;
+            case EventType.REMOVE_NAME:
+                this.removeNameEvent.registerHandler(handler); break;
             case EventType.REMOVE_OCCURRENCE:
                 this.removeOccurrenceEvent.registerHandler(handler); break;
             case EventType.REMOVE_ROLE:
@@ -919,12 +927,14 @@ TM = (function () {
     // TODO: @type is optional In TMAPI 2.0
     // Creates a Name for this topic with the specified value, and scope.
     // Creates a Name for this topic with the specified type, value, and scope.
-    TopicMemImpl.prototype.createName = function (type, value, scope) {
+    TopicMemImpl.prototype.createName = function (value, type, scope) {
         var i, name;
-        SameTopicMapHelper.assertBelongsTo(this.parnt, type);
+        if (type) {
+            SameTopicMapHelper.assertBelongsTo(this.parnt, type);
+        }
         SameTopicMapHelper.assertBelongsTo(this.parnt, scope);
     
-            name = new NameMemImpl(this, type, value, scope);
+        name = new NameMemImpl(this, value, type, scope);
         this.names.push(name);
         return name;
     };
@@ -1157,12 +1167,13 @@ TM = (function () {
         this.id = null;
     };
     
-    NameMemImpl = function (parnt, type, value, scope) {
+    NameMemImpl = function (parnt, value, type, scope) {
         this.itemIdentifiers = [];
         this.parnt = parnt;
         this.value = value;
-        this.type = type || parnt.parnt.parnt.createLocator(
-            'http://psi.topicmaps.org/iso13250/model/topic-name');
+        this.type = type ||
+            parnt.parnt.createTopicBySubjectIdentifier(
+                parnt.parnt.createLocator('http://psi.topicmaps.org/iso13250/model/topic-name'));
         if (!scope) {
             this.scope = [];
         } else if (scope instanceof TopicMemImpl) {
@@ -1174,6 +1185,7 @@ TM = (function () {
         this.variants = [];
         this.id = this.getTopicMap()._getConstructId();
         this.getTopicMap()._id2construct.put(this.id, this);
+        this.parnt.parnt.addNameEvent.fire(this, {type: this.type, value: value});
     };
     
     // mergein TypedMemImpl, DatatypeAwareMemImpl, ReifiableMemImpl, ScopedMemImpl,
@@ -1211,6 +1223,7 @@ TM = (function () {
     };
     
     NameMemImpl.prototype.remove = function () {
+        this.parnt.parnt.removeNameEvent.fire(this);
         this.getParent()._removeName(this);
         this.id = null;
     };
@@ -1483,10 +1496,12 @@ TM = (function () {
     TypeInstanceIndexMemImpl = function (tm) {
         var eventHandler, that = this;
         this.tm = tm;
+        // we use hash tables of hash tables for our index
         this.type2topics = new Hash();
         this.type2associations = new Hash();
         this.type2roles = new Hash();
         this.type2occurrences = new Hash();
+        this.type2names = new Hash();
         this.type2variants = new Hash();
         this.opened = false;
 
@@ -1494,6 +1509,14 @@ TM = (function () {
             var existing, untyped, types, type, i;
             switch (eventtype) {
                 case EventType.ADD_ASSOCIATION:
+                    break;
+                case EventType.ADD_NAME:
+                    existing = that.type2names.get(obj.type.getId());
+                    if (typeof existing === 'undefined') {
+                        existing = new Hash();
+                    }
+                    existing.put(source.getId(), source);
+                    that.type2names.put(obj.type.getId(), existing);
                     break;
                 case EventType.ADD_OCCURRENCE:
                     existing = that.type2occurrences.get(obj.type.getId());
@@ -1547,6 +1570,16 @@ TM = (function () {
                                 existing);
                     } else {
                         that.type2associations.remove(type.getId());
+                    }
+                    break;
+                case EventType.REMOVE_NAME:
+                    type = source.getType();
+                    existing = that.type2names.get(type.getId());
+                    existing.remove(source.getId());
+                    if (existing.length > 0) {
+                        that.type2names.put(type.getId(), existing);
+                    } else {
+                        that.type2names.remove(type.getId());
                     }
                     break;
                 case EventType.REMOVE_OCCURRENCE:
@@ -1611,6 +1644,22 @@ TM = (function () {
                         }
                         existing.push(source);
                         that.type2associations.put(obj.type.getId(), existing);
+                    } else if (source.isName()) {
+                        existing = that.type2names.get(obj.old.getId());
+                        if (existing) {
+                            existing.remove(source.getId());
+                            if (existing.length > 0) {
+                                that.type2names.put(obj.old.getId(), existing);
+                            } else {
+                                that.type2names.remove(obj.old.getId());
+                            }
+                        }
+                        existing = that.type2names.get(obj.type.getId());
+                        if (typeof existing === 'undefined') {
+                            existing = new Hash();
+                        }
+                        existing.put(source.getId(), source);
+                        that.type2names.put(obj.type.getId(), existing);
                     } else if (source.isOccurrence()) {
                         existing = that.type2occurrences.get(obj.old.getId());
                         if (existing) {
@@ -1648,11 +1697,13 @@ TM = (function () {
             }
         };
         //tm.addAssociationEvent.registerHandler(eventHandler);
+        tm.addNameEvent.registerHandler(eventHandler);
         tm.addOccurrenceEvent.registerHandler(eventHandler);
         tm.addRoleEvent.registerHandler(eventHandler);
         tm.addTopicEvent.registerHandler(eventHandler);
         tm.addTypeEvent.registerHandler(eventHandler);
         tm.removeAssociationEvent.registerHandler(eventHandler);
+        tm.removeNameEvent.registerHandler(eventHandler);
         tm.removeOccurrenceEvent.registerHandler(eventHandler);
         tm.removeRoleEvent.registerHandler(eventHandler);
         tm.removeTopicEvent.registerHandler(eventHandler);
@@ -1694,7 +1745,9 @@ TM = (function () {
     * @returns {Array}
     */
     TypeInstanceIndexMemImpl.prototype.getNames = function (type) {
-        return [];
+        var ret = this.type2names.get(type.getId());
+        if (!ret) { return []; }
+        return ret.values();
     };
 
     /**
@@ -1704,7 +1757,11 @@ TM = (function () {
     * a reference to the actual topics, not copies of them.
     */
     TypeInstanceIndexMemImpl.prototype.getNameTypes = function () {
-        return [];
+        var ret = [], keys = this.type2names.keys(), i;
+        for (i=0; i<keys.length; i+=1) {
+            ret.push(this.tm.getConstructById(keys[i]));
+        }
+        return ret;
     };
 
     /**

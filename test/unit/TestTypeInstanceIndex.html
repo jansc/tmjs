@@ -214,6 +214,35 @@ var tmp = new Test.Unit.Runner({
         this._updateIndex();
         this.assertEqual(0, this._typeInstanceIdx.getOccurrences(type).length);
         this.assertEqual(0, this._typeInstanceIdx.getOccurrenceTypes().length);
+    },
+
+    testName: function () {
+        var type, typed, parnt;
+        type = this._tm.createTopic();
+        this._updateIndex();
+        this.assertEqual(0, this._typeInstanceIdx.getNames(type).length);
+        this.assertEqual(0, this._typeInstanceIdx.getNameTypes().length);
+        parnt = this._tm.createTopic();
+        typed = parnt.createName("tmjs");
+        this._updateIndex();
+        this.assertEqual(1, this._typeInstanceIdx.getNameTypes().length);
+        this.assert(!this._typeInstanceIdx.getNameTypes().contains(type));
+        this.assertEqual(0, this._typeInstanceIdx.getNames(type).length);
+        typed.setType(type);
+        this._updateIndex();
+        this.assertEqual(0, this._typeInstanceIdx.getNameTypes().length);
+        this.assertEqual(1, this._typeInstanceIdx.getNames(type).length);
+        this.assert(this._typeInstanceIdx.getNames(type).contains(typed));
+        this.assert(this._typeInstanceIdx.getNameTypes().contains(type));
+        typed.setType(this.createTopic());
+        this.assertEqual(0, this._typeInstanceIdx.getNames(type).length);
+        this.assert(!this._typeInstanceIdx.getNameTypes().contains(type));
+        this.assertEqual(1, this._typeInstanceIdx.getNameTypes().length);
+        typed.setType(type);
+        typed.remove();
+        this._updateIndex();
+        this.assertEqual(0, this._typeInstanceIdx.getNames(type).length);
+        this.assertEqual(0, this._typeInstanceIdx.getNameTypes().length);
     }
 });
 // ]]>

@@ -41,13 +41,13 @@ addCommonSetupFunctions:
             return obj._tm.createTopic();
         };
         obj.createOccurrence = function() {
-            return obj.createTopic().createOccurrence(obj.createTopic(), 'foo');
+            return obj.createTopic().createOccurrence(obj.createTopic(), "foo");
         };
         obj.createName = function() {
-            return obj.createTopic().createName(obj.createTopic(), 'foo');
+            return obj.createTopic().createName("foo", obj.createTopic());
         };
         obj.createVariant = function() {
-            return obj.createTopic().createName('foo').createVariant('bar',
+            return obj.createTopic().createName("foo").createVariant("bar",
                 obj.createTopic());
         };
         obj.createDatatypeAware = function(iri) {
