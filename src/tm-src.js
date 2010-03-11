@@ -1075,7 +1075,8 @@ TM = (function () {
             idx.getOccurrences(this).length ||
             idx.getNames(this).length ||
             idx.getAssociations(this).length ||
-            idx.getRoles(this).length) {
+            idx.getRoles(this).length ||
+            idx.getTopics(this).length) {
             throw {name: 'TopicInUseException',
                 message: '', reporter: this};
         }
