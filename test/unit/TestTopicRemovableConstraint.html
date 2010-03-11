@@ -30,7 +30,7 @@ var _testTyped = function(context, typed) {
         context.fail("The topic is used as type");
     } catch (e) {
         if (e.name === 'TopicInUseException') {
-            assert(topic.equals(e.reporter));
+            context.assert(topic.equals(e.reporter));
         }
     }
     context.assertEqual(topicCount+1, context._tm.getTopics().length);
