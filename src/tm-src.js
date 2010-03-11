@@ -589,6 +589,7 @@ TM = (function () {
         this.removeRoleEvent = new EventHandler(EventType.REMOVE_ROLE);
         this.removeTopicEvent = new EventHandler(EventType.REMOVE_TOPIC);
         this.setTypeEvent = new EventHandler(EventType.SET_TYPE);
+        this.typeInstanceIndex = new TypeInstanceIndexMemImpl(this);
     };
 
     TopicMapMemImpl.prototype.register_event_handler = function(type, handler) {
@@ -647,6 +648,7 @@ TM = (function () {
         this._id2construct = null;
         this.reifier = null;
         this.id = null;
+        this.typeInstanceIndex = null;
     };
     
     TopicMapMemImpl.prototype.createAssociation = function (type, scope) {
@@ -1068,11 +1070,16 @@ TM = (function () {
     // Removes this topic from the containing TopicMapMemImpl instance.
     TopicMemImpl.prototype.remove = function () {
         // TODO: Check if the topic is in use!
-        var other;
-        if (this.getReified()) {
+        var other, idx = this.parnt.typeInstanceIndex;
+        if (this.getReified() ||
+            idx.getOccurrences(this).length ||
+            idx.getNames(this).length ||
+            idx.getAssociations(this).length ||
+            idx.getRoles(this).length) {
             throw {name: 'TopicInUseException',
                 message: '', reporter: this};
         }
+        
         //if (this.getScopingTopic()) {
         //    throw {name: 'TopicInUseException',
         //        message: '', reporter: this};
