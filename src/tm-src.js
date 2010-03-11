@@ -12,11 +12,9 @@ var TM, TopicMapSystemFactory;
  * Date: 
  */
 TM = (function () {
-    var Version, Hash, Locator, TopicMemImpl, AssociationMemImpl, ScopedMemImpl,
-        ConstructMemImpl, TypedMemImpl, ReifiableMemImpl, DatatypeAwareMemImpl,
-        TopicMapMemImpl, RoleMemImpl, NameMemImpl, VariantMemImpl,
-        OccurrenceMemImpl, TopicMapSystemMemImpl,
-        IndexMemImpl, TypeInstanceIndexMemImpl, 
+    var Version, Hash, Locator, Topic, Association, Scoped, Construct, Typed,
+        Reifiable, DatatypeAware, TopicMap, Role, Name, Variant,
+        Occurrence, TopicMapSystemMemImpl, Index, TypeInstanceIndex,
         SameTopicMapHelper;
 
     Version = '@VERSION';
@@ -94,7 +92,7 @@ TM = (function () {
     /**
      * @class Represents a Topic Maps construct.
      */
-    ConstructMemImpl = function () {};
+    Construct = function () {};
 
     /** 
      * Adds an item identifier.
@@ -103,7 +101,7 @@ TM = (function () {
      * @throws {IdentityConstraintException} If another Topic Maps construct with
      *         the same item identifier exists.
      */
-    ConstructMemImpl.prototype.addItemIdentifier = function (itemIdentifier) {
+    Construct.prototype.addItemIdentifier = function (itemIdentifier) {
         var existing;
         if (itemIdentifier === null) {
             throw {name: 'ModelConstraintException',
@@ -125,43 +123,43 @@ TM = (function () {
     /**
     * Returns true if the other object is equal to this one.
     */
-    ConstructMemImpl.prototype.equals = function (other) {
+    Construct.prototype.equals = function (other) {
         return (this.id === other.id);
     };
     
     /** Returns the identifier of this construct. */
-    ConstructMemImpl.prototype.getId = function () {
+    Construct.prototype.getId = function () {
         return this.id;
     };
     
     /** Returns the item identifiers of this Topic Maps construct. */
-    ConstructMemImpl.prototype.getItemIdentifiers = function () {
+    Construct.prototype.getItemIdentifiers = function () {
         return this.itemIdentifiers;
     };
     
     /** Returns the parent of this construct. */
-    ConstructMemImpl.prototype.getParent = function () {
+    Construct.prototype.getParent = function () {
         return this.parnt;
     };
     
     /** Returns the TopicMap instance to which this Topic Maps construct belongs. */
-    ConstructMemImpl.prototype.getTopicMap = function () {
+    Construct.prototype.getTopicMap = function () {
         throw {name: 'NotImplemented', message: 'getTopicMap() not implemented'};
     };
     
     // Returns the hash code value.
     // TODO: Is this needed?
-    ConstructMemImpl.prototype.hashCode = function () {
+    Construct.prototype.hashCode = function () {
         throw {name: 'NotImplemented', message: 'hashCode() not implemented'};
     };
     
     /** Deletes this construct from its parent container. */
-    ConstructMemImpl.prototype.remove = function () {
+    Construct.prototype.remove = function () {
         throw {name: 'NotImplemented', message: 'remove() not implemented'};
     };
     
     /** Removes an item identifier. */
-    ConstructMemImpl.prototype.removeItemIdentifier = function (itemIdentifier) {
+    Construct.prototype.removeItemIdentifier = function (itemIdentifier) {
         for (var i=0; i<this.itemIdentifiers.length; i+=1) {
             if (this.itemIdentifiers[i].getReference() ===
                     itemIdentifier.getReference()) {
@@ -173,50 +171,50 @@ TM = (function () {
     };
     
     /** Return true if the construct is a TopicMap-object */
-    ConstructMemImpl.prototype.isTopicMap = function() {
+    Construct.prototype.isTopicMap = function() {
         return false;
     };
     
     /** Return true if the construct is a Topic-object */
-    ConstructMemImpl.prototype.isTopic = function() {
+    Construct.prototype.isTopic = function() {
         return false;
     };
     
     /** Return true if the construct is an Association-object */
-    ConstructMemImpl.prototype.isAssociation = function() {
+    Construct.prototype.isAssociation = function() {
         return false;
     };
     
     /** Return true if the construct is a Role-object */
-    ConstructMemImpl.prototype.isRole = function() {
+    Construct.prototype.isRole = function() {
         return false;
     };
     
     /** Return true if the construct is a Name-object */
-    ConstructMemImpl.prototype.isName = function() {
+    Construct.prototype.isName = function() {
         return false;
     };
     
     /** Return true if the construct is an Occurrence-object */
-    ConstructMemImpl.prototype.isOccurrence = function() {
+    Construct.prototype.isOccurrence = function() {
         return false;
     };
     
     /** Return true if the construct is a Variant-object */
-    ConstructMemImpl.prototype.isVariant = function() {
+    Construct.prototype.isVariant = function() {
         return false;
     };
     
     // --------------------------------------------------------------------------
-    TypedMemImpl = function () {};
+    Typed = function () {};
     
     // Returns the type of this construct.
-    TypedMemImpl.prototype.getType = function () {
+    Typed.prototype.getType = function () {
         return this.type;
     };
     
     // Sets the type of this construct.
-    TypedMemImpl.prototype.setType = function (type) {
+    Typed.prototype.setType = function (type) {
         if (type === null) { throw {name: 'ModelConstraintException',
             message: 'Topic.getRolesPlayed cannot be called without type'}; }
         SameTopicMapHelper.assertBelongsTo(this.getTopicMap(), type);
@@ -228,10 +226,10 @@ TM = (function () {
     * @class Indicates that a statement (Topic Maps construct) has a scope.
     * Associations, Occurrences, Names, and Variants are scoped.
     */
-    ScopedMemImpl = function () {};
+    Scoped = function () {};
     
     /** Adds a topic to the scope. */
-    ScopedMemImpl.prototype.addTheme = function (theme) {
+    Scoped.prototype.addTheme = function (theme) {
         if (theme === null) { throw {name: 'ModelConstraintException',
             message: 'addTheme(null) is illegal'}; }
         // Check if theme is part of the scope
@@ -246,12 +244,12 @@ TM = (function () {
     };
     
     /** Returns the topics which define the scope. */
-    ScopedMemImpl.prototype.getScope = function () {
+    Scoped.prototype.getScope = function () {
         return this.scope;
     };
     
     /** Removes a topic from the scope. */
-    ScopedMemImpl.prototype.removeTheme = function (theme) {
+    Scoped.prototype.removeTheme = function (theme) {
         for (var i=0; i<this.scope.length; i+=1) {
             if (this.scope[i] === theme) {
                 this.scope.splice(i, 1);
@@ -263,18 +261,18 @@ TM = (function () {
     
     // --------------------------------------------------------------------------
     /**
-    * @class Indicates that a ConstructMemImpl is reifiable. Every Topic Maps
+    * @class Indicates that a Construct is reifiable. Every Topic Maps
     * construct that is not a Topic is reifiable.
     */
-    ReifiableMemImpl = function () {};
+    Reifiable = function () {};
     
     /** Returns the reifier of this construct. */
-    ReifiableMemImpl.prototype.getReifier = function () {
+    Reifiable.prototype.getReifier = function () {
         return this.reifier;
     };
     
     /** Sets the reifier of the construct. */
-    ReifiableMemImpl.prototype.setReifier = function (reifier) {
+    Reifiable.prototype.setReifier = function (reifier) {
         if (reifier && reifier.getReified() !== null) {
             throw {name: 'ModelConstraintException',
                 message: 'Reifies already another construct'};
@@ -292,16 +290,16 @@ TM = (function () {
     // --------------------------------------------------------------------------
     /**
     * @class Common base interface for Occurrences and Variants.
-    * Inherits ScopedMemImpl, ReifiableMemImpl
+    * Inherits Scoped, Reifiable
     */
-    DatatypeAwareMemImpl = function () {};
+    DatatypeAware = function () {};
     
     /** Returns the BigDecimal representation of the value. */
-    DatatypeAwareMemImpl.prototype.decimalValue = function () {
+    DatatypeAware.prototype.decimalValue = function () {
     };
     
     /** Returns the float representation of the value. */
-    DatatypeAwareMemImpl.prototype.floatValue = function () {
+    DatatypeAware.prototype.floatValue = function () {
         var ret = parseFloat(this.value);
         if (isNaN(ret)) {
             throw {name: 'NumberFormatException',
@@ -311,12 +309,12 @@ TM = (function () {
     };
     
     /** Returns the Locator identifying the datatype of the value. */
-    DatatypeAwareMemImpl.prototype.getDatatype = function () {
+    DatatypeAware.prototype.getDatatype = function () {
         return this.datatype;
     };
     
     /** Returns the lexical representation of the value. */
-    DatatypeAwareMemImpl.prototype.getValue = function () {
+    DatatypeAware.prototype.getValue = function () {
         if (typeof this.value === 'object' && this.value instanceof Locator) {
             return this.value.getReference();
         }
@@ -324,7 +322,7 @@ TM = (function () {
     };
     
     /** Returns the BigInteger representation of the value. */
-    DatatypeAwareMemImpl.prototype.integerValue = function () {
+    DatatypeAware.prototype.integerValue = function () {
         var ret = parseInt(this.value, 10);
         if (isNaN(ret)) {
             throw {name: 'NumberFormatException',
@@ -334,7 +332,7 @@ TM = (function () {
     };
     
     /** Returns the Locator representation of the value. */
-    DatatypeAwareMemImpl.prototype.locatorValue = function () {
+    DatatypeAware.prototype.locatorValue = function () {
         if (!(typeof this.value === 'object' && this.value instanceof Locator)) {
             throw {name: 'ModelConstraintException',
                 message: '"'+this.value+'" is not a locator'};
@@ -343,11 +341,11 @@ TM = (function () {
     };
     
     /** Returns the long representation of the value. */
-    DatatypeAwareMemImpl.prototype.longValue = function () {
+    DatatypeAware.prototype.longValue = function () {
     };
     
     /** Sets the value and the datatype. */
-    DatatypeAwareMemImpl.prototype.setValue = function (value, datatype) {
+    DatatypeAware.prototype.setValue = function (value, datatype) {
         var tm = this.getTopicMap();
         if (datatype === null) {
             throw {name: 'ModelConstraintException', message: 'Invalid datatype'};
@@ -428,25 +426,25 @@ TM = (function () {
         this.features[featureName] = enable;
     };
     
-        // Sets a property in the underlying implementation of TopicMapSystem.
-        TopicMapSystemFactory.prototype.setProperty = function (propertyName, value) {
-            this.property[propertyName] = value;
-        };
+    // Sets a property in the underlying implementation of TopicMapSystem.
+    TopicMapSystemFactory.prototype.setProperty = function (propertyName, value) {
+        this.property[propertyName] = value;
+    };
     
-        /**
-        * Creates a new instance of TopicMamSystemMemImpl.
-        * @class Implementation of the TopicMapSystem interface.
-        */
-        TopicMapSystemMemImpl = function () {
-            this.topicmaps = {};
-        };
+    /**
+    * Creates a new instance of TopicMamSystem.
+    * @class Implementation of the TopicMapSystem interface.
+    */
+    TopicMapSystemMemImpl = function () {
+        this.topicmaps = {};
+    };
     
     TopicMapSystemMemImpl.prototype.createTopicMap = function (locator) {
         if (this.topicmaps[locator.getReference()]) {
             throw {name: 'TopicMapExistsException',
                 message: 'A topic map under the same IRI already exists'};
         }
-        var tm = new TopicMapMemImpl(this, locator);
+        var tm = new TopicMap(this, locator);
         this.topicmaps[locator.getReference()] = tm;
         return tm;
     };
@@ -497,7 +495,7 @@ TM = (function () {
         this.toipcmaps = null; // release references
     };
     
-    TopicMapMemImpl = function (tms, locator) {
+    TopicMap = function (tms, locator) {
         this.topicmapsystem = tms;
         this.itemIdentifiers = [];
         this.locator = locator;
@@ -513,21 +511,21 @@ TM = (function () {
         this.reifier = null;
     };
     
-    TopicMapMemImpl.swiss(ReifiableMemImpl, 'getReifier', 'setReifier');
-    TopicMapMemImpl.swiss(ConstructMemImpl, 'addItemIdentifier', 'getItemIdentifiers',
+    TopicMap.swiss(Reifiable, 'getReifier', 'setReifier');
+    TopicMap.swiss(Construct, 'addItemIdentifier', 'getItemIdentifiers',
         'removeItemIdentifier', 'isTopic', 'isAssociation', 'isRole',
         'isOccurrence', 'isName', 'isVariant', 'isTopicMap');
     
-    TopicMapMemImpl.prototype.isTopicMap = function() {
+    TopicMap.prototype.isTopicMap = function() {
         return true;
     };
     
-    TopicMapMemImpl.prototype._getConstructId = function () {
+    TopicMap.prototype._getConstructId = function () {
         this._constructId = this._constructId + 1;
         return this._constructId;
     };
     
-    TopicMapMemImpl.prototype.remove = function() {
+    TopicMap.prototype.remove = function() {
         this.topicmapsystem._removeTopicMap(this);
         this.topicmapsystem = null;
         this.itemIdentifiers = null;
@@ -542,7 +540,7 @@ TM = (function () {
         this.id = null;
     };
     
-    TopicMapMemImpl.prototype.createAssociation = function (type, scope) {
+    TopicMap.prototype.createAssociation = function (type, scope) {
         var a, i;
         if (type === null) {
             throw {name: 'ModelConstraintException',
@@ -555,7 +553,7 @@ TM = (function () {
         SameTopicMapHelper.assertBelongsTo(this, type);
         SameTopicMapHelper.assertBelongsTo(this, scope);
     
-        a = new AssociationMemImpl(this);
+        a = new Association(this);
         this.associations.push(a);
         if (type) {
             a.setType(type);
@@ -565,30 +563,30 @@ TM = (function () {
                 for (i=0; i<scope.length; i+=1) {
                     a.addTheme(scope[i]);
                 }
-            } else if (scope instanceof TopicMemImpl) {
+            } else if (scope instanceof Topic) {
                 a.addTheme(scope[i]);
             }
         }
         return a;
     };
     
-    TopicMapMemImpl.prototype.createLocator = function (iri) {
+    TopicMap.prototype.createLocator = function (iri) {
         return new Locator(this, iri);
     };
     
-    TopicMapMemImpl.prototype._createEmptyTopic = function () {
-        var t = new TopicMemImpl(this);
+    TopicMap.prototype._createEmptyTopic = function () {
+        var t = new Topic(this);
         this.topics.push(t);
         return t;
     };
     
-    TopicMapMemImpl.prototype.createTopic = function () {
+    TopicMap.prototype.createTopic = function () {
         var t = this._createEmptyTopic();
         t.addItemIdentifier(this.createLocator('urn:x-tmjs:'+t.getId()));
         return t;
     };
     
-    TopicMapMemImpl.prototype.createTopicByItemIdentifier = function (itemIdentifier) {
+    TopicMap.prototype.createTopicByItemIdentifier = function (itemIdentifier) {
         if (!itemIdentifier) { throw {name: 'ModelConstraintException',
             message: 'createTopicByItemIdentifier() needs an item identifier'}; }
         var t = this.getConstructByItemIdentifier(itemIdentifier);
@@ -600,7 +598,7 @@ TM = (function () {
         return t;
     };
     
-    TopicMapMemImpl.prototype.createTopicBySubjectIdentifier = function (subjectIdentifier) {
+    TopicMap.prototype.createTopicBySubjectIdentifier = function (subjectIdentifier) {
         if (!subjectIdentifier) { throw {name: 'ModelConstraintException',
             message: 'createTopicBySubjectIdentifier() needs a subject identifier'}; }
         var t = this.getTopicBySubjectIdentifier(subjectIdentifier);
@@ -612,7 +610,7 @@ TM = (function () {
         return t;
     };
     
-    TopicMapMemImpl.prototype.createTopicBySubjectLocator = function (subjectLocator) {
+    TopicMap.prototype.createTopicBySubjectLocator = function (subjectLocator) {
         if (!subjectLocator) { throw {name: 'ModelConstraintException',
             message: 'createTopicBySubjectLocator() needs a subject locator'}; }
         var t = this.getTopicBySubjectLocator(subjectLocator);
@@ -624,11 +622,11 @@ TM = (function () {
         return t;
     };
     
-    TopicMapMemImpl.prototype.getAssociations = function () {
+    TopicMap.prototype.getAssociations = function () {
         return this.associations;
     };
     
-    TopicMapMemImpl.prototype.getConstructById = function (id) {
+    TopicMap.prototype.getConstructById = function (id) {
         if (id === null) { throw {name: 'ModelConstraintException',
                 message: 'getConstructById(null) is illegal'}; }
         var ret = this._id2construct.get(id);
@@ -636,7 +634,7 @@ TM = (function () {
         return ret;
     };
     
-    TopicMapMemImpl.prototype.getConstructByItemIdentifier = function (itemIdentifier) {
+    TopicMap.prototype.getConstructByItemIdentifier = function (itemIdentifier) {
         if (itemIdentifier === null) { throw {name: 'ModelConstraintException',
                 message: 'getConstructByItemIdentifier(null) is illegal'}; }
         var ret = this._ii2construct.get(itemIdentifier.getReference());
@@ -644,16 +642,16 @@ TM = (function () {
         return ret;
     };
     
-    TopicMapMemImpl.prototype.getIndex = function (className) {
+    TopicMap.prototype.getIndex = function (className) {
         throw {name: 'UnsupportedOperationException', 
             message: 'getIndex ist not (yet) supported'};
     };
     
-    TopicMapMemImpl.prototype.getParent = function () {
+    TopicMap.prototype.getParent = function () {
         return null;
     };
     
-    TopicMapMemImpl.prototype.getTopicBySubjectIdentifier = function (subjectIdentifier) {
+    TopicMap.prototype.getTopicBySubjectIdentifier = function (subjectIdentifier) {
         var res = this._si2topic.get(subjectIdentifier.getReference());
         if (res) {
             return res;
@@ -661,7 +659,7 @@ TM = (function () {
         return null; // Make sure that the result is not undefined
     };
     
-    TopicMapMemImpl.prototype.getTopicBySubjectLocator = function (subjectLocator) {
+    TopicMap.prototype.getTopicBySubjectLocator = function (subjectLocator) {
         var res = this._sl2topic.get(subjectLocator.getReference());
         if (res) {
             return res;
@@ -669,48 +667,48 @@ TM = (function () {
         return null; // Make sure that the result is not undefined
     };
     
-    TopicMapMemImpl.prototype.getTopics = function () {
+    TopicMap.prototype.getTopics = function () {
         return this.topics;
     };
     
-    TopicMapMemImpl.prototype.mergeIn = function (topicmap) {
+    TopicMap.prototype.mergeIn = function (topicmap) {
         // TODO implement!
         throw {name: 'NotImplemented', message: 'TopicMap.mergeIn() not implemented'};
     };
     
-    TopicMapMemImpl.prototype.equals = function (topicmap) {
+    TopicMap.prototype.equals = function (topicmap) {
         return this.locator.equals(topicmap.locator);
     };
     
-    TopicMapMemImpl.prototype.getId = function () {
+    TopicMap.prototype.getId = function () {
         return this.id;
     };
     
-    TopicMapMemImpl.prototype.getTopicMap = function () {
+    TopicMap.prototype.getTopicMap = function () {
         return this;
     };
     
     // Remove item identifiers
-    TopicMapMemImpl.prototype._removeConstruct = function (construct) {
+    TopicMap.prototype._removeConstruct = function (construct) {
         var iis = construct.getItemIdentifiers(), i;
         for (i=0; i<iis.length; i+=1) {
             this._ii2construct.remove(iis[i].getReference());
         }
     };
     
-    TopicMapMemImpl.prototype._removeTopic = function (topic) {
+    TopicMap.prototype._removeTopic = function (topic) {
         var i, sis = topic.getSubjectIdentifiers(),
             slos = topic.getSubjectLocators();
-        // remove subject identifiers from TopicMapMemImpl._si2topic
+        // remove subject identifiers from TopicMap._si2topic
         for (i=0; i<sis.length; i+=1) {
             this._si2topic.remove(sis[i].getReference());
         }
-        // remove subject locators from TopicMapMemImpl._sl2topic
+        // remove subject locators from TopicMap._sl2topic
         for (i=0; i<slos.length; i+=1) {
             this._sl2topic.remove(slos[i].getReference());
         }
         this._removeConstruct(topic);
-        // remove topic from TopicMapMemImpl.topics
+        // remove topic from TopicMap.topics
         for (i=0; i<this.topics.length; i+=1) {
             if (topic.id === this.topics[i].id) {
                 this.topics.splice(i, 1);
@@ -719,9 +717,9 @@ TM = (function () {
         }
     };
     
-    TopicMapMemImpl.prototype._removeAssociation = function (association) {
+    TopicMap.prototype._removeAssociation = function (association) {
         var i, iis;
-        // remove association from TopicMapMemImpl.associations
+        // remove association from TopicMap.associations
         for (i=0; i<this.associations.length; i+=1) {
             if (association.id === this.associations[i].id) {
                 this.associations.splice(i, 1);
@@ -729,7 +727,7 @@ TM = (function () {
             }
         }
         this._removeConstruct(association);
-        // remove association from TopicMapMemImpl.associations
+        // remove association from TopicMap.associations
         for (i=0; i<this.associations.length; i+=1) {
             if (association.id === this.associations[i].id) {
                 this.associations.splice(i, 1);
@@ -738,19 +736,19 @@ TM = (function () {
         }
     };
     
-    TopicMapMemImpl.prototype._removeRole = function (role) {
+    TopicMap.prototype._removeRole = function (role) {
         this._removeConstruct(role);
     };
     
-    TopicMapMemImpl.prototype._removeOccurrence = function (occ) {
+    TopicMap.prototype._removeOccurrence = function (occ) {
         this._removeConstruct(occ);
     };
     
-    TopicMapMemImpl.prototype._removeName = function (name) {
+    TopicMap.prototype._removeName = function (name) {
         this._removeConstruct(name);
     };
     
-    TopicMapMemImpl.prototype._removeVariant = function (variant) {
+    TopicMap.prototype._removeVariant = function (variant) {
         this._removeConstruct(variant);
     };
     
@@ -758,7 +756,7 @@ TM = (function () {
     
     // --------------------------------------------------------------------------
     
-    TopicMemImpl = function (parnt) {
+    Topic = function (parnt) {
         this.subjectIdentifiers = [];
         this.subjectLocators = [];
         this.itemIdentifiers = [];
@@ -772,21 +770,21 @@ TM = (function () {
         this.reified = null;
     };
     
-    TopicMemImpl.swiss(ConstructMemImpl, 'addItemIdentifier', 'equals', 'getId',
+    Topic.swiss(Construct, 'addItemIdentifier', 'equals', 'getId',
         'getItemIdentifiers', 'getParent', 'getTopicMap', 'hashCode', 'remove',
         'removeItemIdentifier', 'isTopic', 'isAssociation', 'isRole',
         'isOccurrence', 'isName', 'isVariant', 'isTopicMap');
     
-    TopicMemImpl.prototype.isTopic = function() {
+    Topic.prototype.isTopic = function() {
         return true;
     };
     
-    TopicMemImpl.prototype.getTopicMap = function () {
+    Topic.prototype.getTopicMap = function () {
         return this.parnt;
     };
     
     // Adds a subject identifier to this topic.
-    TopicMemImpl.prototype.addSubjectIdentifier = function (subjectIdentifier) {
+    Topic.prototype.addSubjectIdentifier = function (subjectIdentifier) {
         if (!subjectIdentifier) { throw {name: 'ModelConstraintException',
             message: 'addSubjectIdentifier() needs subject identifier'}; }
         this.subjectIdentifiers.push(subjectIdentifier);
@@ -794,7 +792,7 @@ TM = (function () {
     };
     
     // Adds a subject locator to this topic.
-    TopicMemImpl.prototype.addSubjectLocator = function (subjectLocator) {
+    Topic.prototype.addSubjectLocator = function (subjectLocator) {
         if (!subjectLocator) { throw {name: 'ModelConstraintException',
             message: 'addSubjectLocator() needs subject locator'}; }
         this.subjectLocators.push(subjectLocator);
@@ -802,7 +800,7 @@ TM = (function () {
     };
     
     // Adds a type to this topic.
-    TopicMemImpl.prototype.addType = function (type) {
+    Topic.prototype.addType = function (type) {
         if (!type) { throw {name: 'ModelConstraintException',
             message: 'addType() needs type'}; }
         SameTopicMapHelper.assertBelongsTo(this.parnt, type);
@@ -812,12 +810,12 @@ TM = (function () {
     // TODO: @type is optional In TMAPI 2.0
     // Creates a Name for this topic with the specified value, and scope.
     // Creates a Name for this topic with the specified type, value, and scope.
-    TopicMemImpl.prototype.createName = function (type, value, scope) {
+    Topic.prototype.createName = function (type, value, scope) {
         var i, name;
         SameTopicMapHelper.assertBelongsTo(this.parnt, type);
         SameTopicMapHelper.assertBelongsTo(this.parnt, scope);
     
-            name = new NameMemImpl(this, type, value, scope);
+            name = new Name(this, type, value, scope);
         this.names.push(name);
         return name;
     };
@@ -829,18 +827,18 @@ TM = (function () {
     // java.util.Collection<Topic> scope) 
     // Creates an Occurrence for this topic with the specified type, string value,
     // and scope.
-    TopicMemImpl.prototype.createOccurrence = function (type, value, datatype, scope) {
+    Topic.prototype.createOccurrence = function (type, value, datatype, scope) {
         var occ;
         SameTopicMapHelper.assertBelongsTo(this.parnt, type);
         SameTopicMapHelper.assertBelongsTo(this.parnt, scope);
     
-        occ = new OccurrenceMemImpl(this, type, value);
+        occ = new Occurrence(this, type, value);
         this.occurrences.push(occ);
         return occ;
     };
     
     // Returns the Names of this topic where the name type is type. type is optional.
-    TopicMemImpl.prototype.getNames = function (type) {
+    Topic.prototype.getNames = function (type) {
         var ret = [], i;
         if (type === null) { throw {name: 'IllegalArgumentException',
                 message: 'Topic.getOccurrences cannot be called without type'}; }
@@ -856,7 +854,7 @@ TM = (function () {
     
     // Returns the Occurrences of this topic where the occurrence type is type. type
     // is optional.
-    TopicMemImpl.prototype.getOccurrences = function (type) {
+    Topic.prototype.getOccurrences = function (type) {
         var ret = [], i;
         if (type === null) { throw {name: 'IllegalArgumentException',
                 message: 'Topic.getOccurrences cannot be called without type'}; }
@@ -870,8 +868,8 @@ TM = (function () {
         return ret;
     };
     
-    TopicMemImpl.prototype._removeOccurrence = function (occ) {
-        // remove this from TopicMapMemImpl.topics
+    Topic.prototype._removeOccurrence = function (occ) {
+        // remove this from TopicMap.topics
         for (var i=0; i<this.occurrences.length; i+=1) {
             if (this.occurrences[i].equals(occ)) {
                 this.occurrences.splice(i, 1);
@@ -881,19 +879,19 @@ TM = (function () {
         this.getTopicMap()._removeOccurrence(occ);
     };
     
-    // Returns the ConstructMemImpl which is reified by this topic.
-    TopicMemImpl.prototype.getReified = function (type) {
+    // Returns the Construct which is reified by this topic.
+    Topic.prototype.getReified = function (type) {
         return this.reified;
     };
     
-    TopicMemImpl.prototype._setReified = function (reified) {
+    Topic.prototype._setReified = function (reified) {
         this.reified = reified;
     };
     
     // Returns the roles played by this topic.
     // Returns the roles played by this topic where the role type is type.
     // assocType is optional
-    TopicMemImpl.prototype.getRolesPlayed = function (type, assocType) {
+    Topic.prototype.getRolesPlayed = function (type, assocType) {
         if (type === null) { throw {name: 'IllegalArgumentException',
                 message: 'Topic.getRolesPlayed cannot be called without type'}; }
         if (assocType === null) { throw {name: 'IllegalArgumentException',
@@ -914,11 +912,11 @@ TM = (function () {
     };
     
     // @private Registers role as a role played
-    TopicMemImpl.prototype.addRolePlayed = function (role) {
+    Topic.prototype.addRolePlayed = function (role) {
         this.rolesPlayed.push(role);
     };
     
-    TopicMemImpl.prototype.removeRolePlayed = function (role) {
+    Topic.prototype.removeRolePlayed = function (role) {
         for (var i=0; i<this.rolesPlayed.length; i+=1) {
             if (this.rolesPlayed[i].id === role.id) {
                 this.rolesPlayed.splice(i, 1);
@@ -927,28 +925,28 @@ TM = (function () {
     };
     
     // Returns the subject identifiers assigned to this topic.
-    TopicMemImpl.prototype.getSubjectIdentifiers = function () {
+    Topic.prototype.getSubjectIdentifiers = function () {
         return this.subjectIdentifiers;
     };
     
     // Returns the subject locators assigned to this topic.
-    TopicMemImpl.prototype.getSubjectLocators = function () {
+    Topic.prototype.getSubjectLocators = function () {
         return this.subjectLocators;
     };
     
     // Returns the types of which this topic is an instance of.
-    TopicMemImpl.prototype.getTypes = function () {
+    Topic.prototype.getTypes = function () {
         return this.types;
     };
     
     // Merges another topic into this topic.
-    TopicMemImpl.prototype.mergeIn = function (other) {
+    Topic.prototype.mergeIn = function (other) {
         // TODO Implement!
         throw {name: 'NotImplemented', message: 'Topic.mergeIn() not implemented'};
     };
     
-    // Removes this topic from the containing TopicMapMemImpl instance.
-    TopicMemImpl.prototype.remove = function () {
+    // Removes this topic from the containing TopicMap instance.
+    Topic.prototype.remove = function () {
         // TODO: Check if the topic is in use!
         var other;
         if (this.getReified()) {
@@ -965,7 +963,7 @@ TM = (function () {
     };
     
     // Removes a subject identifier from this topic.
-    TopicMemImpl.prototype.removeSubjectIdentifier = function (subjectIdentifier) {
+    Topic.prototype.removeSubjectIdentifier = function (subjectIdentifier) {
         for (var i=0; i<this.subjectIdentifiers.length; i+=1) {
             if (this.subjectIdentifiers[i].getReference() ===
                 subjectIdentifier.getReference()) {
@@ -977,7 +975,7 @@ TM = (function () {
     };
     
     // Removes a subject locator from this topic.
-    TopicMemImpl.prototype.removeSubjectLocator = function (subjectLocator) {
+    Topic.prototype.removeSubjectLocator = function (subjectLocator) {
         for (var i=0; i<this.subjectLocators.length; i+=1) {
             if (this.subjectLocators[i].getReference() ===
                 subjectLocator.getReference()) {
@@ -989,7 +987,7 @@ TM = (function () {
     };
     
     // Removes a type from this topic.
-    TopicMemImpl.prototype.removeType = function (type) {
+    Topic.prototype.removeType = function (type) {
         for (var i=0; i<this.types.length; i+=1) {
             if (this.types[i].equals(type)) {
                 this.types.splice(i, 1);
@@ -998,7 +996,7 @@ TM = (function () {
         }
     };
     
-    TopicMemImpl.prototype._removeName = function(name) {
+    Topic.prototype._removeName = function(name) {
         for (var i=0; i<this.names.length; i+=1) {
             if (this.names[i].equals(name)) {
                 this.names.splice(i, 1);
@@ -1009,7 +1007,7 @@ TM = (function () {
     };
     
     // --------------------------------------------------------------------------
-    OccurrenceMemImpl = function (parnt, type, value) {
+    Occurrence = function (parnt, type, value) {
         this.itemIdentifiers = [];
         this.parnt = parnt;
         this.type = type;
@@ -1021,33 +1019,32 @@ TM = (function () {
         this.getTopicMap()._id2construct.put(this.id, this);
     };
     
-    // mergein TypedMemImpl, DatatypeAwareMemImpl, ReifiableMemImpl,
-    // ScopedMemImpl, ConstructMemImpl
-    OccurrenceMemImpl.swiss(TypedMemImpl, 'getType', 'setType');
-    OccurrenceMemImpl.swiss(DatatypeAwareMemImpl, 'decimalValue', 'floatValue',
+    // mergein Typed, DatatypeAware, Reifiable, Scoped, Construct
+    Occurrence.swiss(Typed, 'getType', 'setType');
+    Occurrence.swiss(DatatypeAware, 'decimalValue', 'floatValue',
         'getDatatype', 'getValue', 'integerValue', 'locatorValue', 'longValue',
         'setValue');
-    OccurrenceMemImpl.swiss(ReifiableMemImpl, 'getReifier', 'setReifier');
-    OccurrenceMemImpl.swiss(ScopedMemImpl, 'addTheme', 'getScope', 'removeTheme');
-    OccurrenceMemImpl.swiss(ConstructMemImpl, 'addItemIdentifier', 'equals', 'getId',
+    Occurrence.swiss(Reifiable, 'getReifier', 'setReifier');
+    Occurrence.swiss(Scoped, 'addTheme', 'getScope', 'removeTheme');
+    Occurrence.swiss(Construct, 'addItemIdentifier', 'equals', 'getId',
         'getItemIdentifiers', 'getParent', 'getTopicMap', 'hashCode', 'remove',
         'removeItemIdentifier', 'isTopic', 'isAssociation', 'isRole',
         'isOccurrence', 'isName', 'isVariant', 'isTopicMap');
     
-    OccurrenceMemImpl.prototype.isOccurrence = function() {
+    Occurrence.prototype.isOccurrence = function() {
         return true;
     };
     
-    OccurrenceMemImpl.prototype.getTopicMap = function () {
+    Occurrence.prototype.getTopicMap = function () {
         return this.parnt.getParent();
     };
     
-    OccurrenceMemImpl.prototype.remove = function () {
+    Occurrence.prototype.remove = function () {
         this.parnt._removeOccurrence(this);
         this.id = null;
     };
     
-    NameMemImpl = function (parnt, type, value, scope) {
+    Name = function (parnt, type, value, scope) {
         this.itemIdentifiers = [];
         this.parnt = parnt;
         this.value = value;
@@ -1055,7 +1052,7 @@ TM = (function () {
             'http://psi.topicmaps.org/iso13250/model/topic-name');
         if (!scope) {
             this.scope = [];
-        } else if (scope instanceof TopicMemImpl) {
+        } else if (scope instanceof Topic) {
                 this.scope[0] = scope;
         } else if (scope instanceof Array) {
             this.scope = scope;
@@ -1066,46 +1063,45 @@ TM = (function () {
         this.getTopicMap()._id2construct.put(this.id, this);
     };
     
-    // mergein TypedMemImpl, DatatypeAwareMemImpl, ReifiableMemImpl, ScopedMemImpl,
-    // ConstructMemImpl
-    NameMemImpl.swiss(TypedMemImpl, 'getType', 'setType');
-    NameMemImpl.swiss(ReifiableMemImpl, 'getReifier', 'setReifier');
-    NameMemImpl.swiss(ScopedMemImpl, 'addTheme', 'getScope', 'removeTheme');
-    NameMemImpl.swiss(ConstructMemImpl, 'addItemIdentifier', 'equals', 'getId',
+    // mergein Typed, DatatypeAware, Reifiable, Scoped, Construct
+    Name.swiss(Typed, 'getType', 'setType');
+    Name.swiss(Reifiable, 'getReifier', 'setReifier');
+    Name.swiss(Scoped, 'addTheme', 'getScope', 'removeTheme');
+    Name.swiss(Construct, 'addItemIdentifier', 'equals', 'getId',
         'getItemIdentifiers', 'getParent', 'getTopicMap', 'hashCode', 'remove',
         'removeItemIdentifier', 'isTopic', 'isAssociation', 'isRole',
         'isOccurrence', 'isName', 'isVariant', 'isTopicMap');
     
-    NameMemImpl.prototype.isName = function() {
+    Name.prototype.isName = function() {
         return true;
     };
     
-    NameMemImpl.prototype.getTopicMap = function () {
+    Name.prototype.getTopicMap = function () {
         return this.parnt.parnt;
     };
     
-    NameMemImpl.prototype.createVariant = function (value, datatype, scope) {
-        var variant = new VariantMemImpl(this, value, datatype, scope);
+    Name.prototype.createVariant = function (value, datatype, scope) {
+        var variant = new Variant(this, value, datatype, scope);
         this.variants.push(variant);
         return variant;
     };
     
-    NameMemImpl.prototype.setValue = function(value) {
+    Name.prototype.setValue = function(value) {
         if (!value) { throw {name: 'ModelConstraintException',
             message: 'Name.setValue(null) is not allowed'}; }
         this.value = value;
     };
     
-    NameMemImpl.prototype.getValue = function(value) {
+    Name.prototype.getValue = function(value) {
         return this.value;
     };
     
-    NameMemImpl.prototype.remove = function () {
+    Name.prototype.remove = function () {
         this.getParent()._removeName(this);
         this.id = null;
     };
     
-    NameMemImpl.prototype._removeVariant = function (variant) {
+    Name.prototype._removeVariant = function (variant) {
         for (var i=0; i<this.variants.length; i+=1) {
             if (this.variants[i].equals(variant)) {
                 this.variants.splice(i, 1);
@@ -1116,7 +1112,7 @@ TM = (function () {
     };
     
     // FIXME: scope_or_datatype => datatype
-    VariantMemImpl = function (parnt, value, scope_or_datatype, scope) {
+    Variant = function (parnt, value, scope_or_datatype, scope) {
         var scope_arr = scope || scope_or_datatype;
         if (value === null) { throw {name: 'ModelConstraintException',
             message: 'Creation of a variant with null value is not allowed'}; }
@@ -1125,7 +1121,7 @@ TM = (function () {
             message: 'Creation of a variant with datatype == null is not allowed'}; }
         this.itemIdentifiers = [];
         this.parnt = parnt;
-        if (scope_arr && scope_arr instanceof TopicMemImpl) {
+        if (scope_arr && scope_arr instanceof Topic) {
             this.scope = [scope_arr];
         } else {
             this.scope = scope_arr;
@@ -1154,30 +1150,30 @@ TM = (function () {
         this.getTopicMap()._id2construct.put(this.id, this);
     };
     
-    VariantMemImpl.swiss(ReifiableMemImpl, 'getReifier', 'setReifier');
-    VariantMemImpl.swiss(ScopedMemImpl, 'addTheme', 'getScope', 'removeTheme');
-    VariantMemImpl.swiss(ConstructMemImpl, 'addItemIdentifier', 'equals', 'getId',
+    Variant.swiss(Reifiable, 'getReifier', 'setReifier');
+    Variant.swiss(Scoped, 'addTheme', 'getScope', 'removeTheme');
+    Variant.swiss(Construct, 'addItemIdentifier', 'equals', 'getId',
         'getItemIdentifiers', 'getParent', 'getTopicMap', 'hashCode', 'remove',
         'removeItemIdentifier', 'isTopic', 'isAssociation', 'isRole',
         'isOccurrence', 'isName', 'isVariant', 'isTopicMap');
-    VariantMemImpl.swiss(DatatypeAwareMemImpl, 'decimalValue', 'floatValue', 'getDatatype',
+    Variant.swiss(DatatypeAware, 'decimalValue', 'floatValue', 'getDatatype',
         'getValue', 'integerValue', 'locatorValue', 'longValue', 'setValue');
     
-    VariantMemImpl.prototype.isVariant = function() {
+    Variant.prototype.isVariant = function() {
         return true;
     };
     
-    VariantMemImpl.prototype.getTopicMap = function () {
+    Variant.prototype.getTopicMap = function () {
         return this.getParent().getParent().getParent();
     };
     
-    VariantMemImpl.prototype.remove = function () {
+    Variant.prototype.remove = function () {
         this.getParent()._removeVariant(this);
         this.id = null;
     };
     
 
-    RoleMemImpl = function (parnt, type, player) {
+    Role = function (parnt, type, player) {
         this.itemIdentifiers = [];
         this.parnt = parnt;
         this.type = type;
@@ -1187,22 +1183,22 @@ TM = (function () {
         this.getTopicMap()._id2construct.put(this.id, this);
     };
     
-    RoleMemImpl.swiss(TypedMemImpl, 'getType', 'setType');
-    RoleMemImpl.swiss(ReifiableMemImpl, 'getReifier', 'setReifier');
-    RoleMemImpl.swiss(ConstructMemImpl, 'addItemIdentifier', 'equals', 'getId',
+    Role.swiss(Typed, 'getType', 'setType');
+    Role.swiss(Reifiable, 'getReifier', 'setReifier');
+    Role.swiss(Construct, 'addItemIdentifier', 'equals', 'getId',
         'getItemIdentifiers', 'getParent', 'getTopicMap', 'hashCode', 'remove',
         'removeItemIdentifier', 'isTopic', 'isAssociation', 'isRole',
         'isOccurrence', 'isName', 'isVariant', 'isTopicMap');
     
-    RoleMemImpl.prototype.isRole = function () {
+    Role.prototype.isRole = function () {
         return true;
     };
     
-    RoleMemImpl.prototype.getTopicMap = function () {
+    Role.prototype.getTopicMap = function () {
         return this.getParent().getParent();
     };
     
-    RoleMemImpl.prototype.remove = function () {
+    Role.prototype.remove = function () {
         this.parnt._removeRole(this);
         this.itemIdentifiers = null;
         this.parnt = null;
@@ -1212,11 +1208,11 @@ TM = (function () {
         this.id = null;
     };
     
-    RoleMemImpl.prototype.getPlayer = function () {
+    Role.prototype.getPlayer = function () {
         return this.player;
     };
     
-    RoleMemImpl.prototype.setPlayer = function (player) {
+    Role.prototype.setPlayer = function (player) {
         if (!player) { throw {name: 'ModelConstraintException',
             message: 'player i Role.setPlayer cannot be null'}; }
         SameTopicMapHelper.assertBelongsTo(this.parnt.parnt, player);
@@ -1226,7 +1222,7 @@ TM = (function () {
         this.player = player;
     };
     
-    AssociationMemImpl = function (par) {
+    Association = function (par) {
         this.itemIdentifiers = [];
         this.parnt = par;
         this.id = this.getTopicMap()._getConstructId();
@@ -1237,37 +1233,37 @@ TM = (function () {
         this.reifier = null;
     };
     
-    AssociationMemImpl.swiss(TypedMemImpl, 'getType', 'setType');
-    AssociationMemImpl.swiss(ReifiableMemImpl, 'getReifier', 'setReifier');
-    AssociationMemImpl.swiss(ScopedMemImpl, 'addTheme', 'getScope', 'removeTheme');
-    AssociationMemImpl.swiss(ConstructMemImpl, 'addItemIdentifier', 'equals', 'getId',
+    Association.swiss(Typed, 'getType', 'setType');
+    Association.swiss(Reifiable, 'getReifier', 'setReifier');
+    Association.swiss(Scoped, 'addTheme', 'getScope', 'removeTheme');
+    Association.swiss(Construct, 'addItemIdentifier', 'equals', 'getId',
         'getItemIdentifiers', 'getParent', 'getTopicMap', 'hashCode', 'remove',
         'removeItemIdentifier', 'isTopic', 'isAssociation', 'isRole',
         'isOccurrence', 'isName', 'isVariant', 'isTopicMap');
     
-    AssociationMemImpl.prototype.isAssociation = function () {
+    Association.prototype.isAssociation = function () {
         return true;
     };
     
-    AssociationMemImpl.prototype.getTopicMap = function () {
+    Association.prototype.getTopicMap = function () {
         return this.parnt;
     };
     
     // Creates a new Role representing a role in this association.
-    AssociationMemImpl.prototype.createRole = function (type, player) {
+    Association.prototype.createRole = function (type, player) {
         if (!type) { throw {name: 'ModelConstraintException',
             message: 'type i Role.createPlayer cannot be null'}; }
         if (!player) { throw {name: 'ModelConstraintException',
             message: 'player i Role.createRole cannot be null'}; }
         SameTopicMapHelper.assertBelongsTo(this.parnt, type);
         SameTopicMapHelper.assertBelongsTo(this.parnt, player);
-        var role = new RoleMemImpl(this, type, player);
+        var role = new Role(this, type, player);
         player.addRolePlayed(role);
         this.roles.push(role);
         return role;
     };
     
-    AssociationMemImpl.prototype._removeRole = function (role) {
+    Association.prototype._removeRole = function (role) {
         for (var i=0; i<this.roles.length; i+=1) {
             if (role.id === this.roles[i].id) {
                 this.roles.splice(i, 1);
@@ -1278,7 +1274,7 @@ TM = (function () {
         this.getTopicMap()._removeRole(role);
     };
     
-    AssociationMemImpl.prototype.remove = function () {
+    Association.prototype.remove = function () {
         for (var i=0; i<this.roles.length; i+=1) {
             this.roles[i].remove();
         }
@@ -1294,7 +1290,7 @@ TM = (function () {
     
     // Returns the roles participating in this association.
     // Returns all roles with the specified type.
-    AssociationMemImpl.prototype.getRoles = function (type) {
+    Association.prototype.getRoles = function (type) {
         if (type === null) { throw {name: 'IllegalArgumentException',
             message: 'Topic.getRolesPlayed cannot be called with type null'}; }
         if (!type) { return this.roles; }
@@ -1308,7 +1304,7 @@ TM = (function () {
     };
 
     // Returns the role types participating in this association.
-    AssociationMemImpl.prototype.getRoleTypes = function () {
+    Association.prototype.getRoleTypes = function () {
         // Create a hash with the object ids as keys to avoid duplicates
         var types = {}, typearr = [], i, t;
         for (i=0; i<this.roles.length; i+=1) {
@@ -1325,23 +1321,23 @@ TM = (function () {
 
     // ------ ----------------------------------------------------------------
     /** @class */
-    IndexMemImpl = function () {};
+    Index = function () {};
 
     /** Close the index. */
-    IndexMemImpl.prototype.close = function () {
+    Index.prototype.close = function () {
     };
 
     /** 
     * Indicates whether the index is updated automatically. 
     * @returns {boolean}
     */
-    IndexMemImpl.prototype.isAutoUpdated = function () {
+    Index.prototype.isAutoUpdated = function () {
     };
 
     /** Indicates if the index is open.
     * @returns {boolean} true if index is already opened, false otherwise.
     */
-    IndexMemImpl.prototype.isOpen = function () {
+    Index.prototype.isOpen = function () {
     };
 
     /**
@@ -1349,18 +1345,18 @@ TM = (function () {
     * method (aside from isOpen()) exported by this interface or derived
     * interfaces.
     */
-    IndexMemImpl.prototype.open = function () {
+    Index.prototype.open = function () {
     };
 
     /** Synchronizes the index with data in the topic map. */
-    IndexMemImpl.prototype.reindex = function () {
+    Index.prototype.reindex = function () {
     };
 
     /**
-    * Creates a new instance of TypeInstanceIndexMemImpl.
+    * Creates a new instance of TypeInstanceIndex.
     * @class Implementation of the TypeInstanceIndex interface.
     */
-    TypeInstanceIndexMemImpl = function () {
+    TypeInstanceIndex = function () {
         this.type2topics = new Hash();
         this.type2associations = new Hash();
         this.type2roles = new Hash();
@@ -1368,16 +1364,16 @@ TM = (function () {
         this.type2variants = new Hash();
     };
 
-    TypeInstanceIndexMemImpl.swiss(IndexMemImpl, 'close', 'isAutoUpdated',
+    TypeInstanceIndex.swiss(Index, 'close', 'isAutoUpdated',
         'isOpen', 'open', 'reindex');
           
     /**
     * Returns the associations in the topic map whose type property equals type.
     *
-    * @param {TopicMemImpl} type
+    * @param {Topic} type
     * @returns {Array} A list of all associations in the topic map with the given type.
     */
-    TypeInstanceIndexMemImpl.prototype.getAssociations = function (type) {
+    TypeInstanceIndex.prototype.getAssociations = function (type) {
         return this.type2associations[type.getId()];
     };
 
@@ -1386,17 +1382,17 @@ TM = (function () {
     *
     * @returns {Array} A list of all topics that are used as an association type.
     */
-    TypeInstanceIndexMemImpl.prototype.getAssociationTypes = function () {
+    TypeInstanceIndex.prototype.getAssociationTypes = function () {
         return this.type2associations.keys();
     };
 
     /**
     * Returns the topic names in the topic map whose type property equals type.
     *
-    * @param {TopicMemImpl} type
+    * @param {Topic} type
     * @returns {Array}
     */
-    TypeInstanceIndexMemImpl.prototype.getNames = function (type) {
+    TypeInstanceIndex.prototype.getNames = function (type) {
         var ret = this.type2names.get(type.getId());
         if (ret) { return []; }
         return ret;
@@ -1408,7 +1404,7 @@ TM = (function () {
     * @returns {Array} An array of topic types. Note that the array contains
     * a reference to the actual topics, not copies of them.
     */
-    TypeInstanceIndexMemImpl.prototype.getNameTypes = function () {
+    TypeInstanceIndex.prototype.getNameTypes = function () {
         return this.type2names.keys();
     };
 
@@ -1417,7 +1413,7 @@ TM = (function () {
     *
     * @returns {Array}
     */
-    TypeInstanceIndexMemImpl.prototype.getOccurrences = function (type) {
+    TypeInstanceIndex.prototype.getOccurrences = function (type) {
         var ret = this.type2occurrences.get(type.getId());
         if (!ret) { return []; }
         return ret;
@@ -1430,7 +1426,7 @@ TM = (function () {
     * @returns {Array} An array of topic types. Note that the array contains
     * a reference to the actual topics, not copies of them.
     */
-    TypeInstanceIndexMemImpl.prototype.getOccurrenceTypes = function () {
+    TypeInstanceIndex.prototype.getOccurrenceTypes = function () {
         return this.type2occurrences.keys();
     };
 
@@ -1440,7 +1436,7 @@ TM = (function () {
     *
     * @returns {Array}
     */
-    TypeInstanceIndexMemImpl.prototype.getRoles = function (type) {
+    TypeInstanceIndex.prototype.getRoles = function (type) {
         var ret = this.type2roles.get(type.getId());
         if (!ret) { return []; }
         return ret;
@@ -1452,14 +1448,14 @@ TM = (function () {
     * @returns {Array} An array of topic types. Note that the array contains
     * a reference to the actual topics, not copies of them.
     */
-    TypeInstanceIndexMemImpl.prototype.getRoleTypes = function () {
+    TypeInstanceIndex.prototype.getRoleTypes = function () {
         return this.type2roles.keys();
     };
 
     /**
     * Returns the topics which are an instance of the specified type.
     */
-    TypeInstanceIndexMemImpl.prototype.getTopics = function (type) {
+    TypeInstanceIndex.prototype.getTopics = function (type) {
         var ret = this.type2topics.get(type.getId());
         if (!ret) { return []; }
         return ret;
@@ -1469,11 +1465,11 @@ TM = (function () {
     * Returns the topics in topic map which are used as type in an
     * "type-instance"-relationship.
     */
-    TypeInstanceIndexMemImpl.prototype.getTopicTypes = function () {
+    TypeInstanceIndex.prototype.getTopicTypes = function () {
         return this.type2topics.keys();
     };
 
-    TypeInstanceIndexMemImpl.prototype.close = function () {
+    TypeInstanceIndex.prototype.close = function () {
         this.type2topics.empty();
         this.type2associations.empty();
         this.type2roles.empty();
@@ -1503,7 +1499,7 @@ TM = (function () {
         assertBelongsTo: function (topicmap, topic) {
             var i;
             if (!topic) { return false; }
-            if (topic && topic instanceof TopicMemImpl &&
+            if (topic && topic instanceof Topic &&
                     !topicmap.equals(topic.getTopicMap())) {
                 throw {name: 'ModelConstraintException',
                     messge: 'scope topic belongs to different topic map'};
