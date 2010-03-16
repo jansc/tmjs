@@ -16,7 +16,8 @@ TM = (function () {
         ScopedMemImpl, ConstructMemImpl, TypedMemImpl, ReifiableMemImpl,
         DatatypeAwareMemImpl, TopicMapMemImpl, RoleMemImpl, NameMemImpl,
         VariantMemImpl, OccurrenceMemImpl, TopicMapSystemMemImpl,
-        IndexMemImpl, TypeInstanceIndexMemImpl, SameTopicMapHelper;
+        IndexMemImpl, TypeInstanceIndexMemImpl, ScopedIndex, 
+        SameTopicMapHelper, ArrayHelper, IndexHelper;
 
     Version = '@VERSION';
 
@@ -100,14 +101,16 @@ TM = (function () {
     EventType.ADD_NAME = 2;
     EventType.ADD_OCCURRENCE = 3;
     EventType.ADD_ROLE = 4;
-    EventType.ADD_TOPIC = 5;
-    EventType.ADD_TYPE = 6;
-    EventType.REMOVE_ASSOCIATION = 7;
-    EventType.REMOVE_NAME = 8;
-    EventType.REMOVE_OCCURRENCE = 9;
-    EventType.REMOVE_ROLE = 10;
-    EventType.REMOVE_TOPIC = 11;
-    EventType.SET_TYPE = 12;
+    EventType.ADD_THEME = 5;
+    EventType.ADD_TOPIC = 6;
+    EventType.ADD_TYPE = 7;
+    EventType.REMOVE_ASSOCIATION = 8;
+    EventType.REMOVE_NAME = 9;
+    EventType.REMOVE_OCCURRENCE = 10;
+    EventType.REMOVE_ROLE = 11;
+    EventType.REMOVE_THEME = 12;
+    EventType.REMOVE_TOPIC = 13;
+    EventType.SET_TYPE = 14;
 
     // -----------------------------------------------------------------------
     // TODO: The locator functions need some more work. Implement resolve()
@@ -279,6 +282,7 @@ TM = (function () {
         }
         SameTopicMapHelper.assertBelongsTo(this.getTopicMap(), theme);
         this.scope.push(theme);
+        this.getTopicMap().addThemeEvent.fire(this, {theme: theme});
         return true;
     };
     
@@ -291,6 +295,7 @@ TM = (function () {
     ScopedMemImpl.prototype.removeTheme = function (theme) {
         for (var i=0; i<this.scope.length; i+=1) {
             if (this.scope[i] === theme) {
+                this.getTopicMap().removeThemeEvent.fire(this, {theme: this.scope[i]});
                 this.scope.splice(i, 1);
                 break;
             }
@@ -581,12 +586,14 @@ TM = (function () {
         this.addNameEvent = new EventHandler(EventType.ADD_NAME); 
         this.addOccurrenceEvent = new EventHandler(EventType.ADD_OCCURRENCE); 
         this.addRoleEvent = new EventHandler(EventType.ADD_ROLE); 
+        this.addThemeEvent = new EventHandler(EventType.ADD_THEME); 
         this.addTopicEvent = new EventHandler(EventType.ADD_TOPIC); 
         this.addTypeEvent = new EventHandler(EventType.ADD_TYPE); 
         this.removeAssociationEvent = new EventHandler(EventType.REMOVE_ASSOCIATION);
         this.removeNameEvent = new EventHandler(EventType.REMOVE_NAME);
         this.removeOccurrenceEvent = new EventHandler(EventType.REMOVE_OCCURRENCE);
         this.removeRoleEvent = new EventHandler(EventType.REMOVE_ROLE);
+        this.removeThemeEvent = new EventHandler(EventType.REMOVE_THEME);
         this.removeTopicEvent = new EventHandler(EventType.REMOVE_TOPIC);
         this.setTypeEvent = new EventHandler(EventType.SET_TYPE);
         this.typeInstanceIndex = new TypeInstanceIndexMemImpl(this);
@@ -602,6 +609,8 @@ TM = (function () {
                 this.addOccurrenceEvent.registerHandler(handler); break;
             case EventType.ADD_ROLE:
                 this.addRoleEvent.registerHandler(handler); break;
+            case EventType.ADD_THEME:
+                this.addThemeEvent.registerHandler(handler); break;
             case EventType.ADD_TOPIC:
                 this.addTopicEvent.registerHandler(handler); break;
             case EventType.ADD_TYPE:
@@ -614,6 +623,8 @@ TM = (function () {
                 this.removeOccurrenceEvent.registerHandler(handler); break;
             case EventType.REMOVE_ROLE:
                 this.removeRoleEvent.registerHandler(handler); break;
+            case EventType.REMOVE_THEME:
+                this.removeThemeEvent.registerHandler(handler); break;
             case EventType.REMOVE_TOPIC:
                 this.removeTopicEvent.registerHandler(handler); break;
             case EventType.SET_TYPE:
@@ -677,6 +688,8 @@ TM = (function () {
             } else if (scope instanceof TopicMemImpl) {
                 a.addTheme(scope[i]);
             }
+        } else {
+            this.getTopicMap().addThemeEvent.fire(a, {theme: null});
         }
         this.addAssociationEvent.fire(a);
         return a;
@@ -759,6 +772,9 @@ TM = (function () {
         var index;
         if (className === 'TypeInstanceIndex') {
             index = new TypeInstanceIndexMemImpl(this);
+            return index;
+        } else if (className === 'ScopedIndex') {
+            index = new ScopedIndex(this);
             return index;
         }
         throw {name: 'UnsupportedOperationException', 
@@ -1176,21 +1192,25 @@ TM = (function () {
     };
     
     NameMemImpl = function (parnt, value, type, scope) {
+        var i;
         this.itemIdentifiers = [];
         this.parnt = parnt;
         this.value = value;
         this.type = type ||
             parnt.parnt.createTopicBySubjectIdentifier(
                 parnt.parnt.createLocator('http://psi.topicmaps.org/iso13250/model/topic-name'));
-        if (!scope) {
-            this.scope = [];
-        } else if (scope instanceof TopicMemImpl) {
-                this.scope[0] = scope;
-        } else if (scope instanceof Array) {
-            this.scope = scope;
+        if (scope && typeof scope === 'object') {
+            if (scope instanceof Array) {
+                for (i=0; i<scope.length; i+=1) {
+                    this.addTheme(scope[i]);
+                }
+            } else if (scope instanceof TopicMemImpl) {
+                this.addTheme(scope[i]);
+            }
         }
         this.reifier = null;
         this.variants = [];
+        this.scope = [];
         this.id = this.getTopicMap()._getConstructId();
         this.getTopicMap()._id2construct.put(this.id, this);
         this.parnt.parnt.addNameEvent.fire(this, {type: this.type, value: value});
@@ -1412,8 +1432,12 @@ TM = (function () {
     };
     
     AssociationMemImpl.prototype.remove = function () {
+        var i;
+        for (i=0; i<this.scope.length; i+=1) {
+            this.parnt.removeThemeEvent.fire(this, {theme: this.scope[i]});
+        }
         this.parnt.removeAssociationEvent.fire(this);
-        for (var i=0; i<this.roles.length; i+=1) {
+        for (i=0; i<this.roles.length; i+=1) {
             this.roles[i].remove();
         }
         this.id = null;
@@ -1555,6 +1579,7 @@ TM = (function () {
                     untyped = that.type2topics.get('null');
                     if (untyped && untyped.get(source.getId())) {
                         untyped.remove(source.getId());
+                        that.type2topics.put('null', untyped);
                     }
                     
                     existing = that.type2topics.get(obj.type.getId());
@@ -1840,36 +1865,16 @@ TM = (function () {
     * @returns {Array} A list of Topic objects
     */
     TypeInstanceIndexMemImpl.prototype.getTopicsByTypes = function (types, matchall) {
-        var instances, instance_keys, hash = new Hash(), i, j, ret, contains;
-        for (i=0;i<types.length;i+=1) {
-            instances = this.type2topics.get(types[i].getId());
-            if (instances) {
-                instance_keys = instances.keys();
-                // we use a hash to store instances to avoid duplicates
-                for (j=0; j<instance_keys.length; j+=1) {
-                    hash.put(instances.get(instance_keys[j]).getId(),
-                            instances.get(instance_keys[j]));
-                }
-            }
-        }
+        var instances, i, j, ret;
+        instances = IndexHelper.getForKeys(this.type2topics, types);
         if (!matchall) {
-            return hash.values();
+            return instances;
         }
         // If matchall is true, we check all values for all types in {types}
         // It's a hack, but will do for now
-        instances = hash.values();
-        // Helper function: TODO: Should be available in the whole TM namespace
-        contains = function (arr, elem) {
-            for (var key in arr) {
-                if (arr.hasOwnProperty(key)) {
-                    if (arr[key].equals(elem)) { return true; }
-                }
-            }
-            return false;
-        };
         for (i=0; i<instances.length; i+=1) {
             for (j=0; j<types.length; j+=1) {
-                if (!contains(instances[i].getTypes(), types[j])) {
+                if (!ArrayHelper.contains(instances[i].getTypes(), types[j])) {
                     instances.splice(i, 1);
                     i -= 1;
                     break;
@@ -1894,12 +1899,226 @@ TM = (function () {
     };
 
     TypeInstanceIndexMemImpl.prototype.close = function () {
-        this.type2topics.empty();
-        this.type2associations.empty();
-        this.type2roles.empty();
-        this.type2occurrences.empty();
-        this.type2variants.empty();
+        return;
     };
+
+
+    /**
+    * Index for Scoped statements and their scope. This index provides access
+    * to Associations, Occurrences, Names, and Variants by their scope
+    * property and to Topics which are used as theme in a scope. 
+    */
+    ScopedIndex = function (tm) {
+        var that = this, eventHandler;
+        this.tm = tm;
+        this.theme2associations = new Hash();
+        this.theme2names = new Hash();
+        this.theme2occurrences = new Hash();
+        this.theme2variants = new Hash();
+        eventHandler = function (eventtype, source, obj) {
+            var existing, key, unscoped, i, remove_from_index, add_to_index;
+            add_to_index = function (hash, source, obj) {
+                key = (obj.theme ? obj.theme.getId() : 'null');
+
+                // check if source exists with theme null, remove it there
+                // this is the case iff source now has one scoping topic
+                if (source.getScope().length === 1) {
+                    unscoped = hash.get('null');
+                    if (unscoped && unscoped.get(source.getId())) {
+                        unscoped.remove(source.getId());
+                        hash.put('null', unscoped);
+                    }
+                }
+                existing = hash.get(key);
+                if (typeof existing === 'undefined') {
+                    existing = new Hash();
+                }
+                existing.put(source.getId(), source);  
+                hash.put(key, existing);
+            };
+            remove_from_index = function (hash, source, obj) {
+                key = obj.theme.getId();
+                existing = hash.get(key);
+                if (typeof existing !== 'undefined') {
+                    existing.remove(source.getId());  
+                    if (!existing.size()) {
+                        hash.remove(key);
+                    }
+                }
+            };
+            switch (eventtype) {
+                case EventType.ADD_THEME:
+                    if (source.isAssociation()) {
+                        add_to_index(that.theme2associations, source, obj);
+                    } else if (source.isName()) {
+                        add_to_index(that.theme2names, source, obj);
+                    } else if (source.isOccurrence()) {
+                        add_to_index(that.theme2occurrences, source, obj);
+                    } else if (source.isVariant()) {
+                        add_to_index(that.theme2variants, source, obj);
+                    }
+                    break;
+                case EventType.REMOVE_THEME:
+                    if (source.isAssociation()) {
+                        remove_from_index(that.theme2associations, source, obj);
+                    } else if (source.isName()) {
+                        remove_from_index(that.theme2names, source, obj);
+                    } else if (source.isOccurrence()) {
+                        remove_from_index(that.theme2occurrences, source, obj);
+                    } else if (source.isVariant()) {
+                        remove_from_index(that.theme2variants, source, obj);
+                    }
+                    break;
+            }
+        };
+        tm.addThemeEvent.registerHandler(eventHandler);
+        tm.removeThemeEvent.registerHandler(eventHandler);
+    };
+
+    ScopedIndex.swiss(IndexMemImpl, 'close', 'isAutoUpdated',
+        'isOpen', 'open', 'reindex');
+
+    ScopedIndex.prototype.close = function () {
+        return;
+    };
+
+    /**
+    * Returns the Associations in the topic map whose scope property contains
+    * the specified theme. The return value may be empty but must never be null. 
+    * @param theme can be array or {Topic}
+    * @param [matchall] boolean
+    */
+    ScopedIndex.prototype.getAssociations = function (theme) {
+        var ret = this.theme2associations.get((theme ? theme.getId() : 'null'));
+        if (!ret) { return []; }
+        return ret.values();
+    };
+
+    /**
+    * Returns the Associations in the topic map whose scope property contains
+    * the specified theme. The return value may be empty but must never be null. 
+    * @param theme can be array or {Topic}
+    * @param [matchall] boolean
+    */
+    ScopedIndex.prototype.getAssociationsByThemes = function (themes, matchall) {
+        var constructs, i, j, ret;
+        if (themes === null) { throw {name: 'IllegalArgumentException',
+                message: 'ScopedIndexgetAssociationsByThemes cannot be called without themes'}; }
+        constructs = IndexHelper.getForKeys(this.theme2associations, themes);
+        if (!matchall) {
+            return constructs;
+        }
+        // If matchall is true, we check all values for all types in {types}
+        // It's a hack, but will do for now
+        for (i=0; i<constructs.length; i+=1) {
+            for (j=0; j<themes.length; j+=1) {
+                if (!ArrayHelper.contains(constructs[i].getScope(), themes[j])) {
+                    constructs.splice(i, 1);
+                    i -= 1;
+                    break;
+                }
+            }
+        }
+        return constructs;
+    };
+
+    /**
+    * Returns the topics in the topic map used in the scope property of
+    * Associations.
+    */
+    ScopedIndex.prototype.getAssociationThemes = function () {
+        var ret = [], keys = this.theme2associations.keys(), i;
+        for (i=0; i<keys.length; i+=1) {
+            if (keys[i] !== 'null') {
+                ret.push(this.tm.getConstructById(keys[i]));
+            }
+        }
+        return ret;
+    };
+
+    /**
+    * Returns the Names in the topic map whose scope property contains the
+    * specified theme.
+    */
+    ScopedIndex.prototype.getNames = function (theme) {
+        return [];
+    };
+
+    /**
+    * Returns the Names in the topic map whose scope property equals one of
+    * those themes at least.
+    */
+    ScopedIndex.prototype.getNamesByThemes = function (themes, matchall) {
+        return [];
+    };
+
+    /**
+    * Returns the topics in the topic map used in the scope property of Names.
+    */
+    ScopedIndex.prototype.getNameThemes = function () {
+        return [];
+    };
+
+    /**
+    * Returns the Occurrences in the topic map whose scope property contains the
+    * specified theme.
+    */
+    ScopedIndex.prototype.getOccurrences = function (theme) {
+        return [];
+    };
+
+    /**
+    * Returns the Occurrences in the topic map whose scope property equals one
+    * of those themes at least.
+    */
+    ScopedIndex.prototype.getOccurrencesByThemes = function (themes, matchall) {
+        return [];
+    };
+
+    /**
+    * Returns the topics in the topic map used in the scope property of
+    * Occurrences.
+    */
+    ScopedIndex.prototype.getOccurrenceThemes = function () {
+        return [];
+    };
+
+    /**
+    * Returns the Variants in the topic map whose scope property contains the
+    * specified theme. The return value may be empty but must never be null. 
+    * @param {Topic} The Topic which must be part of the scope. This must not be
+    * null. 
+    * @returns {Array} An array of Variants.
+    * @throws {IllegalArgumentException} If theme is null.
+    */
+    ScopedIndex.prototype.getVariants = function (theme) {
+        return [];
+    };
+
+    /**
+    * Returns the Variants in the topic map whose scope property equals one of
+    * those themes at least.
+    * @param {Array} themes Scope of the Variants to be returned.
+    * @param {boolean} If true the scope property of a variant must match all
+    * themes, if false one theme must be matched at least.
+    * @returns {Array} An array of variants
+    * @throws {IllegalArgumentException} If themes is null.
+    */
+    ScopedIndex.prototype.getVariantsByThemes = function (themes, matchall) {
+        return [];
+    };
+
+    /**
+    * Returns the topics in the topic map used in the scope property of Variants.
+    * The return value may be empty but must never be null.
+    * @returns {Array} An array of Topics.
+    */
+    ScopedIndex.prototype.getVariantThemes = function () {
+        return [];
+    };
+
+
+
 
     /**
     * @class Helper class that is used to check if constructs belong to
@@ -1932,6 +2151,37 @@ TM = (function () {
                 }
             }
             return true;
+        }
+    };
+
+    /** Helper functions for hashes of hashes */
+    IndexHelper = {
+        getForKeys: function (hash, keys) {
+            var i, j, tmp = new Hash(), value_hash, value_keys;
+            for (i=0;i<keys.length;i+=1) {
+                value_hash = hash.get(keys[i].getId());
+                if (value_hash) {
+                    value_keys = value_hash.keys();
+                    // we use a hash to store instances to avoid duplicates
+                    for (j=0; j<value_keys.length; j+=1) {
+                        tmp.put(value_hash.get(value_keys[j]).getId(),
+                                value_hash.get(value_keys[j]));
+                    }
+                }
+            }
+            return tmp.values();
+        }
+    };
+
+    ArrayHelper = {
+        /** Checks if arr contains elem */
+        contains: function (arr, elem) {
+            for (var key in arr) {
+                if (arr.hasOwnProperty(key)) {
+                    if (arr[key].equals(elem)) { return true; }
+                }
+            }
+            return false;
         }
     };
 

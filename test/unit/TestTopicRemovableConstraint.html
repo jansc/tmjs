@@ -157,7 +157,7 @@ var tmp = new Test.Unit.Runner({
         }
         catch (e) {
             if (e.name === 'TopicInUseException') {
-                assertEqual(topic, e.reporter);
+                this.assertEqual(topic, e.reporter);
             }
         }
         this.assertEqual(2, this._tm.getTopics().length);
