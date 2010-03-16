@@ -1,5 +1,5 @@
 // Helper functions needed by most unittests
-// Copyright (c) 2010 Jan Schreiber <jan.schreiber+tmjs@gmail.com>
+// Copyright (c) 2010 Jan Schreiber <jans [at] ravn.no>
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
