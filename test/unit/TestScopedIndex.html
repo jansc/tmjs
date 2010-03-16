@@ -1,0 +1,143 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>ScopedIndexTest</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <script type="text/javascript" src="../assets/jsunittest.js"></script>
+  <script type="text/javascript" src="../../src/tm-src.js"></script>
+  <script type="text/javascript" src="datatypeaware.js"></script>
+  <script type="text/javascript" src="tmunittest.js"></script>
+  <link type="text/css" rel="stylesheet" href="../assets/unittest.css" />
+</head>
+<body>
+
+<!-- Log output -->
+<div id="testlog"> </div>
+
+<!-- here go any elements you do the testing on -->
+
+<!-- Tests -->
+<script type="text/javascript" language="javascript">
+// <![CDATA[
+
+var tmp = new Test.Unit.Runner({
+    // optional setup function, run before each individual test case
+    setup: function () { with(this) {
+        var that = this;
+        TMUnitTest.addCommonSetupFunctions(this);
+        this._scopedIdx = this._tm.getIndex("ScopedIndex");
+        this._scopedIdx.open();
+        this._updateIndex = function () {
+            if (!that._scopedIdx.isAutoUpdated()) {
+                that._scopedIdx.reindex();
+            }
+        }
+    }},
+    // optional teardown function, run after each individual test case
+    teardown: function () { with(this) {
+        TMUnitTest.addCommonTeardownFunctions(this);
+        this._scopedIdx.close();
+        this._scopedIdx = null;
+    }},
+
+    testAssociation: function () {
+        var theme = this.createTopic(), scoped;
+        this._updateIndex();
+        this.assertEqual(0, this._scopedIdx.getAssociations(null).length);
+        this.assertEqual(0, this._scopedIdx.getAssociations(theme).length);
+        this.assertEqual(0, this._scopedIdx.getAssociationThemes().length);
+        scoped = this.createAssociation();
+        this.assertEqual(0, scoped.getScope().length);
+        this._updateIndex();
+        this.assertEqual(1, this._scopedIdx.getAssociations(null).length);
+        this.assert(this._scopedIdx.getAssociations(null).contains(scoped));
+        this.assert(!this._scopedIdx.getAssociationThemes().contains(theme));
+        scoped.addTheme(theme);
+        this._updateIndex();
+        this.assertEqual(0, this._scopedIdx.getAssociations(null).length);
+        this.assert(!this._scopedIdx.getAssociations(null).contains(scoped));
+        this.assertNotEqual(0, this._scopedIdx.getAssociationThemes().length);
+        this.assertEqual(1, this._scopedIdx.getAssociationThemes().length);
+        this.assert(this._scopedIdx.getAssociations(theme).contains(scoped));
+        this.assert(this._scopedIdx.getAssociationThemes().contains(theme));
+        scoped.remove();
+        this._updateIndex();
+        this.assertEqual(0, this._scopedIdx.getAssociations(null).length);
+        this.assert(!this._scopedIdx.getAssociations(null).contains(scoped));
+        this.assert(!this._scopedIdx.getAssociationThemes().contains(theme));
+    },
+
+    testAssociationMatchAll: function () {
+        var theme, theme2, unusedTheme, scoped;
+        theme = this.createTopic();
+        theme2 = this.createTopic();
+        unusedTheme = this.createTopic();
+        this._updateIndex();
+        this.assertEqual(0, this._scopedIdx.getAssociations(null).length);
+        this.assertEqual(0, this._scopedIdx.getAssociations(theme).length);
+        this.assertEqual(0, this._scopedIdx.getAssociationThemes().length);
+        scoped = this.createAssociation();
+        this.assertEqual(0, scoped.getScope().length);
+        this._updateIndex();
+        this.assertEqual(1, this._scopedIdx.getAssociations(null).length);
+        this.assert(this._scopedIdx.getAssociations(null).contains(scoped));
+        this.assert(!this._scopedIdx.getAssociationThemes().contains(theme));
+        scoped.addTheme(theme);
+        this._updateIndex();
+        this.assertEqual(1, this._scopedIdx.getAssociationThemes().length);
+        this.assert(this._scopedIdx.getAssociationsByThemes([theme], true).contains(scoped));
+        this.assert(this._scopedIdx.getAssociationsByThemes([theme], false).contains(scoped));
+        scoped.addTheme(theme2);
+        this._updateIndex();
+        this.assertEqual(2, this._scopedIdx.getAssociationThemes().length);
+        this.assert(this._scopedIdx.getAssociationsByThemes([theme], true).contains(scoped));
+        this.assert(this._scopedIdx.getAssociationsByThemes([theme], false).contains(scoped));
+        this.assert(this._scopedIdx.getAssociationsByThemes([theme2], true).contains(scoped));
+        this.assert(this._scopedIdx.getAssociationsByThemes([theme2], false).contains(scoped));
+        this.assert(this._scopedIdx.getAssociationsByThemes([theme, theme2], false).contains(scoped));
+        this.assert(this._scopedIdx.getAssociationsByThemes([theme, theme2], true).contains(scoped));
+        this.assert(this._scopedIdx.getAssociationsByThemes([theme, unusedTheme], false).contains(scoped));
+        this.assert(this._scopedIdx.getAssociationsByThemes([theme2, unusedTheme], false).contains(scoped));
+        this.assert(!this._scopedIdx.getAssociationsByThemes([theme, unusedTheme], true).contains(scoped));
+        this.assert(!this._scopedIdx.getAssociationsByThemes([theme2, unusedTheme], true).contains(scoped));
+    },
+
+    testAssociationMatchAllIllegal: function () {
+        var that = this;
+        this.assertRaise('IllegalArgumentException', function() {
+            that._scopedIdx.getAssociationsByThemes(null, true);
+        }, "getAssociations(null, boolean) is illegal");
+    },
+
+    testOccurrence: function () {
+        var theme = this.createTopic(), scoped;
+        this._updateIndex();
+        this.assertEqual(0, this._scopedIdx.getOccurrences(null).length);
+        this.assertEqual(0, this._scopedIdx.getOccurrences(theme).length);
+        this.assertEqual(0, this._scopedIdx.getOccurrenceThemes().length);
+        scoped = this.createOccurrence();
+        this.assertEqual(0, scoped.getScope().length);
+        this._updateIndex();
+        this.assertEqual(1, this._scopedIdx.getOccurrences(null).length);
+        this.assert(this._scopedIdx.getOccurrences(null).contains(scoped));
+        this.assert(!this._scopedIdx.getOccurrenceThemes().contains(theme));
+        scoped.addTheme(theme);
+        this._updateIndex();
+        this.assertEqual(0, this._scopedIdx.getOccurrences(null).length);
+        this.assert(!this._scopedIdx.getOccurrences(null).contains(scoped));
+        this.assertNotEqual(0, this._scopedIdx.getOccurrenceThemes().length);
+        this.assertEqual(1, this._scopedIdx.getOccurrenceThemes().length);
+        this.assert(this._scopedIdx.getOccurrences(theme).contains(scoped));
+        this.assert(this._scopedIdx.getOccurrenceThemes().contains(theme));
+        scoped.remove();
+        this._updateIndex();
+        this.assertEqual(0, this._scopedIdx.getOccurrences(null).length);
+        this.assert(!this._scopedIdx.getOccurrences(null).contains(scoped));
+        this.assert(!this._scopedIdx.getOccurrenceThemes().contains(theme));
+    },
+});
+// ]]>
+</script>
+</body>
+</html>
