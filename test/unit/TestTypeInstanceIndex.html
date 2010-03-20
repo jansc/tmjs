@@ -1,0 +1,251 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>TestTypeInstanceIndex</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <script type="text/javascript" src="../assets/jsunittest.js"></script>
+  <script type="text/javascript" src="../../src/tm-src.js"></script>
+  <script type="text/javascript" src="datatypeaware.js"></script>
+  <script type="text/javascript" src="tmunittest.js"></script>
+  <link type="text/css" rel="stylesheet" href="../assets/unittest.css" />
+</head>
+<body>
+
+<!-- Log output -->
+<div id="testlog"> </div>
+
+<!-- Tests -->
+<script type="text/javascript" language="javascript">
+// <![CDATA[
+
+var tmp = new Test.Unit.Runner({
+    // optional setup function, run before each individual test case
+    setup: function () {
+        var that = this;
+        this._FEATURE_TYPE_INSTANCE_ASSOCIATIONS =
+            "http://tmapi.org/features/type-instance-associations";
+        TMUnitTest.addCommonSetupFunctions(this);
+        this._typeInstanceIdx = this._tm.getIndex("TypeInstanceIndex");
+        this._updateIndex = function () {
+            if (!that._typeInstanceIdx.isAutoUpdated()) {
+                that._typeInstanceIdx.reindex();
+            }
+        }
+    },
+    // optional teardown function, run after each individual test case
+    teardown: function () { with(this) {
+        TMUnitTest.addCommonTeardownFunctions(this);
+        _typeInstanceIdx.close();
+        _typeInstanceIdx = null;
+    }},
+
+    testTopic: function () {
+        var topic, type1, type2;
+        this._updateIndex();
+        this.assertEqual(0, this._typeInstanceIdx.getTopics(null).length);
+        this.assertEqual(0, this._typeInstanceIdx.getTopicTypes().length);
+        topic = this._tm.createTopic();
+        this._updateIndex();
+        this.assertEqual(0, this._typeInstanceIdx.getTopicTypes().length);
+        this.assertEqual(1, this._typeInstanceIdx.getTopics(null).length);
+        this.assert(this._typeInstanceIdx.getTopics(null).contains(topic));
+        type1 = this._tm.createTopic();
+        type2 = this._tm.createTopic();
+        this._updateIndex();
+        this.assertEqual(0, this._typeInstanceIdx.getTopicTypes().length);
+        this.assertEqual(3, this._typeInstanceIdx.getTopics(null).length);
+        this.assert(this._typeInstanceIdx.getTopics(null).contains(topic));
+        this.assert(this._typeInstanceIdx.getTopics(null).contains(type1));
+        this.assert(this._typeInstanceIdx.getTopics(null).contains(type2));
+
+        this.assertEqual(0, this._typeInstanceIdx.getTopicsByTypes(
+            [type1, type2], false).length);
+        this.assertEqual(0, this._typeInstanceIdx.getTopicsByTypes(
+            [type1, type2], true).length);
+        // Topic with one type
+        topic.addType(type1);
+        this._updateIndex();
+        this.assertEqual(1, this._typeInstanceIdx.getTopicTypes().length);
+    
+        this.assert(this._typeInstanceIdx.getTopicTypes().contains(type1));
+
+        if (this._tms.getFeature(this._FEATURE_TYPE_INSTANCE_ASSOCIATIONS)) {
+            this.assertEqual(5, this._typeInstanceIdx.getTopics(null).length);
+        } else {
+            this.assertEqual(2, this._typeInstanceIdx.getTopics(null).length);
+        }
+        this.assert(!this._typeInstanceIdx.getTopics(null).contains(topic));
+        this.assert(this._typeInstanceIdx.getTopics(null).contains(type1));
+        this.assert(this._typeInstanceIdx.getTopics(null).contains(type2));
+        this.assertEqual(1, this._typeInstanceIdx.getTopics(type1).length);
+        this.assert(this._typeInstanceIdx.getTopics(type1).contains(topic));
+        this.assertEqual(1, this._typeInstanceIdx.getTopicsByTypes([type1, type2], false).length);
+        this.assert(this._typeInstanceIdx.getTopicsByTypes([type1, type2], false).contains(topic));
+        this.assertEqual(0, this._typeInstanceIdx.getTopicsByTypes([type1, type2], true).length);
+
+        // Topic with two types
+        topic.addType(type2);
+        this._updateIndex();
+        this.assertEqual(2, this._typeInstanceIdx.getTopicTypes().length);
+        this.assert(this._typeInstanceIdx.getTopicTypes().contains(type1));
+        this.assert(this._typeInstanceIdx.getTopicTypes().contains(type2));
+        if (this._tms.getFeature(this._FEATURE_TYPE_INSTANCE_ASSOCIATIONS)) {
+            this.assertEqual(5, this._typeInstanceIdx.getTopics(null).length);
+        } else {
+            this.assertEqual(2, this._typeInstanceIdx.getTopics(null).length);
+        }
+        this.assert(!this._typeInstanceIdx.getTopics(null).contains(topic));
+        this.assert(this._typeInstanceIdx.getTopics(null).contains(type1));
+        this.assert(this._typeInstanceIdx.getTopics(null).contains(type2));
+        this.assertEqual(1, this._typeInstanceIdx.getTopics(type1).length);
+        this.assert(this._typeInstanceIdx.getTopics(type1).contains(topic));
+        this.assertEqual(1, this._typeInstanceIdx.getTopics(type2).length);
+        this.assert(this._typeInstanceIdx.getTopics(type2).contains(topic));
+        this.assertEqual(1, this._typeInstanceIdx.getTopicsByTypes([type1, type2], false).length);
+        this.assert(this._typeInstanceIdx.getTopicsByTypes([type1, type2], false).contains(topic));
+        this.assert(1, this._typeInstanceIdx.getTopicsByTypes([type1, type2], true).length);
+        this.assert(this._typeInstanceIdx.getTopicsByTypes([type1, type2], true).contains(topic));
+
+        // Topic removal
+        topic.remove();
+        this._updateIndex();
+        this.assertEqual(0, this._typeInstanceIdx.getTopicTypes().length);
+        if (this._tms.getFeature(this._FEATURE_TYPE_INSTANCE_ASSOCIATIONS)) {
+            this.assertEqual(5, this._typeInstanceIdx.getTopics(null).length);
+        } else {
+            this.assertEqual(2, this._typeInstanceIdx.getTopics(null).length);
+        }
+        this.assert(this._typeInstanceIdx.getTopics(null).contains(type1));
+        this.assert(this._typeInstanceIdx.getTopics(null).contains(type2));
+        this.assertEqual(0, this._typeInstanceIdx.getTopics(type1).length);
+        this.assertEqual(0, this._typeInstanceIdx.getTopics(type2).length);
+        this.assertEqual(0, this._typeInstanceIdx.getTopicsByTypes([type1, type2], false).length);
+        this.assertEqual(0, this._typeInstanceIdx.getTopicsByTypes([type1, type2], true).length);
+    },
+
+    testAssociation: function () {
+        var type, typed;
+        type = this.createTopic();
+        this._updateIndex();
+        this.assertEqual(0, this._typeInstanceIdx.getAssociations(type).length);
+        this.assertEqual(0, this._typeInstanceIdx.getAssociationTypes().length);
+        typed = this.createAssociation();
+        this._updateIndex();
+        this.assertEqual(0, this._typeInstanceIdx.getAssociations(type).length);
+        this.assert(!this._typeInstanceIdx.getAssociationTypes().contains(type));
+        this.assertEqual(1, this._typeInstanceIdx.getAssociationTypes().length);
+        typed.setType(type);
+        this._updateIndex();
+        this.assertNotEqual(0, this._typeInstanceIdx.getAssociationTypes().length);
+        this.assertEqual(1, this._typeInstanceIdx.getAssociations(type).length);
+        this.assert(this._typeInstanceIdx.getAssociations(type).contains(typed));
+        this.assert(this._typeInstanceIdx.getAssociationTypes().contains(type));
+        typed.setType(this.createTopic());
+        this.assert(!this._typeInstanceIdx.getAssociationTypes().contains(type));
+        this.assertEqual(1, this._typeInstanceIdx.getAssociationTypes().length);
+        typed.setType(type);
+        typed.remove();
+        this._updateIndex();
+        this.assertEqual(0, this._typeInstanceIdx.getAssociations(type).length);
+        this.assertEqual(0, this._typeInstanceIdx.getAssociationTypes().length);
+    },
+
+    testRole: function () {
+        var type, parent, typed;
+        type = this.createTopic();
+        this._updateIndex();
+        this.assertEqual(0, this._typeInstanceIdx.getRoles(type).length);
+        this.assertEqual(0, this._typeInstanceIdx.getRoleTypes().length);
+        parent = this.createAssociation();
+        typed = parent.createRole(this.createTopic(), this.createTopic());
+        this._updateIndex();
+        this.assertEqual(1, this._typeInstanceIdx.getRoleTypes().length);
+        this.assert(!this._typeInstanceIdx.getRoleTypes().contains(type));
+        typed.setType(type);
+        this._updateIndex();
+        this.assertEqual(1, this._typeInstanceIdx.getRoleTypes().length);
+        this.assertEqual(1, this._typeInstanceIdx.getRoles(type).length);
+        this.assert(this._typeInstanceIdx.getRoles(type).contains(typed));
+        typed.setType(this.createTopic());
+        this.assertEqual(1, this._typeInstanceIdx.getRoleTypes().length);
+        this.assert(!this._typeInstanceIdx.getRoleTypes().contains(type));
+        typed.setType(type);
+        typed.remove();
+        this._updateIndex();
+        this.assertEqual(0, this._typeInstanceIdx.getRoles(type).length);
+        this.assertEqual(0, this._typeInstanceIdx.getRoleTypes().length);
+        // The same test, but the parent is removed
+        typed = parent.createRole(type, this.createTopic());
+        this._updateIndex();
+        this.assertEqual(1, this._typeInstanceIdx.getRoleTypes().length);
+        this.assertEqual(1, this._typeInstanceIdx.getRoles(type).length);
+        this.assert(this._typeInstanceIdx.getRoles(type).contains(typed));
+        parent.remove();
+        this._updateIndex();
+        this.assertEqual(0, this._typeInstanceIdx.getRoles(type).length);
+        this.assertEqual(0, this._typeInstanceIdx.getRoleTypes().length);
+    },
+
+    testOccurrence: function () {
+        var type, typed, parent;
+        type = this.createTopic();
+        this._updateIndex();
+        this.assertEqual(0, this._typeInstanceIdx.getOccurrences(type).length);
+        this.assertEqual(0, this._typeInstanceIdx.getOccurrenceTypes().length);
+        parent = this.createTopic();
+        typed = parent.createOccurrence(this.createTopic(), "tmjs");
+        this._updateIndex();
+        this.assertEqual(0, this._typeInstanceIdx.getOccurrences(type).length);
+        this.assertEqual(1, this._typeInstanceIdx.getOccurrenceTypes().length);
+        this.assert(!this._typeInstanceIdx.getOccurrenceTypes().contains(type));
+        typed.setType(type);
+        this._updateIndex();
+        this.assertEqual(1, this._typeInstanceIdx.getOccurrenceTypes().length);
+        this.assertEqual(1, this._typeInstanceIdx.getOccurrences(type).length);
+        this.assert(this._typeInstanceIdx.getOccurrences(type).contains(typed));
+        this.assert(this._typeInstanceIdx.getOccurrenceTypes().contains(type));
+        typed.setType(this.createTopic());
+        this.assertEqual(0, this._typeInstanceIdx.getOccurrences(type).length);
+        this.assertEqual(1, this._typeInstanceIdx.getOccurrenceTypes().length);
+        this.assert(!this._typeInstanceIdx.getOccurrenceTypes().contains(type));
+        typed.setType(type);
+        typed.remove();
+        this._updateIndex();
+        this.assertEqual(0, this._typeInstanceIdx.getOccurrences(type).length);
+        this.assertEqual(0, this._typeInstanceIdx.getOccurrenceTypes().length);
+    },
+
+    testName: function () {
+        var type, typed, parnt;
+        type = this._tm.createTopic();
+        this._updateIndex();
+        this.assertEqual(0, this._typeInstanceIdx.getNames(type).length);
+        this.assertEqual(0, this._typeInstanceIdx.getNameTypes().length);
+        parnt = this._tm.createTopic();
+        typed = parnt.createName("tmjs");
+        this._updateIndex();
+        this.assertEqual(1, this._typeInstanceIdx.getNameTypes().length);
+        this.assert(!this._typeInstanceIdx.getNameTypes().contains(type));
+        this.assertEqual(0, this._typeInstanceIdx.getNames(type).length);
+        typed.setType(type);
+        this._updateIndex();
+        this.assertEqual(0, this._typeInstanceIdx.getNameTypes().length);
+        this.assertEqual(1, this._typeInstanceIdx.getNames(type).length);
+        this.assert(this._typeInstanceIdx.getNames(type).contains(typed));
+        this.assert(this._typeInstanceIdx.getNameTypes().contains(type));
+        typed.setType(this.createTopic());
+        this.assertEqual(0, this._typeInstanceIdx.getNames(type).length);
+        this.assert(!this._typeInstanceIdx.getNameTypes().contains(type));
+        this.assertEqual(1, this._typeInstanceIdx.getNameTypes().length);
+        typed.setType(type);
+        typed.remove();
+        this._updateIndex();
+        this.assertEqual(0, this._typeInstanceIdx.getNames(type).length);
+        this.assertEqual(0, this._typeInstanceIdx.getNameTypes().length);
+    }
+});
+// ]]>
+</script>
+</body>
+</html>

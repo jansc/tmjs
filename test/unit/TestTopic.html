@@ -247,7 +247,7 @@ var tmp = new Test.Unit.Runner({
         assertEqual(0, topic.getNames(type).length);
         assertEqual(0, topic.getNames(type2).length);
         assertEqual(0, topic.getNames(unusedType).length);
-        occ = topic.createName(type, "Name");
+        occ = topic.createName("Name", type);
         assertEqual(1, topic.getNames(type).length);
         assert(topic.getNames(type).contains(occ));
         assertEqual(0, topic.getNames(type2).length);
