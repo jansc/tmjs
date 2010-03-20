@@ -1,11 +1,9 @@
 TODO
 
-* Implement index classes (started)
-* Implement Topic.remove()
 * Implement TopicMap.mergeIn(), Topic.mergeIn()
+* Add documentation
 * Implement locator functions
+* Implement LiteralIndex
 * Implement/remove hashCode-functions
-* Decide if scope as variable parameter list is needed.
 * XTM 2.0 import (started)
 * XTM 2.0 export
-* Add documentation
