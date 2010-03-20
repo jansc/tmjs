@@ -1,6 +1,6 @@
 # Introduction
 
-`tmjs` is a Topic Maps engine written in pure JavaScript. It aims to
+`tmjs` is a Topic Maps engine written in pure JavaScript. It aims to be
 compliant with the Topic Maps API [TMAPI 2.0](http://www.tmapi.org/2.0/)
 and implements the Topic Maps - Data Model
 [TMDM](http://www.isotopicmaps.org/sam/sam-model/).
