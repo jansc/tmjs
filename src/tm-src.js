@@ -17,7 +17,7 @@ TM = (function () {
         DatatypeAwareMemImpl, TopicMapMemImpl, RoleMemImpl, NameMemImpl,
         VariantMemImpl, OccurrenceMemImpl, TopicMapSystemMemImpl,
         IndexMemImpl, TypeInstanceIndexMemImpl, ScopedIndex, 
-        SameTopicMapHelper, ArrayHelper, IndexHelper;
+        SameTopicMapHelper, ArrayHelper, IndexHelper, addScope;
 
     Version = '@VERSION';
 
@@ -245,7 +245,7 @@ TM = (function () {
     ConstructMemImpl.prototype.isVariant = function() {
         return false;
     };
-    
+
     // --------------------------------------------------------------------------
     TypedMemImpl = function () {};
     
@@ -283,21 +283,54 @@ TM = (function () {
         SameTopicMapHelper.assertBelongsTo(this.getTopicMap(), theme);
         this.scope.push(theme);
         this.getTopicMap().addThemeEvent.fire(this, {theme: theme});
+        // Special case for names: add the theme to all variants
+        if (this.isName()) {
+            for (i=0; i<this.variants.length; i+=1) {
+                this.getTopicMap().addThemeEvent.fire(this.variants[i], {theme: theme});
+            }
+        }
         return true;
     };
     
     /** Returns the topics which define the scope. */
     ScopedMemImpl.prototype.getScope = function () {
+        if (this.isVariant()) {
+            var i, ret, tmp = new Hash(), parent_scope = this.parnt.getScope();
+            for (i=0; i<parent_scope.length; i+=1) {
+                tmp.put(parent_scope[i].getId(), parent_scope[i]);
+            }
+            for (i=0; i<this.scope.length; i+=1) {
+                tmp.put(this.scope[i].getId(), this.scope[i]);
+            }
+            return tmp.values();
+        }
         return this.scope;
     };
     
     /** Removes a topic from the scope. */
     ScopedMemImpl.prototype.removeTheme = function (theme) {
+        var i, j, scope, found;
         for (var i=0; i<this.scope.length; i+=1) {
             if (this.scope[i] === theme) {
                 this.getTopicMap().removeThemeEvent.fire(this, {theme: this.scope[i]});
                 this.scope.splice(i, 1);
                 break;
+            }
+        }
+        // Special case for names: remove the theme from index for all variants
+        if (this.isName()) {
+            for (i=0; i<this.variants.length; i+=1) {
+                scope = this.variants[i].scope;
+                // Check if the the variant has theme as scope
+                found = false;
+                for (j=0; j<scope.length; j+=1) {
+                    if (theme.equals(scope[j])) {
+                        found = true;
+                    }
+                }
+                if (!found) {
+                    this.getTopicMap().removeThemeEvent.fire(this.variants[i], {theme: theme});
+                }
             }
         }
     };
@@ -597,6 +630,7 @@ TM = (function () {
         this.removeTopicEvent = new EventHandler(EventType.REMOVE_TOPIC);
         this.setTypeEvent = new EventHandler(EventType.SET_TYPE);
         this.typeInstanceIndex = new TypeInstanceIndexMemImpl(this);
+        this.scopedIndex = new ScopedIndex(this);
     };
 
     TopicMapMemImpl.prototype.register_event_handler = function(type, handler) {
@@ -680,17 +714,7 @@ TM = (function () {
         if (type) {
             a.setType(type);
         }
-        if (scope && typeof scope === 'object') {
-            if (scope instanceof Array) {
-                for (i=0; i<scope.length; i+=1) {
-                    a.addTheme(scope[i]);
-                }
-            } else if (scope instanceof TopicMemImpl) {
-                a.addTheme(scope[i]);
-            }
-        } else {
-            this.getTopicMap().addThemeEvent.fire(a, {theme: null});
-        }
+        addScope(a, scope);
         this.addAssociationEvent.fire(a);
         return a;
     };
@@ -950,9 +974,15 @@ TM = (function () {
         if (type) {
             SameTopicMapHelper.assertBelongsTo(this.parnt, type);
         }
-        SameTopicMapHelper.assertBelongsTo(this.parnt, scope);
+        if (scope) {
+            SameTopicMapHelper.assertBelongsTo(this.parnt, scope);
+        }
+        if (typeof scope === 'undefined') {
+            scope = null;
+        }
     
-        name = new NameMemImpl(this, value, type, scope);
+        name = new NameMemImpl(this, value, type);
+        addScope(name, scope);
         this.names.push(name);
         return name;
     };
@@ -965,12 +995,13 @@ TM = (function () {
     // Creates an Occurrence for this topic with the specified type, string value,
     // and scope.
     TopicMemImpl.prototype.createOccurrence = function (type, value, datatype, scope) {
-        var occ;
+        var occ, i;
         SameTopicMapHelper.assertBelongsTo(this.parnt, type);
         SameTopicMapHelper.assertBelongsTo(this.parnt, scope);
     
         occ = new OccurrenceMemImpl(this, type, value);
         this.parnt.addOccurrenceEvent.fire(occ, {type: type, value: value});
+        addScope(occ, scope);
         this.occurrences.push(occ);
         return occ;
     };
@@ -1086,21 +1117,21 @@ TM = (function () {
     // Removes this topic from the containing TopicMapMemImpl instance.
     TopicMemImpl.prototype.remove = function () {
         // TODO: Check if the topic is in use!
-        var other, idx = this.parnt.typeInstanceIndex;
+        var other, tiidx = this.parnt.typeInstanceIndex,
+            sidx = this.parnt.scopedIndex;
         if (this.getReified() ||
-            idx.getOccurrences(this).length ||
-            idx.getNames(this).length ||
-            idx.getAssociations(this).length ||
-            idx.getRoles(this).length ||
-            idx.getTopics(this).length) {
+            tiidx.getOccurrences(this).length ||
+            tiidx.getNames(this).length ||
+            tiidx.getAssociations(this).length ||
+            tiidx.getRoles(this).length ||
+            tiidx.getTopics(this).length ||
+            sidx.getAssociations(this).length ||
+            sidx.getOccurrences(this).length ||
+            sidx.getNames(this).length ||
+            sidx.getVariants(this).length) {
             throw {name: 'TopicInUseException',
                 message: '', reporter: this};
         }
-        
-        //if (this.getScopingTopic()) {
-        //    throw {name: 'TopicInUseException',
-        //        message: '', reporter: this};
-        //}
         this.parnt._removeTopic(this);
         this.parnt._id2construct.remove(this.id);
         this.parnt.removeTopicEvent.fire(this);
@@ -1186,32 +1217,26 @@ TM = (function () {
     };
     
     OccurrenceMemImpl.prototype.remove = function () {
+        for (i=0; i<this.scope.length; i+=1) {
+            this.parnt.parnt.removeThemeEvent.fire(this, {theme: this.scope[i]});
+        }
         this.parnt.parnt.removeOccurrenceEvent.fire(this);
         this.parnt._removeOccurrence(this);
         this.id = null;
     };
     
-    NameMemImpl = function (parnt, value, type, scope) {
+    NameMemImpl = function (parnt, value, type) {
         var i;
         this.itemIdentifiers = [];
         this.parnt = parnt;
         this.value = value;
+        this.scope = [];
+        this.id = this.getTopicMap()._getConstructId();
         this.type = type ||
             parnt.parnt.createTopicBySubjectIdentifier(
                 parnt.parnt.createLocator('http://psi.topicmaps.org/iso13250/model/topic-name'));
-        if (scope && typeof scope === 'object') {
-            if (scope instanceof Array) {
-                for (i=0; i<scope.length; i+=1) {
-                    this.addTheme(scope[i]);
-                }
-            } else if (scope instanceof TopicMemImpl) {
-                this.addTheme(scope[i]);
-            }
-        }
         this.reifier = null;
         this.variants = [];
-        this.scope = [];
-        this.id = this.getTopicMap()._getConstructId();
         this.getTopicMap()._id2construct.put(this.id, this);
         this.parnt.parnt.addNameEvent.fire(this, {type: this.type, value: value});
     };
@@ -1235,7 +1260,30 @@ TM = (function () {
     };
     
     NameMemImpl.prototype.createVariant = function (value, datatype, scope) {
-        var variant = new VariantMemImpl(this, value, datatype, scope);
+        var scope_length = 0, i;
+        if (typeof scope === 'undefined' || scope === null) {
+            throw {name: 'ModelConstraintException',
+            message: 'Creation of a variant with a null scope is not allowed'};
+        }
+        if (scope && typeof scope === 'object') {
+            if (scope instanceof Array) {
+                scope_length = scope.length;
+            } else if (scope instanceof TopicMemImpl) {
+                scope_length = 1;
+            }
+        }
+       /* 
+        if (scope_length <= this.getScope().length) {
+            // check if the variants scope contains more scoping topics
+            throw {name: 'ModelConstraintException',
+            message: 'The variant would be in the same scope as the parent'};
+        }*/
+        var variant = new VariantMemImpl(this, value, datatype);
+        addScope(variant, scope);
+        for (i=0; i<this.scope.length; i+=1) {
+            this.getTopicMap().addThemeEvent.fire(variant,
+                {theme: this.scope[i]});
+        }
         this.variants.push(variant);
         return variant;
     };
@@ -1251,6 +1299,9 @@ TM = (function () {
     };
     
     NameMemImpl.prototype.remove = function () {
+        for (i=0; i<this.scope.length; i+=1) {
+            this.parnt.parnt.removeThemeEvent.fire(this, {theme: this.scope[i]});
+        }
         this.parnt.parnt.removeNameEvent.fire(this);
         this.getParent()._removeName(this);
         this.id = null;
@@ -1266,39 +1317,22 @@ TM = (function () {
         this.getTopicMap()._removeVariant(variant);
     };
     
-    // FIXME: scope_or_datatype => datatype
-    VariantMemImpl = function (parnt, value, scope_or_datatype, scope) {
-        var scope_arr = scope || scope_or_datatype;
+    VariantMemImpl = function (parnt, value, datatype) {
         if (value === null) { throw {name: 'ModelConstraintException',
             message: 'Creation of a variant with null value is not allowed'}; }
-        if (scope_or_datatype === null && scope) {
+        if (datatype === null) {
             throw {name: 'ModelConstraintException',
             message: 'Creation of a variant with datatype == null is not allowed'}; }
         this.itemIdentifiers = [];
+        this.scope = [];
         this.parnt = parnt;
-        if (scope_arr && scope_arr instanceof TopicMemImpl) {
-            this.scope = [scope_arr];
-        } else {
-            this.scope = scope_arr;
-        }
-        if (this.scope === null) {
-            throw {name: 'ModelConstraintException',
-            message: 'Creation of a variant with a null scope is not allowed'};
-        }
-        if (this.scope.length <= this.getParent().getScope().length) {
-            // check if the variants scope contains more scoping topics
-            throw {name: 'ModelConstraintException',
-            message: 'The variant would be in the same scope as the parent'};
-        }
         if (typeof value === 'object' && value instanceof Locator) {
             this.datatype = this.getTopicMap().createLocator('http://www.w3.org/2001/XMLSchema#anyURI');
         } else {
             this.datatype = 
                 this.getTopicMap().createLocator('http://www.w3.org/2001/XMLSchema#string');
         }
-        if (scope && scope_or_datatype) {
-            this.datatype = scope_or_datatype;
-        }
+        this.datatype = datatype;
         this.reifier = null;
         this.value = value;
         this.id = this.getTopicMap()._getConstructId();
@@ -1323,6 +1357,10 @@ TM = (function () {
     };
     
     VariantMemImpl.prototype.remove = function () {
+        var i;
+        for (i=0; i<this.scope.length; i+=1) {
+            this.getTopicMap().removeThemeEvent.fire(this, {theme: this.scope[i]});
+        }
         this.getParent()._removeVariant(this);
         this.id = null;
     };
@@ -2001,25 +2039,10 @@ TM = (function () {
     * @param [matchall] boolean
     */
     ScopedIndex.prototype.getAssociationsByThemes = function (themes, matchall) {
-        var constructs, i, j, ret;
         if (themes === null) { throw {name: 'IllegalArgumentException',
-                message: 'ScopedIndexgetAssociationsByThemes cannot be called without themes'}; }
-        constructs = IndexHelper.getForKeys(this.theme2associations, themes);
-        if (!matchall) {
-            return constructs;
-        }
-        // If matchall is true, we check all values for all types in {types}
-        // It's a hack, but will do for now
-        for (i=0; i<constructs.length; i+=1) {
-            for (j=0; j<themes.length; j+=1) {
-                if (!ArrayHelper.contains(constructs[i].getScope(), themes[j])) {
-                    constructs.splice(i, 1);
-                    i -= 1;
-                    break;
-                }
-            }
-        }
-        return constructs;
+                message: 'ScopedIndex.getAssociationsByThemes cannot be called without themes'}; }
+        return IndexHelper.getConstructsByThemes(this.theme2associations,
+            themes, matchall);
     };
 
     /**
@@ -2027,13 +2050,7 @@ TM = (function () {
     * Associations.
     */
     ScopedIndex.prototype.getAssociationThemes = function () {
-        var ret = [], keys = this.theme2associations.keys(), i;
-        for (i=0; i<keys.length; i+=1) {
-            if (keys[i] !== 'null') {
-                ret.push(this.tm.getConstructById(keys[i]));
-            }
-        }
-        return ret;
+        return IndexHelper.getConstructThemes(this.tm, this.theme2associations);
     };
 
     /**
@@ -2041,7 +2058,9 @@ TM = (function () {
     * specified theme.
     */
     ScopedIndex.prototype.getNames = function (theme) {
-        return [];
+        var ret = this.theme2names.get((theme ? theme.getId() : 'null'));
+        if (!ret) { return []; }
+        return ret.values();
     };
 
     /**
@@ -2049,14 +2068,17 @@ TM = (function () {
     * those themes at least.
     */
     ScopedIndex.prototype.getNamesByThemes = function (themes, matchall) {
-        return [];
+        if (themes === null) { throw {name: 'IllegalArgumentException',
+                message: 'ScopedIndex.getNamesByThemes cannot be called without themes'}; }
+        return IndexHelper.getConstructsByThemes(this.theme2names,
+            themes, matchall);
     };
 
     /**
     * Returns the topics in the topic map used in the scope property of Names.
     */
     ScopedIndex.prototype.getNameThemes = function () {
-        return [];
+        return IndexHelper.getConstructThemes(this.tm, this.theme2names);
     };
 
     /**
@@ -2064,7 +2086,9 @@ TM = (function () {
     * specified theme.
     */
     ScopedIndex.prototype.getOccurrences = function (theme) {
-        return [];
+        var ret = this.theme2occurrences.get((theme ? theme.getId() : 'null'));
+        if (!ret) { return []; }
+        return ret.values();
     };
 
     /**
@@ -2072,7 +2096,10 @@ TM = (function () {
     * of those themes at least.
     */
     ScopedIndex.prototype.getOccurrencesByThemes = function (themes, matchall) {
-        return [];
+        if (themes === null) { throw {name: 'IllegalArgumentException',
+                message: 'ScopedIndex.getOccurrencesByThemes cannot be called without themes'}; }
+        return IndexHelper.getConstructsByThemes(this.theme2occurrences,
+            themes, matchall);
     };
 
     /**
@@ -2080,7 +2107,7 @@ TM = (function () {
     * Occurrences.
     */
     ScopedIndex.prototype.getOccurrenceThemes = function () {
-        return [];
+        return IndexHelper.getConstructThemes(this.tm, this.theme2occurrences);
     };
 
     /**
@@ -2092,7 +2119,12 @@ TM = (function () {
     * @throws {IllegalArgumentException} If theme is null.
     */
     ScopedIndex.prototype.getVariants = function (theme) {
-        return [];
+        if (theme === null) { throw {name: 'IllegalArgumentException',
+            message: 'ScopedIndex.getVariants cannot be called without themes'};
+        }
+        var ret = this.theme2variants.get((theme ? theme.getId() : 'null'));
+        if (!ret) { return []; }
+        return ret.values();
     };
 
     /**
@@ -2105,7 +2137,10 @@ TM = (function () {
     * @throws {IllegalArgumentException} If themes is null.
     */
     ScopedIndex.prototype.getVariantsByThemes = function (themes, matchall) {
-        return [];
+        if (themes === null) { throw {name: 'IllegalArgumentException',
+                message: 'ScopedIndex.getVariantsByThemes cannot be called without themes'}; }
+        return IndexHelper.getConstructsByThemes(this.theme2variants,
+            themes, matchall);
     };
 
     /**
@@ -2114,7 +2149,7 @@ TM = (function () {
     * @returns {Array} An array of Topics.
     */
     ScopedIndex.prototype.getVariantThemes = function () {
-        return [];
+        return IndexHelper.getConstructThemes(this.tm, this.theme2variants);
     };
 
 
@@ -2170,6 +2205,36 @@ TM = (function () {
                 }
             }
             return tmp.values();
+        },
+
+        getConstructThemes: function(tm, hash) {
+            var ret = [], keys = hash.keys(), i;
+            for (i=0; i<keys.length; i+=1) {
+                if (keys[i] !== 'null') {
+                    ret.push(tm.getConstructById(keys[i]));
+                }
+            }
+            return ret;
+        },
+
+        getConstructsByThemes: function (hash, themes, matchall) {
+            var constructs, i, j, ret;
+            constructs = IndexHelper.getForKeys(hash, themes);
+            if (!matchall) {
+                return constructs;
+            }
+            // If matchall is true, we check all values for all types in {types}
+            // It's a hack, but will do for now
+            for (i=0; i<constructs.length; i+=1) {
+                for (j=0; j<themes.length; j+=1) {
+                    if (!ArrayHelper.contains(constructs[i].getScope(), themes[j])) {
+                        constructs.splice(i, 1);
+                        i -= 1;
+                        break;
+                    }
+                }
+            }
+            return constructs;
         }
     };
 
@@ -2184,6 +2249,23 @@ TM = (function () {
             return false;
         }
     };
+
+    /** Internal function to add scope. scope may be Array, Topic or null. */
+    addScope = function (construct, scope) {
+        var i;
+        if (scope && typeof scope === 'object') {
+            if (scope instanceof Array) {
+                for (i=0; i<scope.length; i+=1) {
+                    construct.addTheme(scope[i]);
+                }
+            } else if (scope instanceof TopicMemImpl) {
+                construct.addTheme(scope);
+            }
+        } else {
+            construct.getTopicMap().addThemeEvent.fire(construct, {theme: null});
+        }
+    };
+    
 
     // Export objects into the TM namespace
     return {

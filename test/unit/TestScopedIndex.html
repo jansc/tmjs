@@ -107,7 +107,7 @@ var tmp = new Test.Unit.Runner({
         var that = this;
         this.assertRaise('IllegalArgumentException', function() {
             that._scopedIdx.getAssociationsByThemes(null, true);
-        }, "getAssociations(null, boolean) is illegal");
+        }, "getAssociationsByThemes(null, boolean) is illegal");
     },
 
     testOccurrence: function () {
@@ -136,6 +136,347 @@ var tmp = new Test.Unit.Runner({
         this.assert(!this._scopedIdx.getOccurrences(null).contains(scoped));
         this.assert(!this._scopedIdx.getOccurrenceThemes().contains(theme));
     },
+
+    testOccurrenceMatchAll: function () {
+        var theme, theme2, ununsedTheme, scoped;
+        theme = this.createTopic();
+        theme2 = this.createTopic();
+        unusedTheme = this.createTopic();
+        this._updateIndex();
+        this.assertEqual(0, this._scopedIdx.getOccurrences(null).length);
+        this.assertEqual(0, this._scopedIdx.getOccurrences(theme).length);
+        this.assertEqual(0, this._scopedIdx.getOccurrenceThemes().length);
+        scoped = this.createOccurrence();
+        this.assertEqual(0, scoped.getScope().length);
+        this._updateIndex();
+        this.assertEqual(1, this._scopedIdx.getOccurrences(null).length);
+        this.assert(this._scopedIdx.getOccurrences(null).contains(scoped));
+        this.assert(!this._scopedIdx.getOccurrenceThemes().contains(theme));
+        scoped.addTheme(theme);
+        this._updateIndex();
+        this.assertEqual(1, this._scopedIdx.getOccurrenceThemes().length);
+        this.assert(this._scopedIdx.getOccurrencesByThemes([theme], true).contains(scoped));
+        this.assert(this._scopedIdx.getOccurrencesByThemes([theme], false).contains(scoped));
+        scoped.addTheme(theme2);
+        this._updateIndex();
+        this.assertEqual(2, this._scopedIdx.getOccurrenceThemes().length);
+        this.assert(this._scopedIdx.getOccurrencesByThemes([theme], true).contains(scoped));
+        this.assert(this._scopedIdx.getOccurrencesByThemes([theme], false).contains(scoped));
+        this.assert(this._scopedIdx.getOccurrencesByThemes([theme2], true).contains(scoped));
+        this.assert(this._scopedIdx.getOccurrencesByThemes([theme2], false).contains(scoped));
+        this.assert(this._scopedIdx.getOccurrencesByThemes([theme, theme2], false).contains(scoped));
+        this.assert(this._scopedIdx.getOccurrencesByThemes([theme, theme2], true).contains(scoped));
+        this.assert(this._scopedIdx.getOccurrencesByThemes([theme, unusedTheme], false).contains(scoped));
+        this.assert(this._scopedIdx.getOccurrencesByThemes([theme2, unusedTheme], false).contains(scoped));
+        this.assert(!this._scopedIdx.getOccurrencesByThemes([theme, unusedTheme], true).contains(scoped));
+        this.assert(!this._scopedIdx.getOccurrencesByThemes([theme2, unusedTheme], true).contains(scoped));
+    },
+
+    testOccurrenceMatchAllIllegal: function () {
+        var that = this;
+        this.assertRaise('IllegalArgumentException', function() {
+            that._scopedIdx.getOccurrencesByThemes(null, true);
+        }, "getOccurrenceByThemes(null, boolean) is illegal");
+    },
+
+    testName: function () {
+        var theme, scoped;
+        theme = this.createTopic();
+        this._updateIndex();
+        this.assertEqual(0, this._scopedIdx.getNames(null).length);
+        this.assertEqual(0, this._scopedIdx.getNames(theme).length);
+        this.assertEqual(0, this._scopedIdx.getNameThemes().length);
+        //debugger;
+        scoped = this.createName();
+        this.assertEqual(0, scoped.getScope().length);
+        this._updateIndex();
+        this.assertEqual(1, this._scopedIdx.getNames(null).length);
+        this.assert(this._scopedIdx.getNames(null).contains(scoped));
+        this.assert(!this._scopedIdx.getNameThemes().contains(theme));
+        //debugger;
+        scoped.addTheme(theme);
+        this._updateIndex();
+        this.assertEqual(0, this._scopedIdx.getNames(null).length);
+        this.assert(!this._scopedIdx.getNames(null).contains(scoped));
+        this.assert(this._scopedIdx.getNameThemes().length);
+        this.assertNotEqual(0, this._scopedIdx.getNameThemes().length);
+        this.assert(this._scopedIdx.getNames(theme).contains(scoped));
+        this.assert(this._scopedIdx.getNameThemes().contains(theme));
+        scoped.remove();
+        this._updateIndex();
+        this.assertEqual(0, this._scopedIdx.getNames(null).length);
+        this.assert(!this._scopedIdx.getNames(null).contains(scoped));
+        this.assert(!this._scopedIdx.getNameThemes().contains(theme));
+    },
+
+    testName2: function () {
+        var theme, scoped;
+        theme = this.createTopic();
+        this._updateIndex();
+        this.assertEqual(0, this._scopedIdx.getNames(null).length);
+        this.assertEqual(0, this._scopedIdx.getNames(theme).length);
+        this.assertEqual(0, this._scopedIdx.getNameThemes().length);
+        scoped = this.createTopic().createName("tinyTiM", this.createTopic(), [theme]);
+        this.assertEqual(1, scoped.getScope().length);
+        this._updateIndex();
+        this.assertEqual(0, this._scopedIdx.getNames(null).length);
+        this.assert(!this._scopedIdx.getNames(null).contains(scoped));
+        this.assertNotEqual(0, this._scopedIdx.getNameThemes().length);
+        this.assertEqual(1, this._scopedIdx.getNameThemes().length);
+        this.assert(this._scopedIdx.getNames(theme).contains(scoped));
+        this.assert(this._scopedIdx.getNameThemes().contains(theme));
+        scoped.remove();
+        this._updateIndex();
+        this.assertEqual(0, this._scopedIdx.getNames(null).length);
+        this.assert(!this._scopedIdx.getNames(null).contains(scoped));
+        this.assertEqual(0, this._scopedIdx.getNames(theme).length);
+        this.assert(!this._scopedIdx.getNameThemes().contains(theme));
+    },
+
+    testNameMatchAll: function () {
+        var theme, theme2, unusedTheme, scoped;
+        theme = this.createTopic();
+        theme2 = this.createTopic();
+        unusedTheme = this.createTopic();
+        this._updateIndex();
+        this.assertEqual(0, this._scopedIdx.getNames(null).length);
+        this.assertEqual(0, this._scopedIdx.getNames(theme).length);
+        this.assertEqual(0, this._scopedIdx.getNameThemes().length);
+        scoped = this.createName();
+        this.assertEqual(0, scoped.getScope().length);
+        this._updateIndex();
+        this.assertEqual(1, this._scopedIdx.getNames(null).length);
+        this.assert(this._scopedIdx.getNames(null).contains(scoped));
+        this.assert(!this._scopedIdx.getNameThemes().contains(theme));
+        scoped.addTheme(theme);
+        this._updateIndex();
+        this.assertEqual(1, this._scopedIdx.getNameThemes().length);
+        this.assert(this._scopedIdx.getNamesByThemes([theme], true).contains(scoped));
+        this.assert(this._scopedIdx.getNamesByThemes([theme], false).contains(scoped));
+        scoped.addTheme(theme2);
+        this._updateIndex();
+        this.assertEqual(2, this._scopedIdx.getNameThemes().length);
+        this.assert(this._scopedIdx.getNamesByThemes([theme], true).contains(scoped));
+        this.assert(this._scopedIdx.getNamesByThemes([theme], false).contains(scoped));
+        this.assert(this._scopedIdx.getNamesByThemes([theme2], true).contains(scoped));
+        this.assert(this._scopedIdx.getNamesByThemes([theme2], false).contains(scoped));
+        this.assert(this._scopedIdx.getNamesByThemes([theme, theme2], false).contains(scoped));
+        this.assert(this._scopedIdx.getNamesByThemes([theme, theme2], true).contains(scoped));
+        this.assert(this._scopedIdx.getNamesByThemes([theme, unusedTheme], false).contains(scoped));
+        this.assert(this._scopedIdx.getNamesByThemes([theme2, unusedTheme], false).contains(scoped));
+        this.assert(!this._scopedIdx.getNamesByThemes([theme, unusedTheme], true).contains(scoped));
+        this.assert(!this._scopedIdx.getNamesByThemes([theme2, unusedTheme], true).contains(scoped));
+    },
+
+    testNameMatchAllIllegal: function () {
+        var that = this;
+        this.assertRaise('IllegalArgumentException', function() {
+            that._scopedIdx.getNamesByThemes(null, true);
+        }, "getNameeByThemes(null, boolean) is illegal");
+    },
+
+    testVariantIllegal: function () {
+        var that = this;
+        this.assertRaise('IllegalArgumentException', function() {
+            that._scopedIdx.getVariants(null);
+        }, "getVariants(null) is illegal");
+    },
+
+    testVariantMatchAllIllegal: function () {
+        var that = this;
+        this.assertRaise('IllegalArgumentException', function() {
+            that._scopedIdx.getVariantsByThemes(null);
+        }, "getVariantsByThemes(null, boolean) is illegal");
+    },
+
+    testVariant: function () {
+        var theme, theme2, name, scoped;
+        theme = this.createTopic();
+        theme2 = this.createTopic();
+        this._updateIndex();
+        this.assertEqual(0, this._scopedIdx.getVariants(theme).length);
+        this.assertEqual(0, this._scopedIdx.getVariantThemes().length);
+        name = this.createName();
+        this.assertEqual(0, name.getScope().length);
+        scoped = name.createVariant("Variant",
+            this._tm.createLocator(this._XSD_STRING), theme);
+        this.assertEqual(1, scoped.getScope().length,
+            "Unexpected variant's scope size");
+        this._updateIndex();
+        this.assertNotEqual(0, this._scopedIdx.getVariantThemes().length);
+        this.assertEqual(1, this._scopedIdx.getVariantThemes().length,
+                "Unexpected number of variant themes");
+        this.assert(this._scopedIdx.getVariants(theme).contains(scoped));
+        this.assert(this._scopedIdx.getVariantThemes().contains(theme));
+        // Add theme to name
+        name.addTheme(theme2);
+        this.assertEqual(1, name.getScope().length);
+        this.assertEqual(2, scoped.getScope().length,
+                "The scope change of the parent is not reflected in the variant's scope");
+        this._updateIndex();
+        this.assertEqual(2, this._scopedIdx.getVariantThemes().length,
+                "Change of the parent's scope is not reflected in the index");
+        this.assert(this._scopedIdx.getVariants(theme).contains(scoped));
+        this.assert(this._scopedIdx.getVariantThemes().contains(theme));
+        this.assert(this._scopedIdx.getVariants(theme2).contains(scoped));
+        this.assert(this._scopedIdx.getVariantThemes().contains(theme2));
+        // Remove theme from name
+        name.removeTheme(theme2);
+        this._updateIndex();
+        this.assertNotEqual(0, this._scopedIdx.getVariantThemes().length);
+        this.assertEqual(1, this._scopedIdx.getVariantThemes().length,
+            "The scope change in the name is not reflected in variant");
+        this.assert(this._scopedIdx.getVariants(theme).contains(scoped));
+        this.assert(this._scopedIdx.getVariantThemes().contains(theme));
+        scoped.addTheme(theme2);
+        this._updateIndex();
+        this.assertEqual(2, this._scopedIdx.getVariantThemes().length,
+            "Change of the variant's scope is not reflected in the index");
+        this.assert(this._scopedIdx.getVariants(theme).contains(scoped));
+        this.assert(this._scopedIdx.getVariantThemes().contains(theme));
+        this.assert(this._scopedIdx.getVariants(theme2).contains(scoped));
+        this.assert(this._scopedIdx.getVariantThemes().contains(theme2));
+        // Add theme to name
+        name.addTheme(theme2);
+        this._updateIndex();
+        this.assertEqual(2, this._scopedIdx.getVariantThemes().length,
+                "Adding a theme to the variant's parent is not reflected");
+        this.assert(this._scopedIdx.getVariants(theme).contains(scoped));
+        this.assert(this._scopedIdx.getVariantThemes().contains(theme));
+        this.assert(this._scopedIdx.getVariants(theme2).contains(scoped));
+        this.assert(this._scopedIdx.getVariantThemes().contains(theme2));
+        // Remove theme from name
+        name.removeTheme(theme2);
+        this._updateIndex();
+        this.assertEqual(2, this._scopedIdx.getVariantThemes().length,
+                "Removing the name's theme MUST NOT be reflected in the variant's scope");
+        this.assert(this._scopedIdx.getVariants(theme).contains(scoped));
+        this.assert(this._scopedIdx.getVariantThemes().contains(theme));
+        this.assert(this._scopedIdx.getVariants(theme2).contains(scoped));
+        this.assert(this._scopedIdx.getVariantThemes().contains(theme2));
+        scoped.removeTheme(theme2);
+        this.assertNotEqual(0, this._scopedIdx.getVariantThemes().length);
+        this.assertEqual(1, this._scopedIdx.getVariantThemes().length);
+        this.assert(this._scopedIdx.getVariants(theme).contains(scoped));
+        this.assert(this._scopedIdx.getVariantThemes().contains(theme));
+    },
+
+    testVariant2: function () {
+        var theme, theme2, name, scoped;
+        theme = this.createTopic();
+        theme2 = this.createTopic();
+        this._updateIndex();
+        this.assertEqual(0, this._scopedIdx.getVariants(theme).length);
+        this.assertEqual(0, this._scopedIdx.getVariants(theme2).length);
+        this.assertEqual(0, this._scopedIdx.getVariantThemes().length);
+        name = this.createTopic().createName("Name", null, theme2);
+        this.assertEqual(1, name.getScope().length);
+        scoped = name.createVariant("Variant",
+            this._tm.createLocator(this._XSD_STRING), theme);
+        this.assertEqual(2, scoped.getScope().length);
+        this._updateIndex();
+        this.assertEqual(2, this._scopedIdx.getVariantThemes().length);
+        this.assert(this._scopedIdx.getVariants(theme).contains(scoped));
+        this.assert(this._scopedIdx.getVariantThemes().contains(theme));
+        this.assert(this._scopedIdx.getVariants(theme2).contains(scoped));
+        this.assert(this._scopedIdx.getVariantThemes().contains(theme2));
+        name.removeTheme(theme2);
+        this.assertEqual(0, name.getScope().length);
+        this._updateIndex();
+        this.assertEqual(1, this._scopedIdx.getVariantThemes().length);
+        this.assert(this._scopedIdx.getVariants(theme).contains(scoped));
+        this.assert(this._scopedIdx.getVariantThemes().contains(theme));
+    },
+
+    testVariantMatchAll: function () {
+        var theme, theme2, unusedTheme, name, scoped, nameTheme;
+        theme = this.createTopic();
+        theme2 = this.createTopic();
+        unusedTheme = this.createTopic();
+        this._updateIndex();
+        this.assertEqual(0, this._scopedIdx.getVariants(theme).length);
+        this.assertEqual(0, this._scopedIdx.getVariants(theme2).length);
+        this.assertEqual(0, this._scopedIdx.getVariantThemes().length);
+        name = this.createTopic().createName("Name");
+        this.assertEqual(0, name.getScope().length);
+        scoped = name.createVariant("Variant",
+            this._tm.createLocator(this._XSD_STRING), theme);
+        this.assertEqual(1, scoped.getScope().length);
+        this._updateIndex();
+        this.assertEqual(1, this._scopedIdx.getVariantThemes().length);
+        this.assert(this._scopedIdx.getVariantsByThemes([theme], true).contains(scoped));
+        this.assert(this._scopedIdx.getVariantsByThemes([theme], false).contains(scoped));
+        this.assert(!this._scopedIdx.getVariantsByThemes([theme2], true).contains(scoped));
+        this.assert(!this._scopedIdx.getVariantsByThemes([theme2], false).contains(scoped));
+        scoped.addTheme(theme2);
+        this._updateIndex();
+        this.assert(this._scopedIdx.getVariantsByThemes([theme], true).contains(scoped));
+        this.assert(this._scopedIdx.getVariantsByThemes([theme], false).contains(scoped));
+        this.assert(this._scopedIdx.getVariantsByThemes([theme2], true).contains(scoped));
+        this.assert(this._scopedIdx.getVariantsByThemes([theme2], false).contains(scoped));
+        this.assert(this._scopedIdx.getVariantsByThemes([theme, theme2], true).contains(scoped));
+        this.assert(this._scopedIdx.getVariantsByThemes([theme, theme2], false).contains(scoped));
+        this.assert(this._scopedIdx.getVariantsByThemes([theme, theme2, unusedTheme], false).contains(scoped));
+        this.assert(!this._scopedIdx.getVariantsByThemes([theme, theme2, unusedTheme], true).contains(scoped));
+        nameTheme = this.createTopic();
+        name.addTheme(nameTheme);
+        this._updateIndex();
+        this.assert(this._scopedIdx.getVariantsByThemes([theme], true).contains(scoped));
+        this.assert(this._scopedIdx.getVariantsByThemes([theme], false).contains(scoped));
+        this.assert(this._scopedIdx.getVariantsByThemes([theme2], true).contains(scoped));
+        this.assert(this._scopedIdx.getVariantsByThemes([theme2], false).contains(scoped));
+        this.assert(this._scopedIdx.getVariantsByThemes([nameTheme], true).contains(scoped));
+        this.assert(this._scopedIdx.getVariantsByThemes([nameTheme], false).contains(scoped));
+        this.assert(this._scopedIdx.getVariantsByThemes([theme, theme2], true).contains(scoped));
+        this.assert(this._scopedIdx.getVariantsByThemes([theme, theme2], false).contains(scoped));
+        this.assert(this._scopedIdx.getVariantsByThemes([theme, theme2, nameTheme], true).contains(scoped));
+        this.assert(this._scopedIdx.getVariantsByThemes([theme, theme2, nameTheme], false).contains(scoped));
+        this.assert(this._scopedIdx.getVariantsByThemes([theme, theme2, unusedTheme, nameTheme], false).contains(scoped));
+        this.assert(!this._scopedIdx.getVariantsByThemes([theme, theme2, unusedTheme, nameTheme], true).contains(scoped));
+        name.removeTheme(nameTheme);
+        this._updateIndex();
+        this.assert(!this._scopedIdx.getVariantsByThemes([nameTheme], true).contains(scoped));
+        this.assert(!this._scopedIdx.getVariantsByThemes([nameTheme], false).contains(scoped));
+        this.assert(!this._scopedIdx.getVariantsByThemes([theme, theme2, nameTheme], true).contains(scoped));
+        this.assert(this._scopedIdx.getVariantsByThemes([theme, theme2, nameTheme], false).contains(scoped));
+        scoped.removeTheme(theme);
+        this._updateIndex();
+        this.assert(!this._scopedIdx.getVariantsByThemes([theme], true).contains(scoped));
+        this.assert(!this._scopedIdx.getVariantsByThemes([theme], false).contains(scoped));
+        this.assert(!this._scopedIdx.getVariantsByThemes([theme, theme2], true).contains(scoped));
+        this.assert(this._scopedIdx.getVariantsByThemes([theme, theme2], false).contains(scoped));
+    },
+
+    testVariantMatchAll2: function () {
+        var theme, theme2, unusedTheme, nameTheme, name, scoped;
+        theme = this.createTopic();
+        theme2 = this.createTopic();
+        unusedTheme = this.createTopic();
+        nameTheme = this.createTopic();
+        this._updateIndex();
+        this.assertEqual(0, this._scopedIdx.getVariants(theme).length);
+        this.assertEqual(0, this._scopedIdx.getVariants(theme2).length);
+        this.assertEqual(0, this._scopedIdx.getVariantThemes().length);
+        name = this.createTopic().createName("Name", null, nameTheme);
+        this.assertEqual(1, name.getScope().length);
+        scoped = name.createVariant("Variant",
+            this._tm.createLocator(this._XSD_STRING), [theme, theme2]);
+        this.assertEqual(3, scoped.getScope().length);
+        this._updateIndex();
+        this.assertEqual(3, this._scopedIdx.getVariantThemes().length);
+        this.assert(this._scopedIdx.getVariantsByThemes([theme], true).contains(scoped));
+        this.assert(this._scopedIdx.getVariantsByThemes([theme], false).contains(scoped));
+        this.assert(this._scopedIdx.getVariantsByThemes([theme2], true).contains(scoped));
+        this.assert(this._scopedIdx.getVariantsByThemes([theme2], false).contains(scoped));
+        this.assert(this._scopedIdx.getVariantsByThemes([nameTheme], true).contains(scoped));
+        this.assert(this._scopedIdx.getVariantsByThemes([nameTheme], false).contains(scoped));
+        this.assert(this._scopedIdx.getVariantsByThemes([theme, theme2], true).contains(scoped));
+        this.assert(this._scopedIdx.getVariantsByThemes([theme, theme2], false).contains(scoped));
+        this.assert(this._scopedIdx.getVariantsByThemes([theme, theme2, nameTheme], true).contains(scoped));
+        this.assert(this._scopedIdx.getVariantsByThemes([theme, theme2, nameTheme], false).contains(scoped));
+        this.assert(this._scopedIdx.getVariantsByThemes([theme, theme2, unusedTheme, nameTheme], false).contains(scoped));
+        this.assert(!this._scopedIdx.getVariantsByThemes([theme, theme2, unusedTheme, nameTheme], true).contains(scoped));
+    }
 });
 // ]]>
 </script>

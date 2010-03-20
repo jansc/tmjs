@@ -48,6 +48,7 @@ addCommonSetupFunctions:
         };
         obj.createVariant = function() {
             return obj.createTopic().createName("foo").createVariant("bar",
+                obj._tm.createLocator(obj._XSD_STRING),
                 obj.createTopic());
         };
         obj.createDatatypeAware = function(iri) {

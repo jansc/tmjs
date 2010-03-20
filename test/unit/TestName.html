@@ -62,7 +62,7 @@ new Test.Unit.Runner({
         var name = createName();
         var theme = createTopic();
         var xsdString = createLocator("http://www.w3.org/2001/XMLSchema#string");
-        var variant = name.createVariant("Variant", theme);
+        var variant = name.createVariant("Variant", xsdString, theme);
         assertEqual("Variant", variant.getValue());
         assert(xsdString.equals(variant.getDatatype()));
         assertEqual(1, variant.getScope().length);
@@ -74,7 +74,7 @@ new Test.Unit.Runner({
         var theme = createTopic();
         var xsdAnyURI = createLocator("http://www.w3.org/2001/XMLSchema#anyURI");
         var value = createLocator("http://www.example.org/");
-        var variant = name.createVariant(value, theme);
+        var variant = name.createVariant(value, xsdAnyURI, theme);
         assertEqual(value.getReference(), variant.getValue());
         assertEqual(value, variant.locatorValue());
         assert(xsdAnyURI.equals(variant.getDatatype()));
