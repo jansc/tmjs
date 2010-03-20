@@ -1,3 +1,12 @@
+== 0.2.2 2010-03-20
+
+* Implemented ScopedIndex
+* Implemented TypeInstanceIndex
+* Removed 'MemImpl' from all class names but TopicMapSystemMemImpl
+  (as suggested by Robert Cerny)
+* Implemented check for topic in use in Topic.remove()
+* More unit tests (now 162 tests)
+
 == 0.2.1 2010-03-03
 
 * Bugfix in make rule for building the API docs
