@@ -15,7 +15,7 @@ TM = (function () {
     var Version, Hash, Locator, EventType, Topic, Association,
         Scoped, Construct, Typed, Reifiable,
         DatatypeAware, TopicMap, Role, Name,
-        Variant, Occurrence, TopicMapSystem,
+        Variant, Occurrence, TopicMapSystemMemImpl,
         Index, TypeInstanceIndex, ScopedIndex, 
         SameTopicMapHelper, ArrayHelper, IndexHelper, addScope;
 
@@ -310,7 +310,7 @@ TM = (function () {
     /** Removes a topic from the scope. */
     Scoped.prototype.removeTheme = function (theme) {
         var i, j, scope, found;
-        for (var i=0; i<this.scope.length; i+=1) {
+        for (i=0; i<this.scope.length; i+=1) {
             if (this.scope[i] === theme) {
                 this.getTopicMap().removeThemeEvent.fire(this, {theme: this.scope[i]});
                 this.scope.splice(i, 1);
@@ -493,8 +493,7 @@ TM = (function () {
     TopicMapSystemFactory.prototype.newTopicMapSystem = function () {
         var backend = this.properties['com.semanticheadache.tmjs.backend'] || 'memory'; 
         if (backend === 'memory') {
-            //return new TopicMapSystem();
-            return new TopicMapSystem();
+            return new TopicMapSystemMemImpl();
         }
     };
     
@@ -512,11 +511,11 @@ TM = (function () {
     * Creates a new instance of TopicMamSystem.
     * @class Implementation of the TopicMapSystem interface.
     */
-    TopicMapSystem = function () {
+    TopicMapSystemMemImpl = function () {
         this.topicmaps = {};
     };
     
-    TopicMapSystem.prototype.createTopicMap = function (locator) {
+    TopicMapSystemMemImpl.prototype.createTopicMap = function (locator) {
         if (this.topicmaps[locator.getReference()]) {
             throw {name: 'TopicMapExistsException',
                 message: 'A topic map under the same IRI already exists'};
@@ -526,7 +525,7 @@ TM = (function () {
         return tm;
     };
     
-    TopicMapSystem.prototype.getLocators = function () {
+    TopicMapSystemMemImpl.prototype.getLocators = function () {
         var locators = [], key;
         for (key in this.topicmaps) {
             if (this.topicmaps.hasOwnProperty(key)) {
@@ -536,7 +535,7 @@ TM = (function () {
         return locators;
     };
     
-    TopicMapSystem.prototype.getTopicMap = function (locator) {
+    TopicMapSystemMemImpl.prototype.getTopicMap = function (locator) {
         var tm;
         if (locator instanceof Locator) {
             tm = this.topicmaps[locator.getReference()];
@@ -550,15 +549,15 @@ TM = (function () {
     /**
     * @param {String} iri
     */
-    TopicMapSystem.prototype.createLocator = function (iri) {
+    TopicMapSystemMemImpl.prototype.createLocator = function (iri) {
         return new Locator(this, iri);
     };
     
-    TopicMapSystem.prototype.getFeature = function (featureName) {
+    TopicMapSystemMemImpl.prototype.getFeature = function (featureName) {
         return false;
     };
     
-    TopicMapSystem.prototype._removeTopicMap = function(tm) {
+    TopicMapSystemMemImpl.prototype._removeTopicMap = function(tm) {
         var key;
         for (key in this.topicmaps) {
             if (this.topicmaps.hasOwnProperty(key) &&
@@ -568,7 +567,7 @@ TM = (function () {
         }
     };
     
-    TopicMapSystem.prototype.close = function () {
+    TopicMapSystemMemImpl.prototype.close = function () {
         this.toipcmaps = null; // release references
     };
     
@@ -1116,7 +1115,6 @@ TM = (function () {
     
     // Removes this topic from the containing TopicMap instance.
     Topic.prototype.remove = function () {
-        // TODO: Check if the topic is in use!
         var other, tiidx = this.parnt.typeInstanceIndex,
             sidx = this.parnt.scopedIndex;
         if (this.getReified() ||
@@ -1216,6 +1214,7 @@ TM = (function () {
     };
     
     Occurrence.prototype.remove = function () {
+        var i;
         for (i=0; i<this.scope.length; i+=1) {
             this.parnt.parnt.removeThemeEvent.fire(this, {theme: this.scope[i]});
         }
@@ -1258,7 +1257,7 @@ TM = (function () {
     };
     
     Name.prototype.createVariant = function (value, datatype, scope) {
-        var scope_length = 0, i;
+        var scope_length = 0, i, variant;
         if (typeof scope === 'undefined' || scope === null) {
             throw {name: 'ModelConstraintException',
             message: 'Creation of a variant with a null scope is not allowed'};
@@ -1271,12 +1270,13 @@ TM = (function () {
             }
         }
        /* 
+        TODO: Compare scope of Name and Variant
         if (scope_length <= this.getScope().length) {
             // check if the variants scope contains more scoping topics
             throw {name: 'ModelConstraintException',
             message: 'The variant would be in the same scope as the parent'};
         }*/
-        var variant = new Variant(this, value, datatype);
+        variant = new Variant(this, value, datatype);
         addScope(variant, scope);
         for (i=0; i<this.scope.length; i+=1) {
             this.getTopicMap().addThemeEvent.fire(variant,
@@ -1297,6 +1297,7 @@ TM = (function () {
     };
     
     Name.prototype.remove = function () {
+        var i;
         for (i=0; i<this.scope.length; i+=1) {
             this.parnt.parnt.removeThemeEvent.fire(this, {theme: this.scope[i]});
         }
