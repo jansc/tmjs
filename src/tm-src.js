@@ -1,7 +1,7 @@
 /*jslint browser: true, devel: true, onevar: true, undef: true,
   nomen: false, eqeqeq: true, plusplus: true, bitwise: true,
   regexp: true, newcap: true, immed: true */
-/*global  window*/ 
+/*global  window, exports*/ 
 
 var TM, TopicMapSystemFactory;
 
@@ -504,7 +504,7 @@ TM = (function () {
     
     // Sets a property in the underlying implementation of TopicMapSystem.
     TopicMapSystemFactory.prototype.setProperty = function (propertyName, value) {
-        this.property[propertyName] = value;
+        this.properties[propertyName] = value;
     };
     
     /**
@@ -2274,4 +2274,9 @@ TM = (function () {
 
 // Pollute the global namespace
 TopicMapSystemFactory = TM.TopicMapSystemFactory; 
+
+// Check if we are in a CommonJS environment (e.g. node.js)
+if (typeof exports === 'object' && export !== null) {
+    exports.TopicMapSystemFactory = TopicMapSystemFactory;
+}
 
