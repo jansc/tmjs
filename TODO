@@ -7,3 +7,8 @@ TODO
 * Implement/remove hashCode-functions
 * XTM 2.0 import (started)
 * XTM 2.0 export
+
+Minor issues:
+
+* Construct.remove() is supposed to return the parent of the construct.
+* API docs: add option JSDOC.opt.D.copyright
