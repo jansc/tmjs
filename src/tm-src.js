@@ -116,17 +116,41 @@ TM = (function () {
     // -----------------------------------------------------------------------
     // TODO: The locator functions need some more work. Implement resolve()
     // and toExternalForm()
+
+    /**
+     * @class Immutable representation of an IRI.
+     */
     Locator = function (parnt, iri) {
         this.parnt = parnt;
         this.iri = iri;
     };
 
+    /**
+     * Returns the IRI.
+     * @returns {String} A lexical representation of the IRI.
+     */
     Locator.prototype.getReference = function () {
         return this.iri;
     };
 
+    /**
+     * Returns true if the other object is equal to this one.
+     * @param other The object to compare this object against.
+     * @returns <code>(other instanceof Locator &&
+     *     this.getReference().equals(((Locator)other).getReference()))</code>
+     */
     Locator.prototype.equals = function (other) {
         return (this.iri === other.getReference());
+    };
+
+    /**
+     * Returns the external form of the IRI. Any special character will be
+     * escaped using the escaping conventions of RFC 3987.
+     * @returns {String} A string representation of this locator suitable for
+     * output or passing to APIs which will parse the locator anew.
+     */
+    Locator.prototype.toExternalForm = function () {
+        throw {name: 'NotImplemented', message: 'Locator.toExternalForm() not implemented'};
     };
 
 
@@ -163,45 +187,86 @@ TM = (function () {
     };
 
     /**
-    * Returns true if the other object is equal to this one.
+    * Returns true if the other object is equal to this one. Equality must be
+    * the result of comparing the identity (<code>this == other</code>) of the
+    * two objects.
+    * Note: This equality test does not reflect any equality rule according to
+    * the Topic Maps - Data Model (TMDM) by intention.
+    * @param {String} other The object to compare this object against.
     */
     Construct.prototype.equals = function (other) {
         return (this.id === other.id);
     };
     
-    /** Returns the identifier of this construct. */
+    /**
+     * Returns the identifier of this construct. This property has no
+     * representation in the Topic Maps - Data Model.
+     *
+     * The ID can be anything, so long as no other Construct in the same topic
+     * map has the same ID.
+     * @returns {String} An identifier which identifies this construct uniquely
+     * within a topic map.
+     */
     Construct.prototype.getId = function () {
         return this.id;
     };
     
-    /** Returns the item identifiers of this Topic Maps construct. */
+    /**
+     * Returns the item identifiers of this Topic Maps construct. The return
+     * value may be empty but must never be <code>null</code>.
+     * @returns {Array} An array of Locators representing the item identifiers.
+     * The array MUST NOT be modified.
+     */
     Construct.prototype.getItemIdentifiers = function () {
         return this.itemIdentifiers;
     };
     
-    /** Returns the parent of this construct. */
+    /**
+     * Returns the parent of this construct. This method returns
+     * <code>null</code> iff this construct is a TopicMap instance.
+     * @returns {Construct} The parent of this construct or <code>null</code>
+     * iff the construct is an instance of TopicMap.
+     */
     Construct.prototype.getParent = function () {
         return this.parnt;
     };
     
-    /** Returns the TopicMap instance to which this Topic Maps construct belongs. */
+    /**
+     * Returns the TopicMap instance to which this Topic Maps construct belongs.
+     * A TopicMap instance returns itself.
+     * @returns {Construct} The topic map instance to which this construct belongs.
+     */
     Construct.prototype.getTopicMap = function () {
         throw {name: 'NotImplemented', message: 'getTopicMap() not implemented'};
     };
     
-    // Returns the hash code value.
-    // TODO: Is this needed?
+    /**
+     * Returns the hash code value.
+     * TODO: Is this needed?
+     */
     Construct.prototype.hashCode = function () {
         throw {name: 'NotImplemented', message: 'hashCode() not implemented'};
     };
     
-    /** Deletes this construct from its parent container. */
+    /**
+     * Returns the parent of this construct. This method returns
+     * <code>null</code> iff this construct is a TopicMap instance.
+     * @returns {Construct} The parent of this construct or <code>null</code>
+     * iff the construct is an instance of {@link TopicMap}.
+     */
     Construct.prototype.remove = function () {
         throw {name: 'NotImplemented', message: 'remove() not implemented'};
     };
     
-    /** Removes an item identifier. */
+    /**
+     * Removes an item identifier.
+     * @param {Locator} itemIdentifier The item identifier to be removed from
+     * this construct, if present (<code>null</code> is ignored).
+     */
     Construct.prototype.removeItemIdentifier = function (itemIdentifier) {
+        if (itemIdentifier === null) {
+            return;
+        }
         for (var i=0; i<this.itemIdentifiers.length; i+=1) {
             if (this.itemIdentifiers[i].getReference() ===
                     itemIdentifier.getReference()) {
@@ -212,37 +277,65 @@ TM = (function () {
         this.getTopicMap()._ii2construct.remove(itemIdentifier.getReference());
     };
     
-    /** Return true if the construct is a TopicMap-object */
+    /**
+     * Returns true if the construct is a {@link TopicMap}-object
+     * @returns <code>true</code> if the construct is a {@link TopicMap}-object,
+     *     <code>false</code> otherwise.
+     */
     Construct.prototype.isTopicMap = function() {
         return false;
     };
     
-    /** Return true if the construct is a Topic-object */
+    /**
+     * Returns true if the construct is a {@link Topic}-object
+     * @returns <code>true</code> if the construct is a {@link Topic}-object,
+     *     <code>false</code> otherwise.
+     */
     Construct.prototype.isTopic = function() {
         return false;
     };
     
-    /** Return true if the construct is an Association-object */
+    /**
+     * Returns true if the construct is an {@link Association}-object
+     * @returns <code>true</code> if the construct is an {@link Association}-
+     *     object, <code>false</code> otherwise.
+     */
     Construct.prototype.isAssociation = function() {
         return false;
     };
     
-    /** Return true if the construct is a Role-object */
+    /**
+     * Returns true if the construct is a {@link Role}-object
+     * @returns <code>true</code> if the construct is a {@link Role}-object,
+     *     <code>false</code> otherwise.
+     */
     Construct.prototype.isRole = function() {
         return false;
     };
     
-    /** Return true if the construct is a Name-object */
+    /**
+     * Returns true if the construct is a {@link Name}-object
+     * @returns <code>true</code> if the construct is a {@link Name}-object,
+     *     <code>false</code> otherwise.
+     */
     Construct.prototype.isName = function() {
         return false;
     };
     
-    /** Return true if the construct is an Occurrence-object */
+    /**
+     * Returns true if the construct is an {@link Occurrenct}-object
+     * @returns <code>true</code> if the construct is an {@link Occurrence}-object,
+     *     <code>false</code> otherwise.
+     */
     Construct.prototype.isOccurrence = function() {
         return false;
     };
     
-    /** Return true if the construct is a Variant-object */
+    /**
+     * Returns true if the construct is a {@link Variant}-object
+     * @returns <code>true</code> if the construct is a {@link Variant}-object,
+     *     <code>false</code> otherwise.
+     */
     Construct.prototype.isVariant = function() {
         return false;
     };
@@ -453,6 +546,7 @@ TM = (function () {
     * Constructs a new Topic Map System Factoy. The constructor should not be
     * called directly. Use the {TM.TopicMapSystemFactory.newInstance} instead.
     * @class Represents a Topic Maps construct.
+    * @memberOf TM
     */
     TopicMapSystemFactory = function() {
         this.properties = {};
@@ -2290,7 +2384,10 @@ TM = (function () {
         }
     };
 
-    /** Helper functions for hashes of hashes */
+    /**
+     * Helper functions for hashes of hashes
+     * @ignore
+     */
     IndexHelper = {
         getForKeys: function (hash, keys) {
             var i, j, tmp = new Hash(), value_hash, value_keys;
@@ -2339,6 +2436,11 @@ TM = (function () {
         }
     };
 
+    /** 
+     * Helper functions for arrays. We don't modify the global array
+     * object to avoid conflicts with other libraries.
+     * @ignore
+     */
     ArrayHelper = {
         /** Checks if arr contains elem */
         contains: function (arr, elem) {
@@ -2351,7 +2453,10 @@ TM = (function () {
         }
     };
 
-    /** Internal function to add scope. scope may be Array, Topic or null. */
+    /** 
+     * Internal function to add scope. scope may be Array, Topic or null.
+     * @ignore
+     */
     addScope = function (construct, scope) {
         var i;
         if (scope && typeof scope === 'object') {
