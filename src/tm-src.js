@@ -17,7 +17,8 @@ TM = (function () {
         DatatypeAware, TopicMap, Role, Name,
         Variant, Occurrence, TopicMapSystemMemImpl,
         Index, TypeInstanceIndex, ScopedIndex, 
-        SameTopicMapHelper, ArrayHelper, IndexHelper, addScope;
+        SameTopicMapHelper, ArrayHelper, IndexHelper, addScope,
+        SignatureGenerator, MergeHelper;
 
     Version = '@VERSION';
 
@@ -257,7 +258,7 @@ TM = (function () {
     // Sets the type of this construct.
     Typed.prototype.setType = function (type) {
         if (type === null) { throw {name: 'ModelConstraintException',
-            message: 'Topic.getRolesPlayed cannot be called without type'}; }
+            message: 'Topic.setType cannot be called without type'}; }
         SameTopicMapHelper.assertBelongsTo(this.getTopicMap(), type);
         this.getTopicMap().setTypeEvent.fire(this, {old: this.type, type: type});
         this.type = type;
@@ -1109,8 +1110,105 @@ TM = (function () {
     
     // Merges another topic into this topic.
     Topic.prototype.mergeIn = function (other) {
-        // TODO Implement!
-        throw {name: 'NotImplemented', message: 'Topic.mergeIn() not implemented'};
+        var arr, i, tmp, tmp2, signatures, occ, name;
+        if (this.equals(other)) {
+            return true;
+        }
+
+        SameTopicMapHelper.assertBelongsTo(this.getTopicMap(), other);
+        if (this.getReified() && other.getReified() &&
+            !this.getReified().equals(other.getReified())) {
+            throw {name: 'ModelConstraintException',
+                message: 'The topics reify different Topic Maps constructs and cannot be merged!'};
+        }
+
+        if (!this.getReified() && other.getReified()) {
+            tmp = other.getReified();
+            tmp.setReifier(this);
+        }
+
+        MergeHelper.moveItemIdentifiers(other, this);
+
+        arr = other.getSubjectLocators();
+        while (arr.length) {
+            tmp = arr[arr.length - 1];
+            other.removeSubjectLocator(tmp);
+            this.addSubjectLocator(tmp);
+        }
+
+        arr = other.getSubjectIdentifiers();
+        while (arr.length) {
+            tmp = arr[arr.length - 1];
+            other.removeSubjectIdentifier(tmp);
+            this.addSubjectIdentifier(tmp);
+        }
+
+        arr = other.getTypes();
+        while (arr.length) {
+            tmp = arr[arr.length - 1];
+            other.removeType(tmp);
+            this.addType(tmp);
+        }
+
+        // merge roles played
+        arr = this.getRolesPlayed();
+        signatures = {};
+        for (i=0; i<arr.length; i+=1) {
+            tmp2 = arr[i].getParent();
+            signatures[SignatureGenerator.makeAssociationSignature(tmp2)] = tmp2;
+        }
+        arr = other.getRolesPlayed();
+        for (i=0; i<arr.length; i+=1) {
+            tmp = arr[i];
+            tmp.setPlayer(this);
+            if ((tmp2 = signatures[SignatureGenerator.makeAssociationSignature(tmp.getParent())])) {
+                MergeHelper.moveItemIdentifiers(tmp.getParent(), tmp2);
+                MergeHelper.moveReifier(tmp.getParent(), tmp2);
+                tmp.getParent().remove();
+            }
+        }
+
+        // merge names
+        arr = this.getNames();
+        signatures = {};
+        for (i=0; i<arr.length; i+=1) {
+            signatures[SignatureGenerator.makeNameSignature(arr[i])] = arr[i];
+        }
+        arr = other.getNames();
+        for (i=0; i<arr.length; i+=1) {
+            tmp = arr[i];
+            if ((tmp2 = signatures[SignatureGenerator.makeNameSignature(arr[i])])) {
+                MergeHelper.moveItemIdentifiers(tmp, tmp2);
+                MergeHelper.moveReifier(tmp, tmp2);
+                MergeHelper.moveVariants(tmp, tmp2);
+                tmp.remove();
+            } else {
+                tmp2 = this.createName(tmp.getValue(), tmp.getType(), tmp.getScope());
+                MergeHelper.moveVariants(tmp, tmp2);
+            }
+        }
+
+        // merge occurrences
+        arr = this.getOccurrences();
+        signatures = {};
+        for (i=0; i<arr.length; i+=1) {
+            signatures[SignatureGenerator.makeOccurrenceSignature(arr[i])] = arr[i];
+        }
+        arr = other.getOccurrences();
+        for (i=0; i<arr.length; i+=1) {
+            tmp = arr[i];
+            if ((tmp2 = signatures[SignatureGenerator.makeOccurrenceSignature(arr[i])])) {
+                MergeHelper.moveItemIdentifiers(tmp, tmp2);
+                MergeHelper.moveReifier(tmp, tmp2);
+                tmp.remove();
+            } else {
+                tmp2 = this.createOccurrence(tmp.getType(), tmp.getValue(),
+                    tmp.getDatatype(), tmp.getScope());
+                MergeHelper.moveReifier(tmp, tmp2);
+            }
+        }
+
+        other.remove();
     };
     
     // Removes this topic from the containing TopicMap instance.
@@ -1315,6 +1413,10 @@ TM = (function () {
         }
         this.getTopicMap()._removeVariant(variant);
     };
+
+    Name.prototype.getVariants = function () {
+        return this.variants;
+    };
     
     Variant = function (parnt, value, datatype) {
         if (value === null) { throw {name: 'ModelConstraintException',
@@ -1491,7 +1593,7 @@ TM = (function () {
     // Returns all roles with the specified type.
     Association.prototype.getRoles = function (type) {
         if (type === null) { throw {name: 'IllegalArgumentException',
-            message: 'Topic.getRolesPlayed cannot be called with type null'}; }
+            message: 'Topic.getRoles cannot be called with type null'}; }
         if (!type) { return this.roles; }
         var ret = [], i; 
         for (i=0; i<this.roles.length; i+=1) {
@@ -2264,6 +2366,117 @@ TM = (function () {
             construct.getTopicMap().addThemeEvent.fire(construct, {theme: null});
         }
     };
+
+    /** Helper class for generating signatures of Topic Maps constructs. */
+    SignatureGenerator = {
+        makeNameValueSignature: function (name) {
+            return name.getValue();
+        },
+
+        makeNameSignature: function (name) {
+            return SignatureGenerator.makeNameValueSignature(name) +
+                '#' + SignatureGenerator.makeTypeSignature(name) +
+                '#' + SignatureGenerator.makeScopeSignature(name);
+        },
+
+        makeOccurrenceSignature: function (occ) {
+            return SignatureGenerator.makeOccurrenceValueSignature(occ) +
+                '#' + SignatureGenerator.makeTypeSignature(occ) +
+                '#' + SignatureGenerator.makeScopeSignature(occ);
+        },
+
+        makeOccurrenceValueSignature: function (occ) {
+            return '#' + occ.getValue() + '#' +
+                (occ.getDatatype() ? occ.getDatatype().getReference() : 'null');
+        },
+
+        makeTypeSignature: function(obj) {
+            var type = obj.getType();
+            if (type) {
+                return type.getId();
+            } else {
+                return '';
+            }
+        },
+
+        makeScopeSignature: function (scope) {
+            var i, arr = [];
+            for (i=0; i<scope.length; i+=1) {
+                arr.push(scope[i].getId());
+            }
+            arr.sort();
+            return arr.join('#');
+        },
+
+        makeAssociationSignature: function (ass) {
+            var roles, i, tmp = [];
+            roles = ass.getRoles();
+            for (i=0; i<roles.length; i+=1) {
+                tmp.push(SignatureGenerator.makeTypeSignature(roles[i]) +
+                    '#' + roles[i].getPlayer().getId());
+            }
+            tmp.sort();
+        
+            return '#' + SignatureGenerator.makeTypeSignature(ass) + '#' + tmp.join('#') +
+                SignatureGenerator.makeScopeSignature(ass);
+        },
+
+        makeVariantValueSignature: function (variant) {
+            return '#' + variant.getValue() + '#' + variant.getDatatype().getReference();
+        },
+
+        makeVariantSignature: function (variant) {
+            return SignatureGenerator.makeVariantValueSignature(variant) +
+                '#' + SignatureGenerator.makeScopeSignature(variant);
+        }
+    };
+
+    MergeHelper = {
+        moveItemIdentifiers: function (source, target) {
+            var iis, ii;
+            iis = source.getItemIdentifiers();
+            while (iis.length) {
+                ii = iis[iis.length - 1];
+                source.removeItemIdentifier(ii);
+                target.addItemIdentifier(ii);
+            }
+        },
+
+        /** Moves variants from the name source to the name target */
+        moveVariants: function (source, target) {
+            var arr, i, tmp, tmp2, signatures;
+            arr = target.getVariants();
+            signatures = {};
+            for (i=0; i<arr.length; i+=1) {
+                signatures[SignatureGenerator.makeVariantSignature(arr[i])] = arr[i];
+            }
+            arr = source.getVariants();
+            for (i=0; i<arr.length; i+=1) {
+                tmp = arr[i];
+                if ((tmp2 = signatures[SignatureGenerator.makeVariantSignature(arr[i])])) {
+                    MergeHelper.moveItemIdentifiers(tmp, tmp2);
+                    MergeHelper.moveReifier(tmp, tmp2);
+                    tmp.remove();
+                } else {
+                    target.createVariant(tmp.getValue(), tmp.getDatatype(), tmp.getScope());
+                }
+            }
+        },
+
+        moveReifier: function (source, target) {
+            var r1, r2;
+            if (source.getReifier() === null) {
+                return;
+            } else if (target.getReifier() === null) {
+                target.setReifier(source.getReifier());
+            } else {
+                r1 = source.getReifier();
+                r2 = target.getReifier();
+                source.setReifier(null);
+                r1.mergeIn(r2);
+            }
+        }
+    };
     
 
     // Export objects into the TM namespace
@@ -2276,7 +2489,7 @@ TM = (function () {
 TopicMapSystemFactory = TM.TopicMapSystemFactory; 
 
 // Check if we are in a CommonJS environment (e.g. node.js)
-if (typeof exports === 'object' && export !== null) {
+if (typeof exports === 'object' && exports !== null) {
     exports.TopicMapSystemFactory = TopicMapSystemFactory;
 }
 

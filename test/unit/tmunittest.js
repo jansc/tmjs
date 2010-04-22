@@ -23,13 +23,14 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 
 /*jslint browser: true, devel: true, onevar: true, undef: true, nomen: false, eqeqeq: true, plusplus: true, bitwise: true, regexp: true, newcap: true, immed: true */
-/*global  TopicMapSystem*/ 
+/*global  TopicMapSystem, TopicMapSystemFactory*/ 
 
 var TMUnitTest = {
 addCommonSetupFunctions:
     function (obj) {
-        obj._defaultAddress = 'http://www.tmapi.org/tmapi2.0';
-        var tmsf = TopicMapSystemFactory.newInstance();
+        var tmsf;
+        obj._defaultAddress = "http://www.tmapi.org/tmapi2.0";
+        tmsf = TopicMapSystemFactory.newInstance();
         obj._tms = tmsf.newTopicMapSystem();
         obj._defaultLocator = obj._tms.createLocator(obj._defaultAddress);
         obj._tm = obj._tms.createTopicMap(obj._defaultLocator);
