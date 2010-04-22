@@ -133,6 +133,89 @@ new Test.Unit.Runner({
             name.createVariant("Variant", null);
         }, "Creation of a variant with a null scope is not allowed");
     }}
+
+/*
+    TODO: Implement new tests from tmapi-2.0.2:
+
+     public void testVariantCreationIllegalEmptyArrayScope() {
+         final Name name = createName();
+         try {
+             name.createVariant("Variant");
+             fail("Creation of a variant with an empty scope is not allowed");
+         }
+         catch (ModelConstraintException ex) {
+             // noop.
+         }
+     }
+ 
+     public void testVariantCreationWithLocatorIllegalEmptyScope() {
+         final Name name = createName();
+         try {
+             name.createVariant(createLocator("http://tmapi.org"), Collections.<Topic>emptySet());
+             fail("Creation of a variant with an empty scope is not allowed");
+         }
+         catch (ModelConstraintException ex) {
+             // noop.
+         }
+     }
+ 
+     public void testVariantCreationWithLocatorIllegalNullScope() {
+         final Name name = createName();
+         try {
+             name.createVariant(createLocator("http://tmapi.org"), (Topic[])null);
+             fail("Creation of a variant with a null scope is not allowed");
+         }
+         catch (ModelConstraintException ex) {
+             // noop.
+         }
+     }
+ 
+     public void testVariantCreationWithLocatorIllegalEmptyArrayScope() {
+         final Name name = createName();
+         try {
+             name.createVariant(createLocator("http://tmapi.org"));
+             fail("Creation of a variant with an empty scope is not allowed");
+         }
+         catch (ModelConstraintException ex) {
+             // noop.
+         }
+     }
+ 
+     public void testVariantCreationWithDataTypeIllegalEmptyScope() {
+         final Name name = createName();
+         try {
+             final Locator dt = createLocator("http://www.example.org/datatype");
+             name.createVariant("Variant", dt, Collections.<Topic>emptySet());
+             fail("Creation of a variant with an empty scope is not allowed");
+         }
+         catch (ModelConstraintException ex) {
+             // noop.
+         }
+     }
+ 
+     public void testVariantCreationWithDataTypeIllegalNullScope() {
+         final Name name = createName();
+         try {
+             final Locator dt = createLocator("http://www.example.org/datatype");
+             name.createVariant("Variant", dt, (Topic[])null);
+             fail("Creation of a variant with a null scope is not allowed");
+         }
+         catch (ModelConstraintException ex) {
+             // noop.
+         }
+     }
+     public void testVariantCreationWithDataTypeIllegalEmptyArrayScope() {
+         final Name name = createName();
+         try {
+             final Locator dt = createLocator("http://www.example.org/datatype");
+             name.createVariant("Variant", dt);
+             fail("Creation of a variant with an empty scope is not allowed");
+         }
+         catch (ModelConstraintException ex) {
+             // noop.
+         }
+     }
+*/
 });
 
 

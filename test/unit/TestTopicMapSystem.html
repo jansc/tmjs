@@ -73,6 +73,22 @@ var tmp = new Test.Unit.Runner({
         loc = this._tms.createLocator(ref);
         this.assertEqual(ref, loc.getReference());
     }
+
+    /* TODO Implement new test from tmapi-2.0.2:
+     public void testTopicMapLocator() throws Exception {
+         final String ref = "http://www.tmapi.org/";
+         final Locator loc = _sys.createLocator(ref+"2");
+         TopicMap tm = _sys.createTopicMap(ref);
+         assertEquals(ref, tm.getLocator().getReference());
+         assertEquals(tm, _sys.getTopicMap(ref));
+         tm.close();
+         tm = _sys.createTopicMap(loc);
+         assertEquals(loc, tm.getLocator());
+         assertEquals(tm, _sys.getTopicMap(loc));
+         tm.close();
+     }
+    */
+
 });
 
 
