@@ -1,0 +1,373 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>TestTopicMerge</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <script type="text/javascript" src="../assets/jsunittest.js"></script>
+  <script type="text/javascript" src="../../src/tm-src.js"></script>
+  <script type="text/javascript" src="datatypeaware.js"></script>
+  <script type="text/javascript" src="tmunittest.js"></script>
+  <link type="text/css" rel="stylesheet" href="../assets/unittest.css" />
+</head>
+<body>
+
+<!-- Log output -->
+<div id="testlog"> </div>
+
+<!-- Tests -->
+<script type="text/javascript" language="javascript">
+// <![CDATA[
+
+var tmp = new Test.Unit.Runner({
+    setup: function() {
+        TMUnitTest.addCommonSetupFunctions(this);
+    },
+
+    teardown: function() {
+        TMUnitTest.addCommonTeardownFunctions(this);
+    },
+
+    testTopicMergeNoop: function () {
+        var sid, topic;
+        sid = this.createLocator("http://www.tmapi.org/test/me");
+        topic = this._tm.createTopicBySubjectIdentifier(sid);
+        this.assertEqual(1, this._tm.getTopics().length);
+        this.assertEqual(topic, this._tm.getTopicBySubjectIdentifier(sid));
+        topic.mergeIn(topic);
+        this.assertEqual(1, this._tm.getTopics().length);
+        this.assertEqual(topic, this._tm.getTopicBySubjectIdentifier(sid));
+    },
+
+    /**
+     * Tests if the types are merged too
+     */
+    testTypesMerged: function () {
+        var t1, t2, t3;
+        t1 = this.createTopic();
+        t2 = this.createTopic();
+        t3 = this.createTopic();
+        t2.addType(t3);
+        this.assert(t2.getTypes().contains(t3));
+        this.assertEqual(0, t1.getTypes().length);
+        t1.mergeIn(t2);
+        this.assert(t1.getTypes().contains(t3), "topic must have a type now");
+    },
+
+    /**
+     * If topics reify different Topic Maps constructs they cannot be merged.
+     */
+    testReifiedClash: function () {
+        var topic1, topic2, assoc1, assoc2;
+        topic1 = this.createTopic();
+        topic2 = this.createTopic();
+        assoc1 = this.createAssociation();
+        assoc2 = this.createAssociation();
+        assoc1.setReifier(topic1);
+        assoc2.setReifier(topic2);
+        this.assertEqual(topic1, assoc1.getReifier());
+        this.assertEqual(topic2, assoc2.getReifier());
+        this.assertRaise('ModelConstraintException', function() {
+            topic1.mergeIn(topic2);
+        }, "The topics reify different Topic Maps constructs and cannot be merged");
+    },
+
+    /**
+     * Tests if a topic overtakes all roles played of the other topic.
+     */
+    testRolePlaying: function () {
+        var topic1, topic2, assoc, role;
+        topic1 = this.createTopic();
+        topic2 = this.createTopic();
+        assoc = this.createAssociation();
+        role = assoc.createRole(this.createTopic(), topic2);
+        this.assertEqual(4, this._tm.getTopics().length);
+        this.assert(!topic1.getRolesPlayed().contains(role));
+        this.assert(topic2.getRolesPlayed().contains(role));
+        topic1.mergeIn(topic2);
+        this.assertEqual(3, this._tm.getTopics().length);
+        this.assert(topic1.getRolesPlayed().contains(role));
+    },
+
+    /**
+     * Tests if the subject identifiers are overtaken.
+     */
+    testIdentitySubjectIdentifier: function () {
+        var sid1, sid2, topic1, topic2;
+        sid1 = this._tm.createLocator("http://psi.exmaple.org/sid-1");
+        sid2 = this._tm.createLocator("http://psi.exmaple.org/sid-2");
+        topic1 = this._tm.createTopicBySubjectIdentifier(sid1);
+        topic2 = this._tm.createTopicBySubjectIdentifier(sid2);
+        this.assert(topic1.getSubjectIdentifiers().contains(sid1));
+        this.assert(!topic1.getSubjectIdentifiers().contains(sid2));
+        this.assert(!topic2.getSubjectIdentifiers().contains(sid1));
+        this.assert(topic2.getSubjectIdentifiers().contains(sid2));
+        topic1.mergeIn(topic2);
+        this.assertEqual(2, topic1.getSubjectIdentifiers().length);
+        this.assert(topic1.getSubjectIdentifiers().contains(sid1));
+        this.assert(topic1.getSubjectIdentifiers().contains(sid2));
+    },
+
+    /**
+     * Tests if the subject locator are overtaken.
+     */
+    testIdentitySubjectLocator: function () {
+        var slo1, slo2, topic1, topic2;
+        slo1 = this._tm.createLocator("http://tinytim.sf.net");
+        slo2 = this._tm.createLocator("http://tinytim.sourceforge.net");
+        topic1 = this._tm.createTopicBySubjectLocator(slo1);
+        topic2 = this._tm.createTopicBySubjectLocator(slo2);
+        this.assert(topic1.getSubjectLocators().contains(slo1));
+        this.assert(!topic1.getSubjectLocators().contains(slo2));
+        this.assert(!topic2.getSubjectLocators().contains(slo1));
+        this.assert(topic2.getSubjectLocators().contains(slo2));
+        topic1.mergeIn(topic2);
+        this.assertEqual(2, topic1.getSubjectLocators().length);
+        this.assert(topic1.getSubjectLocators().contains(slo1));
+        this.assert(topic1.getSubjectLocators().contains(slo2));
+    },
+
+    /**
+     * Tests if the item identifiers are overtaken.
+     */
+    testIdentityItemIdentifier: function () {
+        var iid1, iid2, topic1, topic2;
+        iid1 = this._tm.createLocator("http://tinytim.sf.net/test#1");
+        iid2 = this._tm.createLocator("http://tinytim.sf.net/test#2");
+        topic1 = this._tm.createTopicByItemIdentifier(iid1);
+        topic2 = this._tm.createTopicByItemIdentifier(iid2);
+        this.assert(topic1.getItemIdentifiers().contains(iid1));
+        this.assert(!topic1.getItemIdentifiers().contains(iid2));
+        this.assert(!topic2.getItemIdentifiers().contains(iid1));
+        this.assert(topic2.getItemIdentifiers().contains(iid2));
+        topic1.mergeIn(topic2);
+        this.assertEqual(2, topic1.getItemIdentifiers().length);
+        this.assert(topic1.getItemIdentifiers().contains(iid1));
+        this.assert(topic1.getItemIdentifiers().contains(iid2));
+    },
+
+    /**
+     * Tests if merging detects duplicates and that the reifier is kept.
+     */
+    testDuplicateDetectionReifier: function () {
+        var topic1, topic2, reifier, type, nametype, name1, name2;
+        topic1 = this._tm.createTopic();
+        topic2 = this._tm.createTopic();
+        reifier = this._tm.createTopic();
+        type = this._tm.createTopic();
+        nametype = this._tm.createTopic();
+        name1 = topic1.createName(type, nametype, "TMAPI");
+        name2 = topic2.createName(type, nametype, "TMAPI");
+        this.assertEqual(5, this._tm.getTopics().length);
+        name1.setReifier(reifier);
+        this.assertEqual(reifier, name1.getReifier());
+        this.assertEqual(1, topic1.getNames().length);
+        this.assert(topic1.getNames().contains(name1));
+        this.assertEqual(1, topic2.getNames().length);
+        this.assert(topic2.getNames().contains(name2));
+        topic1.mergeIn(topic2);
+        this.assertEqual(4, this._tm.getTopics().length);
+        this.assertEqual(1, topic1.getNames().length);
+        name = topic1.getNames()[0];
+        this.assertEqual(reifier, name.getReifier());
+    },
+
+    /**
+     * Tests if merging detects duplicates and merges the reifiers of the
+     * duplicates.
+     */
+    testDuplicateDetectionReifierMerge: function () {
+        var topic1, topic2, reifier1, reifier2, type, nametype, name1, name2,
+            reifier, topics, i;
+        topic1 = this._tm.createTopic();
+        topic2 = this._tm.createTopic();
+        reifier1 = this._tm.createTopic();
+        reifier2 = this._tm.createTopic();
+        type = this._tm.createTopic();
+        nametype = this._tm.createTopic();
+        name1 = topic1.createName(type, nametype, "TMAPI");
+        name2 = topic2.createName(type, nametype, "TMAPI");
+        this.assertEqual(6, this._tm.getTopics().length);
+        name1.setReifier(reifier1);
+        name2.setReifier(reifier2);
+        this.assertEqual(reifier1, name1.getReifier());
+        this.assertEqual(reifier2, name2.getReifier());
+        this.assertEqual(1, topic1.getNames().length);
+        this.assert(topic1.getNames().contains(name1));
+        this.assertEqual(1, topic2.getNames().length);
+        this.assert(topic2.getNames().contains(name2));
+        topic1.mergeIn(topic2);
+        this.assertEqual(4, this._tm.getTopics().length);
+        this.assertEqual(1, topic1.getNames().length);
+        name = topic1.getNames()[0];
+        reifier = null;
+        topics = this._tm.getTopics();
+        for (i=0; i<topics.length; i += 1) {
+            if (!topics[i].equals(topic1) && !topics[i].equals(type)) {
+                reifier = topics[i];
+                break;
+            }
+        }
+        this.assertEqual(reifier, name.getReifier());
+    },
+
+    /**
+     * Tests if merging detects duplicate associations.
+     */
+    testDuplicateSuppressionAssociation: function () {
+        var topic1, topic2, roleType, type, assoc1, assoc2, role1, role2, role;
+        topic1 = this.createTopic();
+        topic2 = this.createTopic();
+        roleType = this.createTopic();
+        type = this.createTopic();
+        assoc1 =  this._tm.createAssociation(type);
+        assoc2 = this._tm.createAssociation(type);
+        role1 = assoc1.createRole(roleType, topic1);
+        role2 = assoc2.createRole(roleType, topic2);
+        this.assertEqual(4, this._tm.getTopics().length);
+        this.assertEqual(2, this._tm.getAssociations().length);
+        this.assert(topic1.getRolesPlayed().contains(role1));
+        this.assert(topic2.getRolesPlayed().contains(role2));
+        this.assertEqual(1, topic1.getRolesPlayed().length);
+        this.assertEqual(1, topic2.getRolesPlayed().length);
+        topic1.mergeIn(topic2);
+        this.assertEqual(3, this._tm.getTopics().length);
+        this.assertEqual(1, this._tm.getAssociations().length);
+        role = topic1.getRolesPlayed()[0];
+        this.assertEqual(roleType, role.getType());
+    },
+
+    /**
+     * Tests if merging detects duplicate names.
+     */
+    testDuplicateSuppressionName: function () {
+        var topic1, topic2, nametype, name1, name2, name3;
+        topic1 = this._tm.createTopic();
+        topic2 = this._tm.createTopic();
+        nametype = this._tm.createTopic();
+        name1 = topic1.createName("TMAPI", nametype);
+        name2 = topic2.createName("TMAPI", nametype);
+        name3 = topic2.createName("tiny Topic Maps engine", nametype);
+        this.assertEqual(1, topic1.getNames().length);
+        this.assert(topic1.getNames().contains(name1));
+        this.assertEqual(2, topic2.getNames().length);
+        this.assert(topic2.getNames().contains(name2));
+        this.assert(topic2.getNames().contains(name3));
+        topic1.mergeIn(topic2);
+        this.assertEqual(2, topic1.getNames().length);
+    },
+
+    /**
+     * Tests if merging detects duplicate names and moves the variants.
+     */
+    testDuplicateSuppressionName2: function() {
+        var topic1, topic2, nametype, name1, name2, variant, tmpName, tmpVar;
+        topic1 = this._tm.createTopic();
+        topic2 = this._tm.createTopic();
+        nametype = this._tm.createTopic();
+        name1 = topic1.createName("TMAPI", nametype);
+        name2 = topic2.createName("TMAPI", nametype);
+        variant = name2.createVariant("tiny", this._tm.createLocator(this._XSD_STRING), this.createTopic());
+        this.assertEqual(1, topic1.getNames().length);
+        this.assert(topic1.getNames().contains(name1));
+        this.assertEqual(0, name1.getVariants().length); 
+        this.assertEqual(1, topic2.getNames().length);
+        this.assert(topic2.getNames().contains(name2));
+        this.assertEqual(1, name2.getVariants().length);
+        this.assert(name2.getVariants().contains(variant));
+        topic1.mergeIn(topic2);
+        this.assertEqual(1, topic1.getNames().length);
+        tmpName = topic1.getNames()[0];
+        this.assertEqual(1, tmpName.getVariants().length);
+        tmpVar = tmpName.getVariants()[0];
+        this.assertNotUndefined(tmpVar);
+        if (typeof tmpVar !== 'undefined') {
+            this.assertEqual("tiny", tmpVar.getValue());
+        }
+    },
+
+    /**
+     * Tests if merging detects duplicate names and sets the item 
+     * identifier to the union of both names.
+     */
+    testDuplicateSuppressionNameMoveItemIdentifiers: function () {
+        var topic1, topic2, iid1, iid2, name1, name2, name, nametype;
+        topic1 = this._tm.createTopic();
+        topic2 = this._tm.createTopic();
+        iid1 = this._tm.createLocator("http://example.org/iid-1");
+        iid2 = this._tm.createLocator("http://example.org/iid-2");
+        nametype = this._tm.createTopic();
+        name1 = topic1.createName("TMAPI", nametype);
+        name2 = topic2.createName("TMAPI", nametype);
+        name1.addItemIdentifier(iid1);
+        name2.addItemIdentifier(iid2);
+        this.assert(name1.getItemIdentifiers().contains(iid1));
+        this.assert(name2.getItemIdentifiers().contains(iid2));
+        this.assertEqual(1, topic1.getNames().length);
+        this.assert(topic1.getNames().contains(name1));
+        this.assertEqual(1, topic2.getNames().length);
+        this.assert(topic2.getNames().contains(name2));
+        topic1.mergeIn(topic2);
+        this.assertEqual(1, topic1.getNames().length);
+        name = topic1.getNames()[0];
+        this.assertEqual(2, name.getItemIdentifiers().length);
+        this.assert(name.getItemIdentifiers().contains(iid1));
+        this.assert(name.getItemIdentifiers().contains(iid2));
+        this.assertEqual("TMAPI", name.getValue());
+    },
+
+    /**
+     * Tests if merging detects duplicate occurrences.
+     */
+    testDuplicateSuppressionOccurrence: function() {
+        var topic1, topic2, occType, occ1, occ2, occ3;
+        topic1 = this._tm.createTopic();
+        topic2 = this._tm.createTopic();
+        occType = this.createTopic();
+        occ1 = topic1.createOccurrence(occType, "TMAPI");
+        occ2 = topic2.createOccurrence(occType, "TMAPI");
+        occ3 = topic2.createOccurrence(occType, "tiny Topic Maps engine");
+        this.assertEqual(1, topic1.getOccurrences().length);
+        this.assert(topic1.getOccurrences().contains(occ1));
+        this.assertEqual(2, topic2.getOccurrences().length);
+        this.assert(topic2.getOccurrences().contains(occ2));
+        this.assert(topic2.getOccurrences().contains(occ3));
+        topic1.mergeIn(topic2);
+        this.assertEqual(2, topic1.getOccurrences().length);
+    },
+
+    /**
+     * Tests if merging detects duplicate occurrences and sets the item 
+     * identifier to the union of both occurrences.
+     */
+    testDuplicateSuppressionOccurrenceMoveItemIdentifiers: function () {
+        var topic1, topic2, iid1, iid2, occType, occ1, occ2, occ;
+        topic1 = this._tm.createTopic();
+        topic2 = this._tm.createTopic();
+        iid1 = this._tm.createLocator("http://example.org/iid-1");
+        iid2 = this._tm.createLocator("http://example.org/iid-2");
+        occType = this.createTopic();
+        occ1 = topic1.createOccurrence(occType, "TMAPI");
+        occ1.addItemIdentifier(iid1);
+        this.assert(occ1.getItemIdentifiers().contains(iid1));
+        occ2 = topic2.createOccurrence(occType, "TMAPI");
+        occ2.addItemIdentifier(iid2);
+        this.assert(occ2.getItemIdentifiers().contains(iid2));
+        this.assertEqual(1, topic1.getOccurrences().length);
+        this.assert(topic1.getOccurrences().contains(occ1));
+        this.assertEqual(1, topic2.getOccurrences().length);
+        this.assert(topic2.getOccurrences().contains(occ2));
+        topic1.mergeIn(topic2);
+        this.assertEqual(1, topic1.getOccurrences().length);
+        occ = topic1.getOccurrences()[0];
+        this.assertEqual(2, occ.getItemIdentifiers().length);
+        this.assert(occ.getItemIdentifiers().contains(iid1));
+        this.assert(occ.getItemIdentifiers().contains(iid2));
+        this.assertEqual("TMAPI", occ.getValue());
+    }
+
+});
+// ]]>
+</script>
+</body>
+</html>
