@@ -111,7 +111,8 @@ TM = (function () {
     EventType.REMOVE_ROLE = 11;
     EventType.REMOVE_THEME = 12;
     EventType.REMOVE_TOPIC = 13;
-    EventType.SET_TYPE = 14;
+    EventType.REMOVE_TYPE = 14;
+    EventType.SET_TYPE = 15;
 
     // -----------------------------------------------------------------------
     // TODO: The locator functions need some more work. Implement resolve()
@@ -722,6 +723,7 @@ TM = (function () {
         this.removeRoleEvent = new EventHandler(EventType.REMOVE_ROLE);
         this.removeThemeEvent = new EventHandler(EventType.REMOVE_THEME);
         this.removeTopicEvent = new EventHandler(EventType.REMOVE_TOPIC);
+        this.removeTypeEvent = new EventHandler(EventType.REMOVE_TYPE); 
         this.setTypeEvent = new EventHandler(EventType.SET_TYPE);
         this.typeInstanceIndex = new TypeInstanceIndex(this);
         this.scopedIndex = new ScopedIndex(this);
@@ -755,6 +757,8 @@ TM = (function () {
                 this.removeThemeEvent.registerHandler(handler); break;
             case EventType.REMOVE_TOPIC:
                 this.removeTopicEvent.registerHandler(handler); break;
+            case EventType.REMOVE_TYPE:
+                this.removeTypeEvent.registerHandler(handler); break;
             case EventType.SET_TYPE:
                 this.setTypeEvent.registerHandler(handler); break;
         }
@@ -1204,7 +1208,7 @@ TM = (function () {
     
     // Merges another topic into this topic.
     Topic.prototype.mergeIn = function (other) {
-        var arr, i, tmp, tmp2, signatures, occ, name;
+        var arr, i, tmp, tmp2, signatures, occ, name, tiidx, sidx;
         if (this.equals(other)) {
             return true;
         }
@@ -1220,6 +1224,27 @@ TM = (function () {
             tmp = other.getReified();
             tmp.setReifier(this);
         }
+
+        // Change all constructs that use other as type
+        tiidx = this.parnt.typeInstanceIndex;
+        MergeHelper.moveTypes(tiidx.getOccurrences(other), this);
+        MergeHelper.moveTypes(tiidx.getNames(other), this);
+        MergeHelper.moveTypes(tiidx.getAssociations(other), this);
+        MergeHelper.moveTypes(tiidx.getRoles(other), this);
+
+        // Change all topics that have other as type
+        arr = tiidx.getTopics(other);
+        for (i = 0; i < arr.length; i += 1) {
+            arr[i].removeType(other);
+            arr[i].addType(this);
+        }
+
+        // Change all constructs that use other as theme
+        sidx = this.parnt.scopedIndex;
+        MergeHelper.moveThemes(sidx.getAssociations(other), other, this);
+        MergeHelper.moveThemes(sidx.getOccurrences(other), other, this);
+        MergeHelper.moveThemes(sidx.getNames(other), other, this);
+        MergeHelper.moveThemes(sidx.getVariants(other), other, this);
 
         MergeHelper.moveItemIdentifiers(other, this);
 
@@ -1357,6 +1382,7 @@ TM = (function () {
         for (var i=0; i<this.types.length; i+=1) {
             if (this.types[i].equals(type)) {
                 this.types.splice(i, 1);
+                this.parnt.removeTypeEvent.fire(this, {type: type});
                 break;
             }
         }
@@ -1886,6 +1912,20 @@ TM = (function () {
                     that.type2occurrences.remove(source.getId());
                     that.type2variants.remove(source.getId());
                     break;
+                case EventType.REMOVE_TYPE:
+                    existing = that.type2topics.get(obj.type.getId());
+                    existing.remove(source.getId());
+                    if (!existing.size()) {
+                        that.type2topics.remove(obj.type.getId());
+                    }
+                    if (source.getTypes().length === 0) {
+                        untyped = that.type2topics.get('null');
+                        if (typeof untyped === 'undefined') {
+                            untyped = new Hash();
+                        }
+                        untyped.put(source.getId(), source);
+                    }
+                    break;
                 case EventType.SET_TYPE:
                     if (source.isAssociation()) {
                         // remove source from type2associations(obj.old.getId());
@@ -1973,6 +2013,7 @@ TM = (function () {
         tm.removeOccurrenceEvent.registerHandler(eventHandler);
         tm.removeRoleEvent.registerHandler(eventHandler);
         tm.removeTopicEvent.registerHandler(eventHandler);
+        tm.removeTypeEvent.registerHandler(eventHandler);
         tm.setTypeEvent.registerHandler(eventHandler);
     };
 
@@ -2537,6 +2578,20 @@ TM = (function () {
     };
 
     MergeHelper = {
+        moveTypes: function (arr, target) {
+            var i;
+            for (i = 0; i < arr.length; i += 1) {
+                arr[i].setType(target);
+            }
+        },
+
+        moveThemes: function (arr, source, target) {
+            for (var i = 0; i < arr.length; i += 1) {
+                arr[i].removeTheme(source);
+                arr[i].addTheme(target);
+            }
+        },
+
         moveItemIdentifiers: function (source, target) {
             var iis, ii;
             iis = source.getItemIdentifiers();

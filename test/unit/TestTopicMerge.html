@@ -155,10 +155,9 @@ var tmp = new Test.Unit.Runner({
         topic2 = this._tm.createTopic();
         reifier = this._tm.createTopic();
         type = this._tm.createTopic();
-        nametype = this._tm.createTopic();
-        name1 = topic1.createName(type, nametype, "TMAPI");
-        name2 = topic2.createName(type, nametype, "TMAPI");
-        this.assertEqual(5, this._tm.getTopics().length);
+        name1 = topic1.createName("TMAPI", type);
+        name2 = topic2.createName("TMAPI", type);
+        this.assertEqual(4, this._tm.getTopics().length);
         name1.setReifier(reifier);
         this.assertEqual(reifier, name1.getReifier());
         this.assertEqual(1, topic1.getNames().length);
@@ -166,7 +165,7 @@ var tmp = new Test.Unit.Runner({
         this.assertEqual(1, topic2.getNames().length);
         this.assert(topic2.getNames().contains(name2));
         topic1.mergeIn(topic2);
-        this.assertEqual(4, this._tm.getTopics().length);
+        this.assertEqual(3, this._tm.getTopics().length);
         this.assertEqual(1, topic1.getNames().length);
         name = topic1.getNames()[0];
         this.assertEqual(reifier, name.getReifier());
@@ -184,10 +183,9 @@ var tmp = new Test.Unit.Runner({
         reifier1 = this._tm.createTopic();
         reifier2 = this._tm.createTopic();
         type = this._tm.createTopic();
-        nametype = this._tm.createTopic();
-        name1 = topic1.createName(type, nametype, "TMAPI");
-        name2 = topic2.createName(type, nametype, "TMAPI");
-        this.assertEqual(6, this._tm.getTopics().length);
+        name1 = topic1.createName("TMAPI", type);
+        name2 = topic2.createName("TMAPI", type);
+        this.assertEqual(5, this._tm.getTopics().length);
         name1.setReifier(reifier1);
         name2.setReifier(reifier2);
         this.assertEqual(reifier1, name1.getReifier());
@@ -197,7 +195,7 @@ var tmp = new Test.Unit.Runner({
         this.assertEqual(1, topic2.getNames().length);
         this.assert(topic2.getNames().contains(name2));
         topic1.mergeIn(topic2);
-        this.assertEqual(4, this._tm.getTopics().length);
+        this.assertEqual(3, this._tm.getTopics().length);
         this.assertEqual(1, topic1.getNames().length);
         name = topic1.getNames()[0];
         reifier = null;
@@ -364,8 +362,133 @@ var tmp = new Test.Unit.Runner({
         this.assert(occ.getItemIdentifiers().contains(iid1));
         this.assert(occ.getItemIdentifiers().contains(iid2));
         this.assertEqual("TMAPI", occ.getValue());
-    }
+    },
 
+    testOccurrenceTypeChange: function () {
+        var topic, topic1, topic2, occurrence;
+        topic = this.createTopic();
+        topic1 = this.createTopic();
+        topic2 = this.createTopic();
+        occurrence = topic.createOccurrence(topic1, "quux");
+        this.assert(topic1.equals(occurrence.getType()));
+        topic2.mergeIn(topic1);
+        this.assert(topic2.equals(occurrence.getType()));
+    },
+
+    testNameTypeChange: function () {
+        var topic, topic1, topic2, name;
+        topic = this.createTopic();
+        topic1 = this.createTopic();
+        topic2 = this.createTopic();
+        name = topic.createName("quux", topic1);
+        this.assert(topic1.equals(name.getType()));
+        topic2.mergeIn(topic1);
+        this.assert(topic2.equals(name.getType()));
+    },
+
+    testAssociationTypeChange: function () {
+        var topic1, topic2, association;
+        topic1 = this.createTopic();
+        topic2 = this.createTopic();
+        association = this._tm.createAssociation(topic1);
+        this.assert(topic1.equals(association.getType()));
+        topic2.mergeIn(topic1);
+        this.assert(topic2.equals(association.getType()));
+    },
+
+    testRoleTypeChange: function () {
+        var topic1, topic2, player, role, association;
+        topic1 = this.createTopic();
+        topic2 = this.createTopic();
+        player = this.createTopic();
+        association = this.createAssociation();
+        role = association.createRole(topic1, player);
+        this.assert(topic1.equals(role.getType()));
+        topic2.mergeIn(topic1);
+        this.assert(topic2.equals(role.getType()));
+    },
+
+    testTopicTypeChange: function () {
+        var topic1, topic2, topic;
+        topic = this.createTopic();
+        topic1 = this.createTopic();
+        topic2 = this.createTopic();
+        topic.addType(topic1);
+        this.assert(topic.getTypes().contains(topic1));
+        this.assert(!topic.getTypes().contains(topic2));
+        topic2.mergeIn(topic1);
+        this.assert(topic.getTypes().contains(topic2));
+    },
+
+    testTopicTypeChange2: function () {
+        var topic1, topic2, topic, type;
+        topic = this.createTopic();
+        type = this.createTopic();
+        topic1 = this.createTopic();
+        topic2 = this.createTopic();
+        topic.addType(topic1);
+        topic.addType(type);
+        this.assert(topic.getTypes().contains(topic1));
+        this.assert(topic.getTypes().contains(type));
+        this.assert(!topic.getTypes().contains(topic2));
+        topic2.mergeIn(topic1);
+        this.assert(topic.getTypes().contains(topic2));
+        this.assert(topic.getTypes().contains(type));
+    },
+
+    testAssociationScopeChange: function () {
+        var topic1, topic2, association;
+        topic1 = this.createTopic();
+        topic2 = this.createTopic();
+        association = this._tm.createAssociation(this.createTopic(),
+            topic1);
+        this.assert(association.getScope().contains(topic1));
+        this.assert(!association.getScope().contains(topic2));
+        topic2.mergeIn(topic1);
+        this.assert(association.getScope().contains(topic2));
+        this.assert(!association.getScope().contains(topic1));
+    },
+
+    testOccurrenceScopeChange: function () {
+        var topic, topic1, topic2, occurrence;
+        topic = this.createTopic();
+        topic1 = this.createTopic();
+        topic2 = this.createTopic();
+        occurrence = topic.createOccurrence(this.createTopic(),
+            "semanticheadache", this._XSD_STRING, topic1);
+        this.assert(occurrence.getScope().contains(topic1));
+        this.assert(!occurrence.getScope().contains(topic2));
+        topic2.mergeIn(topic1);
+        this.assert(occurrence.getScope().contains(topic2));
+        this.assert(!occurrence.getScope().contains(topic1));
+    },
+
+    testNameScopeChange: function () {
+        var topic, topic1, topic2, name;
+        topic = this.createTopic();
+        topic1 = this.createTopic();
+        topic2 = this.createTopic();
+        name = topic.createName("TMAPI", this.createTopic(), topic1);
+        this.assert(name.getScope().contains(topic1));
+        this.assert(!name.getScope().contains(topic2));
+        topic2.mergeIn(topic1);
+        this.assert(name.getScope().contains(topic2));
+        this.assert(!name.getScope().contains(topic1));
+    },
+
+    testVariantScopeChange: function () {
+        var topic, topic1, topic2, name, variant;
+        topic = this.createTopic();
+        topic1 = this.createTopic();
+        topic2 = this.createTopic();
+        name = topic.createName("TMAPI", this.createTopic());
+        variant = name.createVariant("semanticheadache", this._XSD_STRING, topic1);
+        this.assert(variant.getScope().contains(topic1));
+        this.assert(!variant.getScope().contains(topic2));
+        topic2.mergeIn(topic1);
+        this.assert(variant.getScope().contains(topic2));
+        this.assert(!variant.getScope().contains(topic1));
+    }
 });
 // ]]>
 </script>
