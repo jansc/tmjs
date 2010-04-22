@@ -1,3 +1,10 @@
+== HEAD
+* Implemented Topic.mergeIn()
+* Added more API documentation
+* Added more test cases
+* Bugfix: Removing a type from a topic did not update the TypeInstanceIndex
+* Bugfix: Fixed syntax error in code for node.js-compatibility
+
 == 0.2.2 2010-03-20
 
 * Implemented ScopedIndex
