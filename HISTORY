@@ -1,9 +1,12 @@
-== HEAD
+== 0.3.0 2010-05-04
+* Added JTM import and export (experimental)
 * Implemented Topic.mergeIn()
 * Added more API documentation
 * Added more test cases
 * Bugfix: Removing a type from a topic did not update the TypeInstanceIndex
 * Bugfix: Fixed syntax error in code for node.js-compatibility
+* Bugfix: Topic.remove() now checks if the topic is used as a player in a role
+* several minor bugfixes
 
 == 0.2.2 2010-03-20
 

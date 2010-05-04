@@ -16,6 +16,7 @@ For more details check out the [project's homepage]([http://github.com/jansc/tmj
 # Features
 
 * TMAPI 2.0-like API with an in-memory backend
+* JTM 1.0 import/export (experimental)
 
 See the file TODO for a list of missing features.
 
@@ -23,7 +24,6 @@ See the file TODO for a list of missing features.
 # Features to be implemented in the near future
 
 * XTM 2.0 import/export
-* JTM 1.0 import/export
 
 
 # More planned features (feedback welcome)

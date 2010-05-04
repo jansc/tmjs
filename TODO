@@ -1,6 +1,6 @@
 TODO
 
-* Implement TopicMap.mergeIn(), Topic.mergeIn()
+* Implement TopicMap.mergeIn()
 * Add documentation
 * Implement locator functions
 * Implement LiteralIndex
