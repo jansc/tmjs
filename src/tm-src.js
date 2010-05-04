@@ -12,7 +12,7 @@ var TM, TopicMapSystemFactory;
  * Date: 
  */
 TM = (function () {
-    var Version, Hash, Locator, EventType, Topic, Association,
+    var Version, Hash, XSD, Locator, EventType, Topic, Association,
         Scoped, Construct, Typed, Reifiable,
         DatatypeAware, TopicMap, Role, Name,
         Variant, Occurrence, TopicMapSystemMemImpl,
@@ -113,6 +113,14 @@ TM = (function () {
     EventType.REMOVE_TOPIC = 13;
     EventType.REMOVE_TYPE = 14;
     EventType.SET_TYPE = 15;
+
+    XSD = {
+        'string': "http://www.w3.org/2001/XMLSchema#string",
+        'integer': "http://www.w3.org/2001/XMLSchema#integer",
+        'anyURI': "http://www.w3.org/2001/XMLSchema#anyURI"
+
+        // TODO: Add all build-in types
+    };
 
     // -----------------------------------------------------------------------
     // TODO: The locator functions need some more work. Implement resolve()
@@ -527,18 +535,17 @@ TM = (function () {
         }
         this.value = value;
         this.datatype = datatype ||
-            this.getTopicMap().createLocator('http://www.w3.org/2001/XMLSchema#string');
-        if (datatype && datatype.getReference() ===
-            'http://www.w3.org/2001/XMLSchema#anyURI') {
+            this.getTopicMap().createLocator(XSD.string);
+        if (datatype && datatype.getReference() === XSD.anyURI) {
             this.value = tm.createLocator(value);
         }
         if (!datatype) {
             if (typeof value === 'number') {
-                this.datatype = tm.createLocator('http://www.w3.org/2001/XMLSchema#integer');
+                this.datatype = tm.createLocator(XSD.integer);
             }
         }
         if (typeof value === 'object' && value instanceof Locator) {
-            this.datatype = tm.createLocator('http://www.w3.org/2001/XMLSchema#anyURI');
+            this.datatype = tm.createLocator(XSD.anyURI);
         }
     };
     
@@ -839,6 +846,11 @@ TM = (function () {
             message: 'createTopicByItemIdentifier() needs an item identifier'}; }
         var t = this.getConstructByItemIdentifier(itemIdentifier);
         if (t) {
+            if (!t.isTopic()) {
+                throw {name: 'IdentityConstraintException',
+                message: 'Another construct with the specified item identifier '+
+                    'exists which is not a Topic.'};
+            }
             return t;
         }
         t = this._createEmptyTopic();
@@ -1097,7 +1109,7 @@ TM = (function () {
         SameTopicMapHelper.assertBelongsTo(this.parnt, type);
         SameTopicMapHelper.assertBelongsTo(this.parnt, scope);
     
-        occ = new Occurrence(this, type, value);
+        occ = new Occurrence(this, type, value, datatype);
         this.parnt.addOccurrenceEvent.fire(occ, {type: type, value: value});
         addScope(occ, scope);
         this.occurrences.push(occ);
@@ -1343,7 +1355,8 @@ TM = (function () {
             sidx.getAssociations(this).length ||
             sidx.getOccurrences(this).length ||
             sidx.getNames(this).length ||
-            sidx.getVariants(this).length) {
+            sidx.getVariants(this).length ||
+            this.getRolesPlayed().length) {
             throw {name: 'TopicInUseException',
                 message: '', reporter: this};
         }
@@ -1399,12 +1412,12 @@ TM = (function () {
     };
     
     // --------------------------------------------------------------------------
-    Occurrence = function (parnt, type, value) {
+    Occurrence = function (parnt, type, value, datatype) {
         this.itemIdentifiers = [];
         this.parnt = parnt;
         this.type = type;
         this.value = value;
-        this.datatype = null;
+        this.datatype = datatype ? datatype : this.getTopicMap().createLocator(XSD.string);
         this.scope = [];
         this.reifier = null;
         this.id = this.getTopicMap()._getConstructId();
@@ -1551,7 +1564,7 @@ TM = (function () {
             this.datatype = this.getTopicMap().createLocator('http://www.w3.org/2001/XMLSchema#anyURI');
         } else {
             this.datatype = 
-                this.getTopicMap().createLocator('http://www.w3.org/2001/XMLSchema#string');
+                this.getTopicMap().createLocator(XSD.string);
         }
         this.datatype = datatype;
         this.reifier = null;
@@ -2641,7 +2654,8 @@ TM = (function () {
 
     // Export objects into the TM namespace
     return {
-        TopicMapSystemFactory: TopicMapSystemFactory
+        TopicMapSystemFactory: TopicMapSystemFactory,
+        XSD: XSD
     };
 }());
 
