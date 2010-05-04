@@ -3,6 +3,8 @@
 * Implemented Topic.mergeIn()
 * Added more API documentation
 * Added more test cases
+* Added XSD namespace for common locator strings
+* Bugfix: Made occurrences handle the datatype parameter properly
 * Bugfix: Removing a type from a topic did not update the TypeInstanceIndex
 * Bugfix: Fixed syntax error in code for node.js-compatibility
 * Bugfix: Topic.remove() now checks if the topic is used as a player in a role

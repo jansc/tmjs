@@ -1,0 +1,86 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>FIXMETest</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <script type="text/javascript" src="../assets/jsunittest.js"></script>
+  <script type="text/javascript" src="../../src/tm-src.js"></script>
+  <script type="text/javascript" src="../../src/tm-jtm.js"></script>
+  <script type="text/javascript" src="datatypeaware.js"></script>
+  <script type="text/javascript" src="tmunittest.js"></script>
+  <link type="text/css" rel="stylesheet" href="../assets/unittest.css" />
+</head>
+<body>
+
+<!-- Log output -->
+<div id="testlog"> </div>
+
+<!-- here go any elements you do the testing on -->
+
+<!-- Tests -->
+<script type="text/javascript" language="javascript">
+// <![CDATA[
+
+var tmp = new Test.Unit.Runner({
+    // optional setup function, run before each individual test case
+    setup: function () { with(this) {
+        TMUnitTest.addCommonSetupFunctions(this);
+    }},
+    // optional teardown function, run after each individual test case
+    teardown: function () { with(this) {
+        TMUnitTest.addCommonTeardownFunctions(this);
+    }},
+
+    // test cases follow, each method which starts 
+    // with "test" is considered a test case
+    testJTMReader: function () {
+        var tm, reader, writer, topic, obj;
+        tm = this.createTopicMap();
+        this.assertNotNull(tm);
+        reader = new TM.JTM.Reader(tm);
+        this.assertNotNull(reader);
+
+        // JTM taken from the JTM spec at http://www.cerny-online.com/jtm/1.0/
+        // and slightly modified
+        reader.fromObject(
+            {"version":"1.0",
+            "item_type":"topicmap",
+            "topics":[
+            {"subject_identifiers":["http://psi.topincs.com/movies/dear-wendy",
+            "http://psi.semanticheadache.com/movies/dear-wendy"],
+            "names":[
+            {"value":"Dear Wendy",
+            "type":"si:http://psi.topincs.com/title",
+            "scope":[
+            "si:http://www.topicmaps.org/xtm/1.0/country.xtm#US",
+            "si:http://www.topicmaps.org/xtm/1.0/country.xtm#DE"]}],
+            "occurrences":[
+            {"value":"2005",
+            "type":"si:http://psi.topincs.com/publication-year",
+            "datatype":"http://www.w3.org/2001/XMLSchema#gYear"}]}],
+            "associations":[
+            {"type":"si:http://psi.topicmaps.org/iso13250/model/type-instance",
+            "roles":[
+            {"player":"si:http://psi.topincs.com/movies/dear-wendy",
+            "type":"si:http://psi.topicmaps.org/iso13250/model/instance"},
+            {"player":"si:http://psi.topincs.com/movie",
+                "type":"si:http://psi.topicmaps.org/iso13250/model/type"}]}]}
+        );
+        topic = tm.getTopicBySubjectIdentifier(tm.createLocator("http://psi.topincs.com/movies/dear-wendy"));
+        this.assertNotNull(topic);
+        topic = tm.getTopicBySubjectIdentifier(tm.createLocator("http://psi.semanticheadache.com/movies/dear-wendy"));
+        this.assertNotNull(topic);
+
+        //console.dir(tm);
+        writer = new TM.JTM.Writer(tm);
+        obj = writer.toObject(tm);
+        //console.dir(obj);
+
+        // TODO write tests!!
+    },
+});
+// ]]>
+</script>
+</body>
+</html>

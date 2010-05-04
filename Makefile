@@ -12,7 +12,7 @@ DOC_DIR = ${PREFIX}/doc
 
 JSDOCDIR = ${BUILD_DIR}/jsdoc-toolkit
 
-BASE_FILES = ${SRC_DIR}/tm-src.js
+BASE_FILES = ${SRC_DIR}/tm-src.js ${SRC_DIR}/tm-jtm.js
 
 MODULES = ${SRC_DIR}/HEADER\
 	${BASE_FILES}
