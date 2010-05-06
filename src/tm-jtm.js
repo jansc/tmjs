@@ -9,12 +9,35 @@ TM.JTM = (function() {
         this.tm = tm;
         this.defaultDatatype = this.tm.createLocator(TM.XSD.string);
         this.defaultNametype = "http://psi.topicmaps.org/iso13250/model/topic-name";
+        /**
+        * Internal function that takes a JTM-identifier string as a parameter
+        * and returns a topic object - either an existing topic or a new topic
+        * if the requested topic did not exist
+        * @param {String} locator JTM-identifier
+        */
+        this.getTopicByReference = function (locator) {
+            if (typeof locator === 'undefined' || locator === null) {
+                return null;
+            }
+            switch(locator.substr(0, 3)) {
+                case 'si:' : return this.tm.createTopicBySubjectIdentifier(
+                    this.tm.createLocator(locator.substr(3)));
+                case 'sl:' : return this.tm.createTopicBySubjectLocator(
+                    this.tm.createLocator(locator.substr(3)));
+                case 'ii:' : return this.tm.createTopicByItemIdentifier(
+                    this.tm.createLocator(locator.substr(3)));
+            }
+            throw {name: 'InvalidFormat',
+                message: 'Invaild topic reference \''+locator+'\''};
+        };
     };
 
     /**
     * Imports a JTM topic map or JTM fragment from a JSON-string.
     * name, variant, occurrence and role fragments need the optional parent
     * construct as a parameter.
+    * TODO: Decide if this should be part of tmjs. Add functions for decoding/
+    * encoding JSON if so.
     *
     * @param {String} str JSON encoded JTM
     * @param {Construct} [parent] Parent construct if the JTM fragment contains
@@ -181,27 +204,6 @@ TM.JTM = (function() {
         return scope;
     };
 
-    /**
-    * Internal function that takes a JTM-identifier string as a parameter
-    * and returns a topic object - either an existing topic or a new topic
-    * if the requested topic did not exist
-    * @param {String} locator JTM-identifier
-    */
-    ReaderImpl.prototype.getTopicByReference = function (locator) {
-        if (typeof locator === 'undefined' || locator === null) {
-            return null;
-        }
-        switch(locator.substr(0, 3)) {
-            case 'si:' : return this.tm.createTopicBySubjectIdentifier(
-                this.tm.createLocator(locator.substr(3)));
-            case 'sl:' : return this.tm.createTopicBySubjectLocator(
-                this.tm.createLocator(locator.substr(3)));
-            case 'ii:' : return this.tm.createTopicByItemIdentifier(
-                this.tm.createLocator(locator.substr(3)));
-        }
-        throw {name: 'InvalidFormat',
-            message: 'Invaild topic reference \''+locator+'\''};
-    };
 
     ReaderImpl.prototype.parseItemIdentifiers = function (construct, arr) {
         var i;
@@ -217,11 +219,39 @@ TM.JTM = (function() {
         construct.setReifier(reifierTopic);
     };
 
-    WriterImpl = function (tm) {
+    /**
+    * @class Exports topic maps constructs as JTM 1.0 JavaScript objects.
+    * See http://www.cerny-online.com/jtm/1.0/ for the JSON Topic Maps specification.
+    */
+    WriterImpl = function () {
         var that = this;
-        this.tm = tm;
-        this.defaultDatatype = this.tm.createLocator(TM.XSD.string);
+        this.defaultDatatype = TM.XSD.string;
         this.defaultNametype = "http://psi.topicmaps.org/iso13250/model/topic-name";
+
+        /**
+         * Generates a JTM reference based on the topics subject identifier,
+         * subject locator or item identifier (whatever is set, tested in this
+         * order).
+         * @returns {string} Representing the topic t, e.g.
+         *     "si:http://psi.topicmaps.org/iso13250/model/type
+         */
+        this.getTopicReference = function (t) {
+            var arr;
+            arr = t.getSubjectIdentifiers();
+            if (arr.length > 0) {
+                return 'si:'+arr[0].getReference();
+            }
+            arr = t.getSubjectLocators();
+            if (arr.length > 0) {
+                return 'sl:'+arr[0].getReference();
+            }
+            arr = t.getItemIdentifiers();
+            if (arr.length > 0) {
+                return 'ii:'+arr[0].getReference();
+            }
+            // ModelConstraintExeption: TMDM says that t MUST have on of these
+        };
+
         this.exportIdentifiers = function (obj, arr, attr) {
             var i, len = arr.length;
             if (len > 0) {
@@ -232,6 +262,7 @@ TM.JTM = (function() {
             }
         
         }; 
+
         this.exportScope = function (obj, construct) {
             var i, arr = construct.getScope();
             if (arr.length > 0) {
@@ -241,171 +272,186 @@ TM.JTM = (function() {
                 }
             }
         };
-    };
 
-    WriterImpl.prototype.toObject = function (construct) {
-        var arr, i, len, obj;
-        if (!construct.isTopicMap()) {
-            throw {name: 'TmjsException', message: 'JTM-export of constructs other than TopicMap is not implemented'};
-        }
-        obj = {
-            version: '1.0',
-            item_type: 'topicmap',
-            topics: [],
-            associations: []
+        this.exportParent = function (obj, construct) {
+            var parent = construct.getParent();
+            that.exportIdentifiers(obj, parent.getItemIdentifiers(), 'parent');
         };
-        if (construct.getReifier()) {
-            obj.reifier = this.getTopicReference(construct.getReifier());
-        }
-        arr = construct.getTopics();
-        len = arr.length;
-        for (i = 0; i < len; i += 1) {
-            obj.topics.push(this.exportTopic(arr[i]));
-        }
-        arr = construct.getAssociations();
-        len = arr.length;
-        for (i = 0; i < len; i += 1) {
-            obj.associations.push(this.exportAssociation(arr[i]));
-        }
-        return obj;
-    };
 
-    WriterImpl.prototype.exportTopic = function (t) {
-        var arr, i, len, obj;
-        obj = {};
-        this.exportIdentifiers(obj, t.getSubjectIdentifiers(), 'subject_identifiers');
-        this.exportIdentifiers(obj, t.getSubjectLocators(), 'subject_locators');
-        this.exportIdentifiers(obj, t.getItemIdentifiers(), 'item_identifiers');
-        arr = t.getNames();
-        len = arr.length;
-        if (len > 0) {
-            obj.names = [];
+        this.exportTopicMap = function (m) {
+            var arr, i, len, obj;
+            obj = {
+                topics: [],
+                associations: []
+            };
+            arr = m.getTopics();
+            len = arr.length;
             for (i = 0; i < len; i += 1) {
-                obj.names.push(this.exportName(arr[i]));
+                obj.topics.push(that.exportTopic(arr[i]));
             }
-        }
-        arr = t.getOccurrences();
-        len = arr.length;
-        if (len > 0) {
-            obj.occurrences = [];
+            arr = m.getAssociations();
+            len = arr.length;
             for (i = 0; i < len; i += 1) {
-                obj.occurrences.push(this.exportOccurrence(arr[i]));
+                obj.associations.push(that.exportAssociation(arr[i]));
             }
-        }
-        return obj;
-    };
-
-    WriterImpl.prototype.exportName = function (name) {
-        var arr, i, len, obj, tmp;
-        obj = {
-            'value': name.getValue()
+            return obj;
         };
-        tmp = name.getType();
-        if (tmp) { obj.type = this.getTopicReference(tmp); }
-        tmp = name.getReifier();
-        if (tmp) { obj.reifier = this.getTopicReference(tmp); }
-        
-        this.exportIdentifiers(obj, name.getItemIdentifiers(), 'item_identifiers');
-        this.exportScope(obj, name);
-        arr = name.getVariants();
-        len = arr.length;
-        if (len > 0) {
-            obj.variants = [];
-            for (i = 0; i < len; i += 1) {
-                obj.variants.push(this.exportVariant(arr[i]));
+
+        this.exportTopic = function (t) {
+            var arr, i, len, obj;
+            obj = {};
+            that.exportIdentifiers(obj, t.getSubjectIdentifiers(), 'subject_identifiers');
+            that.exportIdentifiers(obj, t.getSubjectLocators(), 'subject_locators');
+            that.exportIdentifiers(obj, t.getItemIdentifiers(), 'item_identifiers');
+            arr = t.getNames();
+            len = arr.length;
+            if (len > 0) {
+                obj.names = [];
+                for (i = 0; i < len; i += 1) {
+                    obj.names.push(that.exportName(arr[i]));
+                }
             }
-        }
-        return obj;
-    };
-
-    WriterImpl.prototype.exportVariant = function (variant) {
-        var arr, i, len, obj, tmp;
-        obj = {
-            'value': variant.getValue()
+            arr = t.getOccurrences();
+            len = arr.length;
+            if (len > 0) {
+                obj.occurrences = [];
+                for (i = 0; i < len; i += 1) {
+                    obj.occurrences.push(that.exportOccurrence(arr[i]));
+                }
+            }
+            return obj;
         };
-        tmp = variant.getDatatype();
-        if (tmp && tmp !== this.defaultDatatype) {
-            obj.datatype = tmp.getReference();
-        }
-        tmp = variant.getReifier();
-        if (tmp) { obj.reifier = this.getTopicReference(tmp); }
-        
-        this.exportIdentifiers(obj, variant.getItemIdentifiers(), 'item_identifiers');
-        this.exportScope(obj, variant);
-    };
 
-    WriterImpl.prototype.exportOccurrence = function (occ) {
-        var arr, i, len, obj, tmp;
-        obj = {
-            value: occ.getValue(),
-            type: this.getTopicReference(occ.getType())
+        this.exportName = function (name) {
+            var arr, i, len, obj, tmp;
+            obj = {
+                'value': name.getValue()
+            };
+            tmp = name.getType();
+            if (tmp) { obj.type = that.getTopicReference(tmp); }
+            tmp = name.getReifier();
+            if (tmp) { obj.reifier = that.getTopicReference(tmp); }
+            
+            that.exportIdentifiers(obj, name.getItemIdentifiers(), 'item_identifiers');
+            that.exportScope(obj, name);
+            arr = name.getVariants();
+            len = arr.length;
+            if (len > 0) {
+                obj.variants = [];
+                for (i = 0; i < len; i += 1) {
+                    obj.variants.push(that.exportVariant(arr[i]));
+                }
+            }
+            return obj;
         };
-        tmp = occ.getDatatype();
-        if (tmp && tmp !== this.defaultDatatype) {
-            obj.datatype = tmp.getReference();
-        }
-        tmp = occ.getReifier();
-        if (tmp) { obj.reifier = this.getTopicReference(tmp); }
-        
-        this.exportIdentifiers(obj, occ.getItemIdentifiers(), 'item_identifiers');
-        this.exportScope(obj, occ);
-        return obj;
-    };
 
-    WriterImpl.prototype.exportAssociation = function (association) {
-    /*
-    ▪   roles - an non-empty array of Roles required
-    */
-        var arr, i, obj, tmp;
-        obj = {
-            type: this.getTopicReference(association.getType()),
-            roles: []
+        this.exportVariant = function (variant) {
+            var arr, i, len, obj, tmp;
+            obj = {
+                'value': variant.getValue()
+            };
+            tmp = variant.getDatatype();
+            if (tmp && tmp !== variant.getTopicMap().createLocator(that.defaultDatatype)) {
+                obj.datatype = tmp.getReference();
+            }
+            tmp = variant.getReifier();
+            if (tmp) { obj.reifier = that.getTopicReference(tmp); }
+            
+            that.exportIdentifiers(obj, variant.getItemIdentifiers(), 'item_identifiers');
+            that.exportScope(obj, variant);
         };
-        tmp = association.getReifier();
-        if (tmp) { obj.reifier = this.getTopicReference(tmp); }
-        this.exportIdentifiers(association, association.getItemIdentifiers(), 'item_identifiers');
-        this.exportScope(obj, association);
-        arr = association.getRoles();
-        for (i = 0; i < arr.length; i += 1) {
-            obj.roles.push(this.exportRole(arr[i]));
-        }
-        return obj;
-    };
 
-    WriterImpl.prototype.exportRole = function (role) {
-        var arr, i, obj, tmp;
-        obj = {
-            player: this.getTopicReference(role.getPlayer()),
-            type: this.getTopicReference(role.getType())
+        this.exportOccurrence = function (occ) {
+            var arr, i, len, obj, tmp;
+            obj = {
+                value: occ.getValue(),
+                type: that.getTopicReference(occ.getType())
+            };
+            tmp = occ.getDatatype();
+            if (tmp && tmp !== occ.getTopicMap().createLocator(that.defaultDatatype)) {
+                obj.datatype = tmp.getReference();
+            }
+            tmp = occ.getReifier();
+            if (tmp) { obj.reifier = that.getTopicReference(tmp); }
+            
+            that.exportIdentifiers(obj, occ.getItemIdentifiers(), 'item_identifiers');
+            that.exportScope(obj, occ);
+            return obj;
         };
-        tmp = role.getReifier();
-        if (tmp) { obj.reifier = this.getTopicReference(tmp); }
-        this.exportIdentifiers(obj, role.getItemIdentifiers(), 'item_identifiers');
-        return obj;
+
+        this.exportAssociation = function (association) {
+            var arr, i, obj, tmp;
+            obj = {
+                type: that.getTopicReference(association.getType()),
+                roles: []
+            };
+            tmp = association.getReifier();
+            if (tmp) { obj.reifier = that.getTopicReference(tmp); }
+            that.exportIdentifiers(obj, association.getItemIdentifiers(), 'item_identifiers');
+            that.exportScope(obj, association);
+            arr = association.getRoles();
+            for (i = 0; i < arr.length; i += 1) {
+                obj.roles.push(that.exportRole(arr[i]));
+            }
+            return obj;
+        };
+
+        this.exportRole = function (role) {
+            var arr, i, obj, tmp;
+            obj = {
+                player: that.getTopicReference(role.getPlayer()),
+                type: that.getTopicReference(role.getType())
+            };
+            tmp = role.getReifier();
+            if (tmp) { obj.reifier = that.getTopicReference(tmp); }
+            that.exportIdentifiers(obj, role.getItemIdentifiers(), 'item_identifiers');
+            return obj;
+        };
     };
 
     /**
-    * Generates a JTM reference based on the topics subject identifier,
-    * subject locator or item identifier (whatever is set, tested in this
-    * order).
-    * @returns {string} Representing the topic t, e.g.
-    *     "si:http://psi.topicmaps.org/iso13250/model/type
+    * Returns a JTM JavaScript object representation of construct.
+    * @param {Construct} construct The topic map construct to be exported. Can be
+    * TopicMap, Topic, Occurrence, Name, Variant, Association or Role.
+    * @param {boolean} [includeParent] If true the optional JTM element 'parent' is
+    * included. Refers to the parent via its item identifier.  If undefined or false,
+    * the parent element is dropped.
     */
-    WriterImpl.prototype.getTopicReference = function (t) {
-        var arr;
-        arr = t.getSubjectIdentifiers();
-        if (arr.length > 0) {
-            return 'si:'+arr[0].getReference();
+    WriterImpl.prototype.toObject = function (construct, includeParent) {
+        var obj, tm;
+        includeParent = includeParent || false;
+        tm = construct.getTopicMap();
+
+        if (construct.isTopicMap()) {
+            obj = this.exportTopicMap(construct);
+            obj.item_type = 'topicmap';
+        } else if (construct.isRole()) {
+            obj = this.exportRole(construct);
+            obj.item_type = 'role';
+        } else if (construct.isTopic()) {
+            obj = this.exportTopic(construct);
+            obj.item_type = 'topic';
+        } else if (construct.isAssociation()) {
+            obj = this.exportAssociation(construct);
+            obj.item_type = 'association';
+        } else if (construct.isOccurrence()) {
+            obj = this.exportOccurrence(construct);
+            obj.item_type = 'occurrence';
+        } else if (construct.isName()) {
+            obj = this.exportName(construct);
+            obj.item_type = 'name';
+        } else if (construct.isVariant()) {
+            obj = this.exportVariant(construct);
+            obj.item_type = 'variant';
         }
-        arr = t.getSubjectLocators();
-        if (arr.length > 0) {
-            return 'sl:'+arr[0].getReference();
+        obj.version = '1.0';
+        if (!construct.isTopic() && construct.getReifier()) {
+            obj.reifier = this.getTopicReference(construct.getReifier());
         }
-        arr = t.getItemIdentifiers();
-        if (arr.length > 0) {
-            return 'ii:'+arr[0].getReference();
+        if (includeParent && !construct.isTopicMap()) {
+            this.exportParent(obj, construct);
         }
-        // ModelConstraintExeption: TMDM says that t MUST have on of these
+        return obj;
     };
 
     return {
