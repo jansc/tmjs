@@ -79,6 +79,107 @@ var tmp = new Test.Unit.Runner({
 
         // TODO write tests!!
     },
+
+    testJTMReaderOccurrenceFragment: function() {
+        var tm, reader, topic, occ, tmp;
+        tm = this.createTopicMap();
+        this.assertNotNull(tm);
+        topic = tm.createTopic();
+        reader = new TM.JTM.Reader(tm);
+        this.assertNotNull(reader);
+        this.assertEqual(topic.getOccurrences().length, 0);
+        reader.fromObject({'version': '1.0',
+            'item_type': 'occurrence',
+            'value': '2005',
+            'type': 'si:http://psi.semanticheadache.com/test/date',
+            'datatype': 'http://www.w3.org/2001/XMLSchema#gYear',
+            'reifier': 'si:http://psi.semanticheadache.com/test/myreifier',
+            'item_identifiers': ['http://psi.semanticheadache.com/test/ii1']},
+            topic);
+        this.assertEqual(topic.getOccurrences().length, 1);
+        occ = topic.getOccurrences()[0];
+        this.assertEqual('2005', occ.getValue());
+
+        tmp = occ.getType();
+        this.assertNotNull(tmp);
+        this.assertEqual(tmp.getSubjectIdentifiers().length, 1);
+        this.assertEqual(tmp.getSubjectIdentifiers()[0].getReference(),
+            'http://psi.semanticheadache.com/test/date');
+        this.assertEqual(occ.getDatatype().getReference(),
+            'http://www.w3.org/2001/XMLSchema#gYear');
+
+        tmp = occ.getReifier();
+        this.assertNotNull(tmp);
+        this.assertEqual(tmp.getSubjectIdentifiers().length, 1);
+        this.assertEqual(tmp.getSubjectIdentifiers()[0].getReference(),
+            'http://psi.semanticheadache.com/test/myreifier');
+
+        this.assertEqual(occ.getItemIdentifiers().length, 1);
+        this.assertEqual(occ.getItemIdentifiers()[0].getReference(),
+            'http://psi.semanticheadache.com/test/ii1');
+    },
+
+/*
+    testJTMReaderTopicFragment: function () {
+        // TODO
+    },
+
+    testJTMReaderNameFragment: function () {
+        // TODO
+    },
+
+    testJTMReaderVariantFragment: function () {
+        // TODO
+    },
+
+    testJTMReaderAssociationFragment: function () {
+        // TODO
+    },
+*/
+
+    testJTMReaderRoleFragment: function () {
+        var tm, reader, association, role, tmp;
+        tm = this.createTopicMap();
+        association = tm.createAssociation();
+        this.assertEqual(0, association.getRoles().length);
+        reader = new TM.JTM.Reader(tm);
+        reader.fromObject({'version': '1.0',
+            "item_type": 'role',
+            "player": "si:http://psi.semanticheadache.com/test/foobar",
+            "type": "si:http://psi.topicmaps.org/iso13250/model/instance",
+            "item_identifiers": ["http://psi.semanticheadache.com/test/ii1"]},
+            association);
+        this.assertEqual(1, association.getRoles().length);
+        role = association.getRoles()[0];
+        tmp = role.getPlayer();
+        this.assertNotNull(tmp);
+        this.assertEqual(tmp.getSubjectIdentifiers().length, 1);
+        this.assertEqual(tmp.getSubjectIdentifiers()[0].getReference(),
+            'http://psi.semanticheadache.com/test/foobar');
+            
+        tmp = role.getType();
+        this.assertNotNull(tmp);
+        this.assertEqual(tmp.getSubjectIdentifiers().length, 1);
+        this.assertEqual(tmp.getSubjectIdentifiers()[0].getReference(),
+            'http://psi.topicmaps.org/iso13250/model/instance');
+
+        this.assertEqual(role.getItemIdentifiers().length, 1);
+        this.assertEqual(role.getItemIdentifiers()[0].getReference(),
+            'http://psi.semanticheadache.com/test/ii1');
+    },
+
+    testJTMWriterRoleFragment: function () {
+        var tm, writer, role, association, type, player, obj;
+        tm = this.createTopicMap();
+        writer = new TM.JTM.Writer(tm);
+        association = tm.createAssociation();
+        type = tm.createTopicBySubjectIdentifier(tm.createLocator(
+            "http://psi.semanticheadache.com/test/type"));
+        player = tm.createTopicBySubjectIdentifier(tm.createLocator(
+            "http://psi.semanticheadache.com/test/player"));
+        role = association.createRole(type, player);
+        obj = writer.toObject(role);
+    }
 });
 // ]]>
 </script>
