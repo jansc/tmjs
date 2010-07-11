@@ -78,7 +78,7 @@ This is how to create a TopicMap object:
     factory.setProperty('com.semanticheadache.tmjs.backend', 'memory');
     sys = factory.newTopicMapSystem();
     tmid = sys.createLocator("http://example.org/mytm");
-    tm = sys.createTopicMap(locator);
+    tm = sys.createTopicMap(tmid);
 
 By default newTopicMapSystem() returns an in-memory implementation.
 

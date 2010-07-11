@@ -14,6 +14,7 @@ TM.JTM = (function() {
         * and returns a topic object - either an existing topic or a new topic
         * if the requested topic did not exist
         * @param {String} locator JTM-identifier
+        * @throws {InvalidFormat} If the locator could not be parsed.
         */
         this.getTopicByReference = function (locator) {
             if (typeof locator === 'undefined' || locator === null) {
