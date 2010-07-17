@@ -2665,5 +2665,6 @@ TopicMapSystemFactory = TM.TopicMapSystemFactory;
 // Check if we are in a CommonJS environment (e.g. node.js)
 if (typeof exports === 'object' && exports !== null) {
     exports.TopicMapSystemFactory = TopicMapSystemFactory;
+    exports.TM = TM;
 }
 
