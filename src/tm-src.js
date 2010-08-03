@@ -2571,13 +2571,17 @@ TM = (function () {
             var roles, i, tmp = [];
             roles = ass.getRoles();
             for (i=0; i<roles.length; i+=1) {
-                tmp.push(SignatureGenerator.makeTypeSignature(roles[i]) +
-                    '#' + roles[i].getPlayer().getId());
+                tmp.push(SignatureGenerator.makeRoleSignature(roles[i]));
             }
             tmp.sort();
         
             return '#' + SignatureGenerator.makeTypeSignature(ass) + '#' + tmp.join('#') +
                 SignatureGenerator.makeScopeSignature(ass);
+        },
+
+        makeRoleSignature: function (role) {
+            return SignatureGenerator.makeTypeSignature(role) + '#' +
+                role.getPlayer().getId();
         },
 
         makeVariantValueSignature: function (variant) {
