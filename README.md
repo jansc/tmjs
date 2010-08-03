@@ -111,5 +111,5 @@ please use the issue tracker at
 # Copyright and License
 
 `tmjs` has been written by Jan Schreiber (jans [at] ravn.no). It is licensed
-under the MIT license. See the file LICENSE for details.
+under the MIT license. See the file MIT-LICENSE.txt for details.
 
