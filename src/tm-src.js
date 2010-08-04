@@ -18,6 +18,7 @@ TM = (function () {
         Variant, Occurrence, TopicMapSystemMemImpl,
         Index, TypeInstanceIndex, ScopedIndex, 
         SameTopicMapHelper, ArrayHelper, IndexHelper, addScope,
+        DuplicateRemover,
         SignatureGenerator, MergeHelper;
 
     Version = '@VERSION';
@@ -1863,6 +1864,7 @@ TM = (function () {
                     break;
                 case EventType.REMOVE_ASSOCIATION:
                     type = source.getType();
+                    if (!type) { break; }
                     existing = that.type2associations.get(type.getId());
                     for (i=0; i<existing.length; i+=1) {
                         if (existing[i].equals(source)) {
@@ -2549,7 +2551,7 @@ TM = (function () {
                 (occ.getDatatype() ? occ.getDatatype().getReference() : 'null');
         },
 
-        makeTypeSignature: function(obj) {
+        makeTypeSignature: function (obj) {
             var type = obj.getType();
             if (type) {
                 return type.getId();
@@ -2591,6 +2593,49 @@ TM = (function () {
         makeVariantSignature: function (variant) {
             return SignatureGenerator.makeVariantValueSignature(variant) +
                 '#' + SignatureGenerator.makeScopeSignature(variant);
+        }
+    };
+
+    /** Utility class that removes duplicates according to the TMDM. */
+    DuplicateRemover = {
+        removeTopicMapDuplicates: function (tm) {
+            var i, topics, associations, sig2ass = new Hash(), sig, existing;
+            topics = tm.getTopics();
+            for (i=0; i<topics.length; i+=1) {
+                // FIXME
+            }
+            associations = tm.getAssociations();
+            for (i=0; i<associations.length; i+=1) {
+                DuplicateRemover.removeAssociationDuplicates(associations[i]);
+                sig = SignatureGenerator.makeAssociationSignature(associations[i]);
+                if ((existing = sig2ass.get(sig))) {
+                    MergeHelper.moveConstructCharacteristics(associations[i], existing);
+                    MergeHelper.moveRoleCharacteristics(associations[i], existing);
+                    associations[i].remove();
+                    i -= 1;
+                } else {
+                    sig2ass.put(sig, associations[i]);
+                }
+            }
+            sig2ass.empty();
+        },
+
+        removeTopicDuplicates: function (topic) {
+            // TODO
+        },
+
+        removeAssociationDuplicates: function (assoc) {
+            var i, roles = assoc.getRoles(), sig2role = new Hash(), sig, existing;
+            for (i=0; i<roles.length; i+=1) {
+                sig = SignatureGenerator.makeAssociationRoleSignature(roles[i]);
+                if ((existing = sig2role.get(sig))) {
+                    MergeHelper.moveConstructCharacteristics(roles[i], existing);
+                    roles[i].remove();
+                    i -= 1;
+                } else {
+                    sig2role.put(sig, roles[i]);
+                }
+            }
         }
     };
 
@@ -2652,13 +2697,32 @@ TM = (function () {
                 source.setReifier(null);
                 r1.mergeIn(r2);
             }
+        },
+
+        moveRoleCharacteristics: function (source, target) {
+            var i, roles, sigs = new Hash();
+            roles = source.getRoles();
+            for (i=0; i<roles.length; i+=1) {
+                sigs.put(roles[i], SignatureGenerator.makeRoleSignature(roles[i]));
+            }
+            roles = target.getRoles();
+            for (i=0; i<roles.length; i+=1) {
+                MergeHelper.moveConstructCharacteristics(roles[i],
+                    sigs.get(SignatureGenerator.makeRoleSignature(roles[i])));
+            }
+        },
+
+        moveConstructCharacteristics: function (source, target) {
+            MergeHelper.moveReifier(source, target);
+            MergeHelper.moveItemIdentifiers(source, target);
         }
     };
-    
+
 
     // Export objects into the TM namespace
     return {
         TopicMapSystemFactory: TopicMapSystemFactory,
+        DuplicateRemover: DuplicateRemover,
         XSD: XSD
     };
 }());
