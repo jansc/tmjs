@@ -45,8 +45,8 @@ var tmp = new Test.Unit.Runner({
     testEmptyAssociationDuplicateRemover: function () {
         var tm, type, assocs;
         tm = this.createTopicMap();
-        tm.createAssociation().addItemIdentifier(tm.createLocator('urn:x-tmjs:1'));
-        tm.createAssociation().addItemIdentifier(tm.createLocator('urn:x-tmjs:2'));
+        tm.createAssociation().addItemIdentifier(tm.createLocator('urn:x-tmjs-unit:1'));
+        tm.createAssociation().addItemIdentifier(tm.createLocator('urn:x-tmjs-unit:2'));
         assocs = tm.getAssociations();
         this.assertEqual(2, assocs.length);
         this.assertEqual(1, assocs[0].getItemIdentifiers().length);
@@ -54,6 +54,71 @@ var tmp = new Test.Unit.Runner({
         TM.DuplicateRemover.removeTopicMapDuplicates(tm);
         this.assertEqual(1, tm.getAssociations().length);
         this.assertEqual(2, tm.getAssociations()[0].getItemIdentifiers().length);
+    },
+
+    testEmptyTopicDuplicateRemover: function () {
+        // Topic duplicates are not to be removed
+        var tm, type, topics;
+        tm = this.createTopicMap();
+        tm.createTopic().addItemIdentifier(tm.createLocator('urn:x-tmjs-unit:1'));
+        tm.createTopic().addItemIdentifier(tm.createLocator('urn:x-tmjs-unit:2'));
+        topics = tm.getTopics();
+        this.assertEqual(2, topics.length);
+        this.assertEqual(2, topics[0].getItemIdentifiers().length);
+        this.assertEqual(2, topics[1].getItemIdentifiers().length);
+        TM.DuplicateRemover.removeTopicMapDuplicates(tm);
+        this.assertEqual(2, tm.getTopics().length);
+        this.assertEqual(2, tm.getTopics()[0].getItemIdentifiers().length);
+    },
+
+    testEmptyOccurrenceDuplicateRemover: function () {
+        var tm, type, t, type, occurrences;
+        tm = this.createTopicMap();
+        type = tm.createTopic();
+        t = tm.createTopic();
+        t.createOccurrence(type, "foo");
+        t.createOccurrence(type, "foo");
+        occurrences = t.getOccurrences();
+        this.assertEqual(2, occurrences.length);
+        this.assertEqual("foo", occurrences[0].getValue());
+        this.assertEqual("foo", occurrences[1].getValue());
+        TM.DuplicateRemover.removeTopicMapDuplicates(tm);
+        this.assertEqual(1, t.getOccurrences().length);
+        this.assertEqual("foo", t.getOccurrences()[0].getValue());
+    },
+
+    testEmptyNameDuplicateRemover: function () {
+        var tm, type, t, type, names;
+        tm = this.createTopicMap();
+        type = tm.createTopic();
+        t = tm.createTopic();
+        t.createName("foo", type);
+        t.createName("foo", type);
+        names = t.getNames();
+        this.assertEqual(2, names.length);
+        this.assertEqual("foo", names[0].getValue());
+        this.assertEqual("foo", names[1].getValue());
+        TM.DuplicateRemover.removeTopicMapDuplicates(tm);
+        this.assertEqual(1, t.getNames().length);
+        this.assertEqual("foo", t.getNames()[0].getValue());
+    },
+
+    testEmptyVariantDuplicateRemover: function () {
+        var tm, type, t, name, type, scope, variants;
+        tm = this.createTopicMap();
+        type = tm.createTopic();
+        scope = tm.createTopic();
+        t = tm.createTopic();
+        name = t.createName("quux", type);
+        name.createVariant("foo", tm.createLocator(this._XSD_STRING), scope);
+        name.createVariant("foo", tm.createLocator(this._XSD_STRING), scope);
+        variants = name.getVariants();
+        this.assertEqual(2, variants.length);
+        this.assertEqual("foo", variants[0].getValue());
+        this.assertEqual("foo", variants[1].getValue());
+        TM.DuplicateRemover.removeTopicMapDuplicates(tm);
+        this.assertEqual(1, name.getVariants().length);
+        this.assertEqual("foo", name.getVariants()[0].getValue());
     },
 
 });

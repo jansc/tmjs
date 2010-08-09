@@ -2602,7 +2602,8 @@ TM = (function () {
             var i, topics, associations, sig2ass = new Hash(), sig, existing;
             topics = tm.getTopics();
             for (i=0; i<topics.length; i+=1) {
-                // FIXME
+                DuplicateRemover.removeOccurrencesDuplicates(topics[i].getOccurrences());
+                DuplicateRemover.removeNamesDuplicates(topics[i].getNames());
             }
             associations = tm.getAssociations();
             for (i=0; i<associations.length; i+=1) {
@@ -2612,7 +2613,6 @@ TM = (function () {
                     MergeHelper.moveConstructCharacteristics(associations[i], existing);
                     MergeHelper.moveRoleCharacteristics(associations[i], existing);
                     associations[i].remove();
-                    i -= 1;
                 } else {
                     sig2ass.put(sig, associations[i]);
                 }
@@ -2620,8 +2620,51 @@ TM = (function () {
             sig2ass.empty();
         },
 
-        removeTopicDuplicates: function (topic) {
-            // TODO
+        removeOccurrencesDuplicates: function (occurrences) {
+            var i, sig2occ = new Hash(), occ, sig;
+            for (i=0; i<occurrences.length; i+=1) {
+                occ = occurrences[i];
+                sig = SignatureGenerator.makeOccurrenceSignature(occ);
+                if ((existing = sig2occ.get(sig))) {
+                    MergeHelper.moveConstructCharacteristics(occ, existing);
+                    occ.remove();
+                } else {
+                    sig2occ.put(sig, occ);
+                }
+            }
+            sig2occ.empty();
+        },
+
+        removeNamesDuplicates: function (names) {
+            var i, sig2names = new Hash(), name;
+            for (i=0; i<names.length; i+=1) {
+                name = names[i];
+                DuplicateRemover.removeVariantsDuplicates(name.getVariants());
+                sig = SignatureGenerator.makeNameSignature(name);
+                if ((existing = sig2names.get(sig))) {
+                    MergeHelper.moveConstructCharacteristics(name, existing);
+                    MergeHelper.moveVariants(name, existing);
+                    name.remove();
+                } else {
+                    sig2names.put(sig, name);
+                }
+            }
+            sig2names.empty();
+        },
+
+        removeVariantsDuplicates: function (variants) {
+            var i, sig2variants = new Hash(), variant;
+            for (i=0; i<variants.length; i+=1) {
+                variant = variants[i];
+                sig = SignatureGenerator.makeVariantSignature(variant);
+                if ((existing = sig2variants.get(sig))) {
+                    MergeHelper.moveConstructCharacteristics(variant, existing);
+                    variant.remove();
+                } else {
+                    sig2variants.put(sig, variant);
+                }
+            }
+            sig2variants.empty();
         },
 
         removeAssociationDuplicates: function (assoc) {
@@ -2631,7 +2674,6 @@ TM = (function () {
                 if ((existing = sig2role.get(sig))) {
                     MergeHelper.moveConstructCharacteristics(roles[i], existing);
                     roles[i].remove();
-                    i -= 1;
                 } else {
                     sig2role.put(sig, roles[i]);
                 }
