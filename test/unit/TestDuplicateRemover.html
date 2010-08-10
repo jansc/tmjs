@@ -38,7 +38,7 @@ var tmp = new Test.Unit.Runner({
         var tm;
         tm = this.createTopicMap();
         this.assertNotNull(tm);
-        TM.DuplicateRemover.removeTopicMapDuplicates(tm);
+        tm.sanitize();
         this.assertNotNull(tm);
     },
 
@@ -51,7 +51,7 @@ var tmp = new Test.Unit.Runner({
         this.assertEqual(2, assocs.length);
         this.assertEqual(1, assocs[0].getItemIdentifiers().length);
         this.assertEqual(1, assocs[1].getItemIdentifiers().length);
-        TM.DuplicateRemover.removeTopicMapDuplicates(tm);
+        tm.sanitize();
         this.assertEqual(1, tm.getAssociations().length);
         this.assertEqual(2, tm.getAssociations()[0].getItemIdentifiers().length);
     },
@@ -66,7 +66,7 @@ var tmp = new Test.Unit.Runner({
         this.assertEqual(2, topics.length);
         this.assertEqual(2, topics[0].getItemIdentifiers().length);
         this.assertEqual(2, topics[1].getItemIdentifiers().length);
-        TM.DuplicateRemover.removeTopicMapDuplicates(tm);
+        tm.sanitize();
         this.assertEqual(2, tm.getTopics().length);
         this.assertEqual(2, tm.getTopics()[0].getItemIdentifiers().length);
     },
@@ -82,7 +82,7 @@ var tmp = new Test.Unit.Runner({
         this.assertEqual(2, occurrences.length);
         this.assertEqual("foo", occurrences[0].getValue());
         this.assertEqual("foo", occurrences[1].getValue());
-        TM.DuplicateRemover.removeTopicMapDuplicates(tm);
+        tm.sanitize();
         this.assertEqual(1, t.getOccurrences().length);
         this.assertEqual("foo", t.getOccurrences()[0].getValue());
     },
@@ -98,7 +98,7 @@ var tmp = new Test.Unit.Runner({
         this.assertEqual(2, names.length);
         this.assertEqual("foo", names[0].getValue());
         this.assertEqual("foo", names[1].getValue());
-        TM.DuplicateRemover.removeTopicMapDuplicates(tm);
+        tm.sanitize();
         this.assertEqual(1, t.getNames().length);
         this.assertEqual("foo", t.getNames()[0].getValue());
     },
@@ -116,7 +116,7 @@ var tmp = new Test.Unit.Runner({
         this.assertEqual(2, variants.length);
         this.assertEqual("foo", variants[0].getValue());
         this.assertEqual("foo", variants[1].getValue());
-        TM.DuplicateRemover.removeTopicMapDuplicates(tm);
+        tm.sanitize();
         this.assertEqual(1, name.getVariants().length);
         this.assertEqual("foo", name.getVariants()[0].getValue());
     },

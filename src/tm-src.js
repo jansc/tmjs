@@ -776,6 +776,10 @@ TM = (function () {
     TopicMap.swiss(Construct, 'addItemIdentifier', 'getItemIdentifiers',
         'removeItemIdentifier', 'isTopic', 'isAssociation', 'isRole',
         'isOccurrence', 'isName', 'isVariant', 'isTopicMap');
+
+    TopicMap.prototype.sanitize = function () {
+        DuplicateRemover.removeTopicMapDuplicates(this);
+    };
     
     TopicMap.prototype.isTopicMap = function() {
         return true;
@@ -2764,7 +2768,6 @@ TM = (function () {
     // Export objects into the TM namespace
     return {
         TopicMapSystemFactory: TopicMapSystemFactory,
-        DuplicateRemover: DuplicateRemover,
         XSD: XSD
     };
 }());
