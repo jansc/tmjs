@@ -2621,7 +2621,7 @@ TM = (function () {
         },
 
         removeOccurrencesDuplicates: function (occurrences) {
-            var i, sig2occ = new Hash(), occ, sig;
+            var i, sig2occ = new Hash(), occ, sig, existing;
             for (i=0; i<occurrences.length; i+=1) {
                 occ = occurrences[i];
                 sig = SignatureGenerator.makeOccurrenceSignature(occ);
@@ -2636,7 +2636,7 @@ TM = (function () {
         },
 
         removeNamesDuplicates: function (names) {
-            var i, sig2names = new Hash(), name;
+            var i, sig2names = new Hash(), name, sig, existing;
             for (i=0; i<names.length; i+=1) {
                 name = names[i];
                 DuplicateRemover.removeVariantsDuplicates(name.getVariants());
@@ -2653,7 +2653,7 @@ TM = (function () {
         },
 
         removeVariantsDuplicates: function (variants) {
-            var i, sig2variants = new Hash(), variant;
+            var i, sig2variants = new Hash(), variant, sig, existing;
             for (i=0; i<variants.length; i+=1) {
                 variant = variants[i];
                 sig = SignatureGenerator.makeVariantSignature(variant);
