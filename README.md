@@ -82,6 +82,12 @@ This is how to create a TopicMap object:
 
 By default newTopicMapSystem() returns an in-memory implementation.
 
+See these topics for more information:
+
+* [Getting started](http://wiki.github.com/jansc/tmjs/getting-started)
+* [JTM import and export](http://wiki.github.com/jansc/tmjs/jtm-import-and-export)
+* [Duplicate removal](http://wiki.github.com/jansc/tmjs/duplicate-removal)
+
 
 # Distribution overview
 
@@ -105,7 +111,7 @@ the source code and to run the unit tests.
 For feedback or if you find any bugs or have comments or feature request
 please use the issue tracker at
 
-[project's homepage]([http://github.com/jansc/tmjs)
+[project's homepage](http://github.com/jansc/tmjs)
 
 
 # Copyright and License

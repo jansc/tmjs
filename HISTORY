@@ -1,5 +1,5 @@
 == 0.3.1 2010-08-09
-* API for duplicate suppression (DuplicateRemover)
+* API for duplicate suppression (tm.sanitize())
 * Restructured code of JTM.Writer, changed API, supports now export of fragments
 * Added more tests for TM.JTM.Reader
 * Added missing SignatureGenerator for roles (internal API)
