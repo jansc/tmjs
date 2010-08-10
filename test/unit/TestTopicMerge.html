@@ -150,7 +150,7 @@ var tmp = new Test.Unit.Runner({
      * Tests if merging detects duplicates and that the reifier is kept.
      */
     testDuplicateDetectionReifier: function () {
-        var topic1, topic2, reifier, type, nametype, name1, name2;
+        var topic1, topic2, reifier, type, nametype, name1, name2, name;
         topic1 = this._tm.createTopic();
         topic2 = this._tm.createTopic();
         reifier = this._tm.createTopic();
@@ -177,7 +177,7 @@ var tmp = new Test.Unit.Runner({
      */
     testDuplicateDetectionReifierMerge: function () {
         var topic1, topic2, reifier1, reifier2, type, nametype, name1, name2,
-            reifier, topics, i;
+            reifier, topics, i, name;
         topic1 = this._tm.createTopic();
         topic2 = this._tm.createTopic();
         reifier1 = this._tm.createTopic();
