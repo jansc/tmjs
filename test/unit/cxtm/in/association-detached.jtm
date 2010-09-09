@@ -1,0 +1,6 @@
+{"version": "1.0",
+  "item_type": "association",
+  "type": "ii:#assoctype",
+  "roles": [{"type": "ii:#roletype",
+                "player": "ii:#topic"}]
+}

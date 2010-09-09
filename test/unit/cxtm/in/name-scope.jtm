@@ -1,0 +1,11 @@
+{"version": "1.0",
+ "item_type": "topicmap",
+  "topics":[
+    {"item_identifiers": ["http://www.example.org/topic"],
+     "names": [
+        {"value": "Name",
+         "type": "si:http://psi.topicmaps.org/iso13250/model/topic-name",
+         "scope": ["ii:#theme1", "ii:#theme2"]
+        }
+     ]}
+]}

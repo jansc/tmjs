@@ -12,14 +12,15 @@ var TM, TopicMapSystemFactory;
  * Date: 
  */
 TM = (function () {
-    var Version, Hash, XSD, Locator, EventType, Topic, Association,
+    var Version, Hash, XSD, TMDM, Locator, EventType, Topic, Association,
         Scoped, Construct, Typed, Reifiable,
         DatatypeAware, TopicMap, Role, Name,
         Variant, Occurrence, TopicMapSystemMemImpl,
         Index, TypeInstanceIndex, ScopedIndex, 
         SameTopicMapHelper, ArrayHelper, IndexHelper, addScope,
         DuplicateRemover,
-        SignatureGenerator, MergeHelper;
+        SignatureGenerator, MergeHelper, CopyHelper,
+        TypeInstanceHelper;
 
     Version = '@VERSION';
 
@@ -121,6 +122,12 @@ TM = (function () {
         'anyURI': "http://www.w3.org/2001/XMLSchema#anyURI"
 
         // TODO: Add all build-in types
+    };
+
+    TMDM = {
+        'TYPE_INSTANCE': 'http://psi.topicmaps.org/iso13250/model/type-instance',
+        'TYPE': 'http://psi.topicmaps.org/iso13250/model/type',
+        'INSTANCE': 'http://psi.topicmaps.org/iso13250/model/instance'
     };
 
     // -----------------------------------------------------------------------
@@ -292,7 +299,7 @@ TM = (function () {
      * @returns <code>true</code> if the construct is a {@link TopicMap}-object,
      *     <code>false</code> otherwise.
      */
-    Construct.prototype.isTopicMap = function() {
+    Construct.prototype.isTopicMap = function () {
         return false;
     };
     
@@ -301,7 +308,7 @@ TM = (function () {
      * @returns <code>true</code> if the construct is a {@link Topic}-object,
      *     <code>false</code> otherwise.
      */
-    Construct.prototype.isTopic = function() {
+    Construct.prototype.isTopic = function () {
         return false;
     };
     
@@ -310,7 +317,7 @@ TM = (function () {
      * @returns <code>true</code> if the construct is an {@link Association}-
      *     object, <code>false</code> otherwise.
      */
-    Construct.prototype.isAssociation = function() {
+    Construct.prototype.isAssociation = function () {
         return false;
     };
     
@@ -319,7 +326,7 @@ TM = (function () {
      * @returns <code>true</code> if the construct is a {@link Role}-object,
      *     <code>false</code> otherwise.
      */
-    Construct.prototype.isRole = function() {
+    Construct.prototype.isRole = function () {
         return false;
     };
     
@@ -328,7 +335,7 @@ TM = (function () {
      * @returns <code>true</code> if the construct is a {@link Name}-object,
      *     <code>false</code> otherwise.
      */
-    Construct.prototype.isName = function() {
+    Construct.prototype.isName = function () {
         return false;
     };
     
@@ -337,7 +344,7 @@ TM = (function () {
      * @returns <code>true</code> if the construct is an {@link Occurrence}-object,
      *     <code>false</code> otherwise.
      */
-    Construct.prototype.isOccurrence = function() {
+    Construct.prototype.isOccurrence = function () {
         return false;
     };
     
@@ -346,7 +353,7 @@ TM = (function () {
      * @returns <code>true</code> if the construct is a {@link Variant}-object,
      *     <code>false</code> otherwise.
      */
-    Construct.prototype.isVariant = function() {
+    Construct.prototype.isVariant = function () {
         return false;
     };
 
@@ -557,7 +564,7 @@ TM = (function () {
     * @class Represents a Topic Maps construct.
     * @memberOf TM
     */
-    TopicMapSystemFactory = function() {
+    TopicMapSystemFactory = function () {
         this.properties = {};
         this.features = {};
     };
@@ -661,7 +668,7 @@ TM = (function () {
         return false;
     };
     
-    TopicMapSystemMemImpl.prototype._removeTopicMap = function(tm) {
+    TopicMapSystemMemImpl.prototype._removeTopicMap = function (tm) {
         var key;
         for (key in this.topicmaps) {
             if (this.topicmaps.hasOwnProperty(key) &&
@@ -737,7 +744,7 @@ TM = (function () {
         this.scopedIndex = new ScopedIndex(this);
     };
 
-    TopicMap.prototype.register_event_handler = function(type, handler) {
+    TopicMap.prototype.register_event_handler = function (type, handler) {
         switch (type) {
             case EventType.ADD_ASSOCIATION:
                 this.addAssociationEvent.registerHandler(handler); break;
@@ -779,9 +786,10 @@ TM = (function () {
 
     TopicMap.prototype.sanitize = function () {
         DuplicateRemover.removeTopicMapDuplicates(this);
+        TypeInstanceHelper.convertAssociationsToType(this);
     };
     
-    TopicMap.prototype.isTopicMap = function() {
+    TopicMap.prototype.isTopicMap = function () {
         return true;
     };
     
@@ -790,7 +798,7 @@ TM = (function () {
         return this._constructId;
     };
     
-    TopicMap.prototype.remove = function() {
+    TopicMap.prototype.remove = function () {
         this.topicmapsystem._removeTopicMap(this);
         this.topicmapsystem = null;
         this.itemIdentifiers = null;
@@ -814,7 +822,7 @@ TM = (function () {
         } 
         if (scope === null) {
             throw {name: 'ModelConstraintException',
-                messge: 'Creating an association with scope == null is not allowed'};
+                message: 'Creating an association with scope == null is not allowed'};
         }
         SameTopicMapHelper.assertBelongsTo(this, type);
         SameTopicMapHelper.assertBelongsTo(this, scope);
@@ -910,7 +918,7 @@ TM = (function () {
     TopicMap.prototype.getIndex = function (className) {
         var index;
         if (className === 'TypeInstanceIndex') {
-            index = new TypeInstanceIndex(this);
+            index = this.typeInstanceIndex;
             return index;
         } else if (className === 'ScopedIndex') {
             index = new ScopedIndex(this);
@@ -1048,7 +1056,7 @@ TM = (function () {
         'removeItemIdentifier', 'isTopic', 'isAssociation', 'isRole',
         'isOccurrence', 'isName', 'isVariant', 'isTopicMap');
     
-    Topic.prototype.isTopic = function() {
+    Topic.prototype.isTopic = function () {
         return true;
     };
     
@@ -1060,6 +1068,13 @@ TM = (function () {
     Topic.prototype.addSubjectIdentifier = function (subjectIdentifier) {
         if (!subjectIdentifier) { throw {name: 'ModelConstraintException',
             message: 'addSubjectIdentifier() needs subject identifier'}; }
+        // Ignore if the identifier already exists
+        for (var i=0; i<this.subjectIdentifiers.length; i+=1) {
+            if (this.subjectIdentifiers[i].getReference() ===
+                subjectIdentifier.getReference()) {
+                return;
+            }
+        }
         this.subjectIdentifiers.push(subjectIdentifier);
         this.parnt._si2topic.put(subjectIdentifier.getReference(), this);
     };
@@ -1068,6 +1083,13 @@ TM = (function () {
     Topic.prototype.addSubjectLocator = function (subjectLocator) {
         if (!subjectLocator) { throw {name: 'ModelConstraintException',
             message: 'addSubjectLocator() needs subject locator'}; }
+        // Ignore if the identifier already exists
+        for (var i=0; i<this.subjectLocators.length; i+=1) {
+            if (this.subjectLocators[i].getReference() ===
+                subjectLocator.getReference()) {
+                return;
+            }
+        }
         this.subjectLocators.push(subjectLocator);
         this.parnt._sl2topic.put(subjectLocator.getReference(), this);
     };
@@ -1406,7 +1428,7 @@ TM = (function () {
         }
     };
     
-    Topic.prototype._removeName = function(name) {
+    Topic.prototype._removeName = function (name) {
         for (var i=0; i<this.names.length; i+=1) {
             if (this.names[i].equals(name)) {
                 this.names.splice(i, 1);
@@ -1441,7 +1463,7 @@ TM = (function () {
         'removeItemIdentifier', 'isTopic', 'isAssociation', 'isRole',
         'isOccurrence', 'isName', 'isVariant', 'isTopicMap');
     
-    Occurrence.prototype.isOccurrence = function() {
+    Occurrence.prototype.isOccurrence = function () {
         return true;
     };
     
@@ -1484,7 +1506,7 @@ TM = (function () {
         'removeItemIdentifier', 'isTopic', 'isAssociation', 'isRole',
         'isOccurrence', 'isName', 'isVariant', 'isTopicMap');
     
-    Name.prototype.isName = function() {
+    Name.prototype.isName = function () {
         return true;
     };
     
@@ -1522,13 +1544,13 @@ TM = (function () {
         return variant;
     };
     
-    Name.prototype.setValue = function(value) {
+    Name.prototype.setValue = function (value) {
         if (!value) { throw {name: 'ModelConstraintException',
             message: 'Name.setValue(null) is not allowed'}; }
         this.value = value;
     };
     
-    Name.prototype.getValue = function(value) {
+    Name.prototype.getValue = function (value) {
         return this.value;
     };
     
@@ -1587,7 +1609,7 @@ TM = (function () {
     Variant.swiss(DatatypeAware, 'decimalValue', 'floatValue', 'getDatatype',
         'getValue', 'integerValue', 'locatorValue', 'longValue', 'setValue');
     
-    Variant.prototype.isVariant = function() {
+    Variant.prototype.isVariant = function () {
         return true;
     };
     
@@ -2430,13 +2452,13 @@ TM = (function () {
             if (topic && topic instanceof Topic &&
                     !topicmap.equals(topic.getTopicMap())) {
                 throw {name: 'ModelConstraintException',
-                    messge: 'scope topic belongs to different topic map'};
+                    message: 'scope topic belongs to different topic map'};
             }
             if (topic && topic instanceof Array) {
                 for (i=0; i<topic.length; i+=1) {
                     if (!topicmap.equals(topic[i].getTopicMap())) {
                         throw {name: 'ModelConstraintException',
-                            messge: 'scope topic belong to different topic maps'};
+                            message: 'scope topic belong to different topic maps'};
                     }
                 }
             }
@@ -2465,7 +2487,7 @@ TM = (function () {
             return tmp.values();
         },
 
-        getConstructThemes: function(tm, hash) {
+        getConstructThemes: function (tm, hash) {
             var ret = [], keys = hash.keys(), i;
             for (i=0; i<keys.length; i+=1) {
                 if (keys[i] !== 'null') {
@@ -2674,7 +2696,7 @@ TM = (function () {
         removeAssociationDuplicates: function (assoc) {
             var i, roles = assoc.getRoles(), sig2role = new Hash(), sig, existing;
             for (i=0; i<roles.length; i+=1) {
-                sig = SignatureGenerator.makeAssociationRoleSignature(roles[i]);
+                sig = SignatureGenerator.makeRoleSignature(roles[i]);
                 if ((existing = sig2role.get(sig))) {
                     MergeHelper.moveConstructCharacteristics(roles[i], existing);
                     roles[i].remove();
@@ -2764,11 +2786,64 @@ TM = (function () {
         }
     };
 
+    CopyHelper = {
+        copyTopicMap: function (source, target) {
+        },
+
+        copyTopic: function (source, targettm) {
+        }
+    };
+
+    TypeInstanceHelper = {
+        convertAssociationsToType: function (tm) {
+            var typeInstance, type, instance, associations, index, i, ass, roles;
+            typeInstance = tm.getTopicBySubjectIdentifier(
+                tm.createLocator(TMDM.TYPE_INSTANCE));
+            type = tm.getTopicBySubjectIdentifier(
+                tm.createLocator(TMDM.TYPE));
+            instance = tm.getTopicBySubjectIdentifier(
+                tm.createLocator(TMDM.INSTANCE));
+            if (!typeInstance || !type || !instance) {
+                return;
+            }
+            index = tm.getIndex('TypeInstanceIndex');
+            if (!index) {
+                return;
+            }
+            if (!index.isAutoUpdated()) {
+                index.reindex();
+            }
+            associations = index.getAssociations(typeInstance);
+            for (i=0; i<associations.length; i+=1) {
+                ass = associations[i];
+                if (ass.getScope().length > 0 ||
+                    ass.getReifier() !== null ||
+                    ass.getItemIdentifiers().length > 0) {
+                    continue;
+                }
+                roles = ass.getRoles();
+                if (roles.length !== 2) {
+                    continue;
+                }
+                if (roles[0].getType().equals(type) && roles[1].getType().equals(instance)) {
+                    roles[1].getPlayer().addType(roles[0].getPlayer());
+                } else
+                if (roles[1].getType().equals(type) && roles[0].getType().equals(instance)) {
+                    roles[0].getPlayer().addType(roles[1].getPlayer());
+                } else {
+                    continue;
+                }
+                ass.remove();
+            }
+        }
+    };
 
     // Export objects into the TM namespace
     return {
         TopicMapSystemFactory: TopicMapSystemFactory,
-        XSD: XSD
+        XSD: XSD,
+        TMDM: TMDM,
+        Hash: Hash // needed by CXTM export
     };
 }());
 

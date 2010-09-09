@@ -1,0 +1,50 @@
+<topicMap>
+<topic number="1">
+<itemIdentifiers>
+<locator>#assoctype</locator>
+</itemIdentifiers>
+</topic>
+<topic number="2">
+<itemIdentifiers>
+<locator>#reifier</locator>
+</itemIdentifiers>
+</topic>
+<topic number="3">
+<itemIdentifiers>
+<locator>#reifier2</locator>
+</itemIdentifiers>
+</topic>
+<topic number="4">
+<itemIdentifiers>
+<locator>#roletype</locator>
+</itemIdentifiers>
+</topic>
+<topic number="5">
+<itemIdentifiers>
+<locator>#roletype2</locator>
+</itemIdentifiers>
+</topic>
+<topic number="6">
+<itemIdentifiers>
+<locator>#topic</locator>
+</itemIdentifiers>
+<rolePlayed ref="association.1.role.1"></rolePlayed>
+</topic>
+<topic number="7">
+<itemIdentifiers>
+<locator>#topic2</locator>
+</itemIdentifiers>
+<rolePlayed ref="association.1.role.2"></rolePlayed>
+</topic>
+<association number="1">
+<type topicref="1"></type>
+<role number="1" reifier="2">
+<player topicref="6"></player>
+<type topicref="4"></type>
+</role>
+<role number="2" reifier="3">
+<player topicref="7"></player>
+<type topicref="5"></type>
+</role>
+</association>
+</topicMap>

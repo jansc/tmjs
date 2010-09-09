@@ -8,10 +8,6 @@ TM.JTM = (function() {
     ReaderImpl = function (tm) {
         this.tm = tm;
         this.defaultDatatype = this.tm.createLocator(TM.XSD.string);
-        // TODO: The default name type should only be created on demand.
-        // But who cares (for now)...?
-        this.defaultNametype = tm.createTopicBySubjectIdentifier(
-            tm.createLocator("http://psi.topicmaps.org/iso13250/model/topic-name"));
         /**
         * Internal function that takes a JTM-identifier string as a parameter
         * and returns a topic object - either an existing topic or a new topic
@@ -100,6 +96,7 @@ TM.JTM = (function() {
             }
             arr = null;
         }
+        this.tm.sanitize(); // remove duplicates and convert type-instance associations to types
         return true;
     };
 
@@ -144,7 +141,7 @@ TM.JTM = (function() {
         var name, type, scope, arr, i;
         scope = this.parseScope(obj.scope);
         type = this.getTopicByReference(obj.type);
-        name = parent.createName(obj.value, type ? type : this.defaultNametype, scope);
+        name = parent.createName(obj.value, type, scope);
         arr = obj.variants;
         if (arr && typeof arr === 'object' && arr instanceof Array) {
             for (i = 0; i < arr.length; i += 1) {
@@ -230,7 +227,6 @@ TM.JTM = (function() {
     WriterImpl = function () {
         var that = this;
         this.defaultDatatype = TM.XSD.string;
-        this.defaultNametype = "http://psi.topicmaps.org/iso13250/model/topic-name";
 
         /**
          * Generates a JTM reference based on the topics subject identifier,

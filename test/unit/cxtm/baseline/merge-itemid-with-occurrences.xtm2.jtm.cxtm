@@ -1,0 +1,24 @@
+<topicMap>
+<topic number="1">
+<itemIdentifiers>
+<locator>#occtype</locator>
+</itemIdentifiers>
+</topic>
+<topic number="2">
+<itemIdentifiers>
+<locator>#topic</locator>
+<locator>#topic2</locator>
+<locator>http://example.org/#topic</locator>
+</itemIdentifiers>
+<occurrence number="1">
+<value>Some data</value>
+<datatype>http://www.w3.org/2001/XMLSchema#string</datatype>
+<type topicref="1"></type>
+</occurrence>
+<occurrence number="2">
+<value>Some more data</value>
+<datatype>http://www.w3.org/2001/XMLSchema#string</datatype>
+<type topicref="1"></type>
+</occurrence>
+</topic>
+</topicMap>

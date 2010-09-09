@@ -1,0 +1,5 @@
+{"version": "1.0",
+ "item_type": "topicmap",
+  "topics":[
+    {"item_identifiers": ["http://www.example.org/topic"]}
+]}

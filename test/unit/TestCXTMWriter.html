@@ -1,0 +1,234 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>FIXMETest</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <script type="text/javascript" src="../assets/jsunittest.js"></script>
+  <script type="text/javascript" src="../../src/tm-src.js"></script>
+  <script type="text/javascript" src="../../src/tm-jtm.js"></script>
+  <script type="text/javascript" src="../../src/tm-cxtm.js"></script>
+  <script type="text/javascript" src="datatypeaware.js"></script>
+  <script type="text/javascript" src="tmunittest.js"></script>
+  <script type="text/javascript" src="jquery.min.js"></script>
+  <link type="text/css" rel="stylesheet" href="../assets/unittest.css" />
+</head>
+<body>
+
+<!-- Log output -->
+<div id="testlog"> </div>
+
+<!-- here go any elements you do the testing on -->
+
+<!-- Tests -->
+<script type="text/javascript" language="javascript">
+// <![CDATA[
+var okCount = 0, failCount = 0, exceptionCount = 0;
+var compareCXTM = function(test, filename) {
+        var tm, writer, reader, cxtm, jtm = null, baseline = null, obj, error = false;
+        $.ajax({async: false, url: './cxtm/in/'+filename,
+                success: function (data, statusText, xmlHttpRequest) { jtm = data; }});
+        $.ajax({async: false, url: './cxtm/baseline/'+filename+'.cxtm',
+                success: function (data, statusText, xmlHttpRequest) { baseline = data; }});
+        tm = test.createTopicMap(filename);
+        test.assertNotNull(jtm);
+        test.assertNotNull(baseline);
+        test.assertNotNull(tm);
+        obj = $.parseJSON(jtm);
+        test.assertNotNull(obj);
+
+        try {
+            reader = new TM.JTM.Reader(tm);
+            reader.fromObject(obj);
+            writer = new TM.CXTM.Writer();
+            test.assertNotNull(writer);
+            cxtm = writer.toString(tm);
+            test.assertEqual(baseline, cxtm, "CXTM error in "+filename);
+        } catch(e) {
+            error = true;
+        }
+        test.assertEqual(false, error, "Exception in "+filename);
+        if (!error) {
+            if (baseline !== null && baseline === cxtm) {
+                okCount += 1;
+                console.log(filename+" OK");
+            } else {
+                failCount += 1;
+                console.log(filename+" failed");
+            }
+        } else {
+            exceptionCount += 1;
+            console.log("An exception was thrown in "+filename);
+        }
+        tm.remove();
+    };
+
+var tmp = new Test.Unit.Runner({
+    // optional setup function, run before each individual test case
+    setup: function () { with(this) {
+        TMUnitTest.addCommonSetupFunctions(this);
+    }},
+    // optional teardown function, run after each individual test case
+    teardown: function () { with(this) {
+        TMUnitTest.addCommonTeardownFunctions(this);
+    }},
+
+    testCXTMAssociation: function () {
+         compareCXTM(this, 'association.jtm');
+    },
+
+    testCXTMOccurrence: function () {
+         compareCXTM(this, 'occurrence.jtm');
+    },
+
+    testCXTMAll: function () {
+         var file, files = ['association-binary-duplicate.xtm2.jtm',
+                     //'merge-itemid-with-types.xtm2.jtm',
+                     //'occurrence-detached2.jtm',
+                     'subjloc-duplicate.xtm2.jtm',
+                     'association-binary.xtm2.jtm',
+                     'merge-itemid-with-variants.xtm2.jtm',
+                     'occurrence-duplicate-iid.xtm2.jtm',
+                     'subjloc-fragment.xtm2.jtm',
+                     //'association-detached.jtm',
+                     'merge-itemid.xtm2.jtm',
+                     'occurrence-duplicate-iid2.xtm2.jtm',
+                     'subjloc-multiple.xtm2.jtm',
+                     'association-duplicate-iid.xtm2.jtm',
+                     'merge-subjid.xtm2.jtm',
+                     'occurrence-duplicate-reifier.xtm2.jtm',
+                     'subjloc-relative.xtm2.jtm',
+                     'association-duplicate-reified.xtm2.jtm',
+                     'merge-subjloc.xtm2.jtm',
+                     'occurrence-duplicate.xtm2.jtm',
+                     'subjloc.xtm2.jtm',
+                     'association-duplicate-role.xtm2.jtm',
+                     'merge-three-way.xtm2.jtm',
+                     'occurrence-reifier-slo.jtm',
+                     'tm-reifier.xtm2.jtm',
+                     'association-instanceof-duplicate.xtm2.jtm',
+                     'name-default-type.jtm',
+                     'occurrence-reifier.jtm',
+                     'topic-detached.jtm',
+                     'association-instanceof-scope.xtm2.jtm',
+                     //'name-detached-default-type.jtm',
+                     'occurrence-reifier.xtm2.jtm',
+                     'topic-item-identifier.jtm',
+                     'association-reifier-null.jtm',
+                     //'name-detached.jtm',
+                     'occurrence-resourcedata-uri-relative.xtm2.jtm',
+                     'topic-subject-identifier.jtm',
+                     'association-reifier-slo.jtm',
+                     //'name-detached2.jtm',
+                     'occurrence-resourcedata-uri.xtm2.jtm',
+                     'topic-subject-locator.jtm',
+                     'association-reifier.jtm',
+                     'name-detached3.jtm',
+                     'occurrence-resourceref-relative.xtm2.jtm',
+                     'topic-type-duplicate.xtm2.jtm',
+                     'association-reifier.xtm2.jtm',
+                     'name-duplicate-iid.xtm2.jtm',
+                     'occurrence-resourceref.xtm2.jtm',
+                     'topic-type.xtm2.jtm',
+                     'association-scope.jtm',
+                     'name-duplicate-merge.xtm2.jtm',
+                     'occurrence-scope-duplicate-merged.xtm2.jtm',
+                     'topic.xtm2.jtm',
+                     'association-scope.xtm2.jtm',
+                     'name-duplicate-reified.xtm2.jtm',
+                     'occurrence-scope-duplicate.xtm2.jtm',
+                     'topicmap-reifier-null.jtm',
+                     'association-ternary.xtm2.jtm',
+                     'name-duplicate-reified2.xtm2.jtm',
+                     'occurrence-scope.xtm2.jtm',
+                     'topicmap-reifier-slo.jtm',
+                     'association.jtm',
+                     'name-duplicate.xtm2.jtm',
+                     'occurrence-uri.jtm',
+                     'topicmap-reifier.jtm',
+                     'association.xtm2.jtm',
+                     'name-escaping.xtm2.jtm',
+                     'occurrence.jtm',
+                     'variant-datatype-unknown.xtm2.jtm',
+                     'empty.jtm',
+                     'name-reifier-slo.jtm',
+                     'occurrence.xtm2.jtm',
+                     'variant-duplicate-iid.xtm2.jtm',
+                     'empty.xtm2.jtm',
+                     'name-reifier.jtm',
+                     'role-duplicate-iid.xtm2.jtm',
+                     'variant-duplicate-reifier.xtm2.jtm',
+                     'empty2.jtm',
+                     'name-reifier.xtm2.jtm',
+                     'role-duplicate-iid2.xtm2.jtm',
+                     'variant-duplicate-reifier2.xtm2.jtm',
+                     'empty3.jtm',
+                     'name-scope-duplicate-merged.xtm2.jtm',
+                     'role-duplicate-reified.xtm2.jtm',
+                     'variant-duplicate.xtm2.jtm',
+                     'empty4.jtm',
+                     'name-scope-duplicate.xtm2.jtm',
+                     'role-duplicate-reified2.xtm2.jtm',
+                     'variant-inherit.xtm2.jtm',
+                     'itemid-association.xtm2.jtm',
+                     'name-scope-multiple.xtm2.jtm',
+                     'role-duplicate-reified3.xtm2.jtm',
+                     'variant-reifier-slo.jtm',
+                     'itemid-duplicate.xtm2.jtm',
+                     'name-scope.jtm',
+                     'role-duplicate-reified4.xtm2.jtm',
+                     'variant-reifier.jtm',
+                     'itemid-fragment.xtm2.jtm',
+                     'name-scope.xtm2.jtm',
+                     'role-iid.jtm',
+                     'variant-reifier.xtm2.jtm',
+                     'itemid-name.xtm2.jtm',
+                     'name-type-after-bad.xtm2.jtm',
+                     'role-reifier-slo.jtm',
+                     'variant-resourcedata-uri.xtm2.jtm',
+                     'itemid-occurrence.xtm2.jtm',
+                     'name-type-after.xtm2.jtm',
+                     'role-reifier.jtm',
+                     'variant-resourceref-relative.xtm2.jtm',
+                     'itemid-relative.xtm2.jtm',
+                     'name-type-before.xtm2.jtm',
+                     'role-reifier.xtm2.jtm',
+                     'variant-resourceref.xtm2.jtm',
+                     'itemid-role.xtm2.jtm',
+                     'name-type-scope.xtm2.jtm',
+                     'subjid-duplicate.xtm2.jtm',
+                     'variant-scope-duplicate.xtm2.jtm',
+                     'itemid-tm.xtm2.jtm',
+                     'name-type.xtm2.jtm',
+                     'subjid-escaping.xtm2.jtm',
+                     'variant-scope-multiple.xtm2.jtm',
+                     'itemid-variant.xtm2.jtm',
+                     'name-unicode.xtm2.jtm',
+                     'subjid-escaping2.xtm2.jtm',
+                     'variant.jtm',
+                     'itemid.xtm2.jtm',
+                     'name.jtm',
+                     'subjid-fragment.xtm2.jtm',
+                     'variant.xtm2.jtm',
+                     'merge-itemid-with-association.xtm2.jtm',
+                     'name.xtm2.jtm',
+                     'subjid-relative.xtm2.jtm',
+                     'merge-itemid-with-names.xtm2.jtm',
+                     'occurrence-datatype-unknown.xtm2.jtm',
+                     'subjid-sameas-itemid.xtm2.jtm',
+                     'merge-itemid-with-occurrences.xtm2.jtm',
+                     //'occurrence-detached.jtm',
+                     'subjid.xtm2.jtm'
+                         ];
+
+        for (i=0; i<files.length; i+=1) {
+            compareCXTM(this, files[i]);
+        }
+        console.log("ok = "+okCount+", failed = "+failCount+", failed with exception = "+exceptionCount);
+    }
+
+});
+// ]]>
+</script>
+</body>
+</html>

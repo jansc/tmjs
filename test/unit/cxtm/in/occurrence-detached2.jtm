@@ -1,0 +1,6 @@
+{"version": "1.0",
+  "item_type": "occurrence",
+  "parent": ["ii:http://www.example.org/topic", "si:http://psi.example.org/topic"],
+  "value": "Value",
+  "type": "si:http://psi.example.org/type"
+}
