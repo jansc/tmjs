@@ -103,22 +103,23 @@ TM.JTM = (function() {
     };
 
     ReaderImpl.prototype.parseTopic = function (obj) {
-        var topic = null, parseIdentifier, arr, i;
+        var topic = null, parseIdentifier, arr, i, identifier;
         parseIdentifier = function (tm, topic, arr, getFunc, createFunc, addFunc) {
             var i, len, tmp;
             if (arr && typeof arr === 'object' && arr instanceof Array) {
                 len = arr.length;
                 for (i = 0; i < len; i += 1) {
+                    identifier = decodeURI(arr[i]);
                     if (!topic) {
-                        topic = createFunc.apply(tm, [tm.createLocator(arr[i])]);
+                        topic = createFunc.apply(tm, [tm.createLocator(identifier)]);
                     } else {
-                        tmp = getFunc.apply(tm, [tm.createLocator(arr[i])]);
+                        tmp = getFunc.apply(tm, [tm.createLocator(identifier)]);
                         if (tmp && tmp.isTopic() && !topic.equals(tmp)) {
                             topic.mergeIn(tmp);
                         } else if (tmp && tmp.isTopic() && topic.equals(tmp)) {
                             // Skip
                         } else {
-                            topic[addFunc](tm.createLocator(arr[i]));
+                            topic[addFunc](tm.createLocator(identifier));
                         }
                     }
                 }

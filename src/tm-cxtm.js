@@ -4,16 +4,115 @@
 /*global TM*/ 
 
 TM.CXTM = (function () {
-    var WriterImpl;
+    var WriterImpl, TypeInstanceAssociation, TypeInstanceRole;
+
+    // Fake association object that represents type-instance relations as
+    // associations.
+    TypeInstanceAssociation = function (tm, type, instance) {
+        var typeRole, instanceRole;
+        this.tm = tm;
+        this.type_player = type;
+        this.instance_player = instance;
+        this.id = 'fake-'+(TypeInstanceAssociation.max_id+1);
+        TypeInstanceAssociation.max_id += 1;
+        typeRole = tm.createTopicBySubjectIdentifier(
+            tm.createLocator(TM.TMDM.TYPE));
+        instanceRole = tm.createTopicBySubjectIdentifier(
+            tm.createLocator(TM.TMDM.INSTANCE));
+        this.roles = [
+            new TypeInstanceRole(this, typeRole, this.type_player), 
+            new TypeInstanceRole(this, instanceRole, this.instance_player) 
+        ];
+    };
+
+    TypeInstanceAssociation.max_id = 0;
+
+    TypeInstanceAssociation.prototype.getId = function () {
+        return this.id;
+    };
+
+    TypeInstanceAssociation.prototype.getReifier = function () {
+        return null;
+    };
+
+    TypeInstanceAssociation.prototype.getScope = function () {
+        return [];
+    };
+
+    TypeInstanceAssociation.prototype.getItemIdentifiers = function () {
+        return [];
+    };
+
+    TypeInstanceAssociation.prototype.getType = function () {
+        return this.tm.createTopicBySubjectIdentifier(
+            this.tm.createLocator(TM.TMDM.TYPE_INSTANCE));
+    };
+
+    TypeInstanceAssociation.prototype.getRoles = function () {
+        return this.roles;
+    };
+
+    TypeInstanceAssociation.prototype.remove = function () {
+    };
+
+    TypeInstanceRole = function (parent, type, player) {
+        this.parent = parent;
+        this.type = type;
+        this.player = player;
+        this.id = 'fake-'+(TypeInstanceAssociation.max_id + 1);
+        TypeInstanceAssociation.max_id += 1;
+    };
+
+    TypeInstanceRole.prototype.getId = function () {
+        return this.id;
+    };
+
+    TypeInstanceRole.prototype.equals = function (other) {
+        return this.getId() === other.getId();
+    };
+
+    TypeInstanceRole.prototype.getScope = function () {
+        return [];
+    };
+
+    TypeInstanceRole.prototype.getTopicMap = function () {
+        return this.tm;
+    };
+
+    TypeInstanceRole.prototype.getPlayer = function () {
+        return this.player;
+    };
+
+    TypeInstanceRole.prototype.getType = function () {
+        return this.type;
+    };
+
+    TypeInstanceRole.prototype.getItemIdentifiers = function () {
+        return [];
+    };
+
+    TypeInstanceRole.prototype.getReifier = function () {
+        return null;
+    };
+
+    TypeInstanceRole.prototype.getParent = function () {
+        return this.parent;
+    };
+
+    TypeInstanceRole.prototype.remove = function () {
+    };
+
 
     WriterImpl = function (tm) {
         this.tm = tm;
         this.id2cxtmid = null;
+        this.topic2roles = null;
     };
 
     WriterImpl.prototype.toString = function (tm) {
         var i, ret = [], items, sorted_items = [];
         this.id2cxtmid = new TM.Hash();
+        this.topic2roles = new TM.Hash();
         tm.sanitize();
         this.buildIndex(tm);
         ret.push('<topicMap'+this.exportReifier(tm)+'>');
@@ -26,19 +125,40 @@ TM.CXTM = (function () {
         for (i=0; i<sorted_items.length; i+=1) {
             this.exportTopic(ret, i+1, sorted_items[i]);
         }
-
-        this.exportAssociations(ret, tm.getAssociations());
+        this.exportAssociations(ret, tm.getAssociations(), tm);
         ret.push('</topicMap>');
         this.id2cxtmid.empty();
         return ret.join('\n')+'\n';
     };
 
     WriterImpl.prototype.buildIndex = function (tm) {
-        var tmp, arr = [], i, j, roles;
+        var tmp, arr = [], i, j, roles, types, tia, index;
+        this.tiAssocs = [];
+
+        index = tm.getIndex('TypeInstanceIndex');
+        if (index.getTopicTypes().length > 0) {
+            // TODO: Make these topics "fake" topics
+            tm.createTopicBySubjectIdentifier(tm.createLocator(TM.TMDM.TYPE));
+            tm.createTopicBySubjectIdentifier(tm.createLocator(TM.TMDM.INSTANCE));
+            tm.createTopicBySubjectIdentifier(tm.createLocator(TM.TMDM.TYPE_INSTANCE));
+        }
 
         tmp = tm.getTopics();
         for (i=0; i<tmp.length; i+=1) {
             arr.push(tmp[i]);
+            types = tmp[i].getTypes();
+            for (j=0; j<types.length; j+=1) {
+                tia = new TypeInstanceAssociation(tm, types[j], tmp[i]);
+                if (!this.topic2roles.contains(types[j].getId())) {
+                    this.topic2roles.put(types[j].getId(), []);
+                }
+                this.topic2roles.get(types[j].getId()).push(tia.getRoles()[0]);
+                if (!this.topic2roles.contains(tmp[i].getId())) {
+                    this.topic2roles.put(tmp[i].getId(), []);
+                }
+                this.topic2roles.get(tmp[i].getId()).push(tia.getRoles()[1]);
+                this.tiAssocs.push(tia);
+            }
         }
         arr.sort(WriterImpl.compareTopic);
         for (i=0; i<arr.length; i+=1) {
@@ -48,6 +168,9 @@ TM.CXTM = (function () {
         tmp = tm.getAssociations();
         for (i=0; i<tmp.length; i+=1) {
             arr.push(tmp[i]);
+        }
+        for (i=0; i<this.tiAssocs.length; i+=1) {
+            arr.push(this.tiAssocs[i]);
         }
         arr.sort(WriterImpl.compareAssociation);
         for (i=0; i<arr.length; i+=1) {
@@ -61,7 +184,7 @@ TM.CXTM = (function () {
     };
 
     WriterImpl.prototype.exportTopic = function (ret, id, topic) {
-        var rolesPlayed, i, role;
+        var rolesPlayed, i, role, arr, fakeRoles;
         ret.push('<topic number="'+id+'">');
         this.exportIdentifiers(ret, 'subjectIdentifiers', topic.getSubjectIdentifiers());
         this.exportIdentifiers(ret, 'subjectLocators', topic.getSubjectLocators());
@@ -69,23 +192,36 @@ TM.CXTM = (function () {
         this.exportNames(ret, topic.getNames());
         this.exportOccurrences(ret, topic.getOccurrences());
         rolesPlayed = topic.getRolesPlayed();
+        arr = [];
         for (i=0; i<rolesPlayed.length; i+=1) {
-            role = rolesPlayed[i];
+            arr.push(rolesPlayed[i]);
+        }
+        fakeRoles = this.topic2roles.get(topic.getId());
+        if (fakeRoles) {
+            for (i=0; i<fakeRoles.length; i+=1) {
+                arr.push(fakeRoles[i]);
+            }
+        }
+        arr.sort(WriterImpl.compareRole);
+        for (i=0; i<arr.length; i+=1) {
             ret.push('<rolePlayed ref="association.'+
-                    this.id2cxtmid.get(role.getParent().getId())+
-                    '.role.'+this.id2cxtmid.get(role.getId())+'"></rolePlayed>');
+                    this.id2cxtmid.get(arr[i].getParent().getId())+
+                    '.role.'+this.id2cxtmid.get(arr[i].getId())+'"></rolePlayed>');
         }
         ret.push('</topic>');
         return ret;
     };
 
-    WriterImpl.prototype.exportAssociations = function (ret, associations) {
+    WriterImpl.prototype.exportAssociations = function (ret, associations, tm) {
         var i, arr = [], association;
-        if (associations.length === 0) {
+        if (associations.length === 0 && this.tiAssocs.length === 0) {
             return;
         }
         for (i=0; i<associations.length; i +=1) {
             arr.push(associations[i]);
+        }
+        for (i=0; i<this.tiAssocs.length; i+=1) {
+            arr.push(this.tiAssocs[i]);
         }
         arr.sort(WriterImpl.compareAssociation);
         for (i=0; i<arr.length; i+=1) {
@@ -102,7 +238,7 @@ TM.CXTM = (function () {
     };
 
     WriterImpl.prototype.exportRoles = function (ret, roles) {
-        var i, arr = [], roles;
+        var i, arr = [], role;
         if (roles.length === 0) {
             return;
         }
