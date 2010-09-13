@@ -63,7 +63,7 @@ TM.JTM = (function() {
             throw {name: 'InvalidFormat',
                 message: 'Unknown version of JTM'};
         }
-        switch (obj.item_type) {
+        switch (obj.item_type.toLowerCase()) {
             case "topicmap": ret = this.parseTopicMap(obj); break;
             case "topic": ret = this.parseTopic(obj); break;
             case "name": ret = this.parseName(parent, obj); break;
@@ -79,6 +79,8 @@ TM.JTM = (function() {
 
     ReaderImpl.prototype.parseTopicMap = function (obj) {
         var i, len, arr;
+        this.parseItemIdentifiers(this.tm, obj.item_identifiers);
+        this.parseReifier(this.tm, obj.reifier);
         if (obj.topics && typeof obj.topics === 'object' && obj.topics instanceof Array) {
             arr = obj.topics;
             len = arr.length;
@@ -102,25 +104,35 @@ TM.JTM = (function() {
 
     ReaderImpl.prototype.parseTopic = function (obj) {
         var topic = null, parseIdentifier, arr, i;
-        parseIdentifier = function (tm, topic, arr, createFunc, addFunc) {
-            var i, len;
+        parseIdentifier = function (tm, topic, arr, getFunc, createFunc, addFunc) {
+            var i, len, tmp;
             if (arr && typeof arr === 'object' && arr instanceof Array) {
                 len = arr.length;
                 for (i = 0; i < len; i += 1) {
                     if (!topic) {
                         topic = createFunc.apply(tm, [tm.createLocator(arr[i])]);
                     } else {
-                        topic[addFunc](tm.createLocator(arr[i]));
+                        tmp = getFunc.apply(tm, [tm.createLocator(arr[i])]);
+                        if (tmp && tmp.isTopic() && !topic.equals(tmp)) {
+                            topic.mergeIn(tmp);
+                        } else if (tmp && tmp.isTopic() && topic.equals(tmp)) {
+                            // Skip
+                        } else {
+                            topic[addFunc](tm.createLocator(arr[i]));
+                        }
                     }
                 }
             }
             return topic;
         };
         topic = parseIdentifier(this.tm, topic, obj.subject_identifiers,
+            this.tm.getTopicBySubjectIdentifier,
             this.tm.createTopicBySubjectIdentifier, 'addSubjectIdentifier');
         topic = parseIdentifier(this.tm, topic, obj.subject_locators,
+            this.tm.getTopicBySubjectLocator,
             this.tm.createTopicBySubjectLocator, 'addSubjectLocator');
         topic = parseIdentifier(this.tm, topic, obj.item_identifiers,
+            this.tm.getConstructByItemIdentifier,
             this.tm.createTopicByItemIdentifier, 'addItemIdentifier');
 
         arr = obj.names;
@@ -207,17 +219,24 @@ TM.JTM = (function() {
 
 
     ReaderImpl.prototype.parseItemIdentifiers = function (construct, arr) {
-        var i;
+        var i, tm;
+        tm = construct.getTopicMap();
         if (arr && typeof arr === 'object' && arr instanceof Array) {
             for (i = 0; i < arr.length; i += 1) {
-                construct.addItemIdentifier(construct.getTopicMap().createLocator(arr[i]));
+                if (!tm.getConstructByItemIdentifier(tm.createLocator(arr[i]))) {
+                    construct.addItemIdentifier(tm.createLocator(arr[i]));
+                }
             }
         }
     };
 
     ReaderImpl.prototype.parseReifier = function (construct, reifier) {
         var reifierTopic = this.getTopicByReference(reifier);
-        construct.setReifier(reifierTopic);
+        if (reifierTopic && reifierTopic.getReified() === null || !reifierTopic) {
+            construct.setReifier(reifierTopic);
+        } else {
+            // Ignore the case that reifierTopic reifies another item
+        }
     };
 
     /**

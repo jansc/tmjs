@@ -975,6 +975,7 @@ TM = (function () {
         for (i=0; i<iis.length; i+=1) {
             this._ii2construct.remove(iis[i].getReference());
         }
+        this._id2construct.remove(construct.getId());
     };
     
     TopicMap.prototype._removeTopic = function (topic) {
@@ -1736,8 +1737,8 @@ TM = (function () {
             this.parnt.removeThemeEvent.fire(this, {theme: this.scope[i]});
         }
         this.parnt.removeAssociationEvent.fire(this);
-        for (i=0; i<this.roles.length; i+=1) {
-            this.roles[i].remove();
+        while (this.roles.length) {
+            this.roles[0].remove();
         }
         this.id = null;
         this.roles = null;
@@ -2769,14 +2770,15 @@ TM = (function () {
 
         moveRoleCharacteristics: function (source, target) {
             var i, roles, sigs = new Hash();
-            roles = source.getRoles();
+            roles = target.getRoles();
             for (i=0; i<roles.length; i+=1) {
                 sigs.put(roles[i], SignatureGenerator.makeRoleSignature(roles[i]));
             }
-            roles = target.getRoles();
+            roles = source.getRoles();
             for (i=0; i<roles.length; i+=1) {
-                MergeHelper.moveConstructCharacteristics(roles[i],
+                MergeHelper.moveItemIdentifiers(roles[i],
                     sigs.get(SignatureGenerator.makeRoleSignature(roles[i])));
+                roles[i].remove();
             }
         },
 

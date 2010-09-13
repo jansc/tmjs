@@ -16,7 +16,7 @@ TM.CXTM = (function () {
         this.id2cxtmid = new TM.Hash();
         tm.sanitize();
         this.buildIndex(tm);
-        ret.push('<topicMap>');
+        ret.push('<topicMap'+this.exportReifier(tm)+'>');
         this.exportItemIdentifiers(ret, tm);
         items = tm.getTopics();
         for (i=0; i<items.length; i+=1) {
@@ -55,7 +55,7 @@ TM.CXTM = (function () {
             roles = arr[i].getRoles();
             roles.sort(WriterImpl.compareRole);
             for (j=0; j<roles.length; j+=1) {
-                this.id2cxtmid.put(roles[i].getId(), (j+1));
+                this.id2cxtmid.put(roles[j].getId(), (j+1));
             }
         }
     };
@@ -71,7 +71,9 @@ TM.CXTM = (function () {
         rolesPlayed = topic.getRolesPlayed();
         for (i=0; i<rolesPlayed.length; i+=1) {
             role = rolesPlayed[i];
-            ret.push('<rolePlayed ref="association.'+this.id2cxtmid.get(role.getParent().getId())+'.role.'+this.id2cxtmid.get(role.getId())+'"></rolePlayed>');
+            ret.push('<rolePlayed ref="association.'+
+                    this.id2cxtmid.get(role.getParent().getId())+
+                    '.role.'+this.id2cxtmid.get(role.getId())+'"></rolePlayed>');
         }
         ret.push('</topic>');
         return ret;
@@ -88,8 +90,10 @@ TM.CXTM = (function () {
         arr.sort(WriterImpl.compareAssociation);
         for (i=0; i<arr.length; i+=1) {
             association = arr[i];
-            ret.push('<association'+this.exportReifier(association)+' number="'+(i+1)+'">');
-            ret.push('<type topicref="'+this.id2cxtmid.get(association.getType().getId())+'"></type>');
+            ret.push('<association number="'+(i+1)+'"'+
+                    this.exportReifier(association)+'>');
+            ret.push('<type topicref="'+
+                    this.id2cxtmid.get(association.getType().getId())+'"></type>');
             this.exportRoles(ret, association.getRoles());
             this.exportScope(ret, association.getScope());
             this.exportItemIdentifiers(ret, association);
@@ -108,9 +112,12 @@ TM.CXTM = (function () {
         arr.sort(WriterImpl.compareRole);
         for (i=0; i<arr.length; i+=1) {
             role = arr[i];
-            ret.push('<role'+this.exportReifier(role)+' number="'+(i+1)+'">');
-            ret.push('<player topicref="'+this.id2cxtmid.get(role.getPlayer().getId())+'"></player>');
-            ret.push('<type topicref="'+this.id2cxtmid.get(role.getType().getId())+'"></type>');
+            ret.push('<role number="'+(i+1)+'"'+this.exportReifier(role)+'>');
+            ret.push('<player topicref="'+
+                    this.id2cxtmid.get(role.getPlayer().getId())+
+                    '"></player>');
+            ret.push('<type topicref="'+
+                    this.id2cxtmid.get(role.getType().getId())+'"></type>');
             this.exportItemIdentifiers(ret, role);
             ret.push('</role>');
         }
@@ -130,7 +137,8 @@ TM.CXTM = (function () {
         for (i=0; i<arr.length; i+=1) {
             scopingTopic = arr[i];
             ret.push('<scopingTopic topicref="'+
-                    this.id2cxtmid.get(scopingTopic.getId())+'"></scopingTopic>');
+                    this.id2cxtmid.get(scopingTopic.getId())+
+                    '"></scopingTopic>');
         }
         ret.push('</scope>');
     };
@@ -146,10 +154,14 @@ TM.CXTM = (function () {
         arr.sort(WriterImpl.compareOccurrence);
         for (i=0; i<arr.length; i+=1) {
             occurrence = arr[i];
-            ret.push('<occurrence'+this.exportReifier(occurrence)+' number="'+(i+1)+'">');
-            ret.push('<value>'+occurrence.getValue()+'</value>');
-            ret.push('<datatype>'+occurrence.getDatatype().getReference()+'</datatype>');
-            ret.push('<type topicref="'+this.id2cxtmid.get(occurrence.getType().getId())+'"></type>');
+            ret.push('<occurrence'+
+                    ' number="'+(i+1)+'"'+this.exportReifier(occurrence)+'>');
+            ret.push('<value>'+occurrence.getValue()+
+                    '</value>');
+            ret.push('<datatype>'+occurrence.getDatatype().getReference()+
+                    '</datatype>');
+            ret.push('<type topicref="'+this.id2cxtmid.get(occurrence.getType().getId())+
+                    '"></type>');
             this.exportScope(ret, occurrence.getScope());
             this.exportItemIdentifiers(ret, occurrence);
             ret.push('</occurrence>');
@@ -157,7 +169,7 @@ TM.CXTM = (function () {
     };
 
     WriterImpl.prototype.exportNames = function (ret, names) {
-        var i, arr = [], name;
+        var i, arr = [], name, value;
         if (names.length === 0) {
             return;
         }
@@ -167,9 +179,15 @@ TM.CXTM = (function () {
         arr.sort(WriterImpl.compareName);
         for (i=0; i<arr.length; i+=1) {
             name = arr[i];
-            ret.push('<name'+this.exportReifier(name)+' number="'+(i+1)+'">');
-            ret.push('<value>'+name.getValue()+'</value>');
-            ret.push('<type topicref="'+this.id2cxtmid.get(name.getType().getId())+'"></type>');
+            value = name.getValue();
+            // FIXME Check that encoding is correct
+            value = value.replace('&', '&amp;');
+            value = value.replace('<', '&lt;');
+            value = value.replace('>', '&gt;');
+            ret.push('<name number="'+(i+1)+'"'+this.exportReifier(name)+'>');
+            ret.push('<value>'+value+'</value>');
+            ret.push('<type topicref="'+
+                    this.id2cxtmid.get(name.getType().getId())+'"></type>');
             this.exportScope(ret, name.getScope());
             this.exportVariants(ret, name.getVariants());
             this.exportItemIdentifiers(ret, name);
@@ -188,9 +206,11 @@ TM.CXTM = (function () {
         arr.sort(WriterImpl.compareVariant);
         for (i=0; i<arr.length; i+=1) {
             variant = arr[i];
-            ret.push('<variant'+this.exportReifier(variant)+' number="'+(i+1)+'">');
+            ret.push('<variant number="'+(i+1)+
+                    '"'+this.exportReifier(variant)+'>');
             ret.push('<value>'+variant.getValue()+'</value>');
-            ret.push('<datatype>'+variant.getDatatype().getReference()+'</datatype>');
+            ret.push('<datatype>'+variant.getDatatype().getReference()+
+                    '</datatype>');
             this.exportScope(ret, variant.getScope());
             this.exportItemIdentifiers(ret, variant);
             ret.push('</variant>');
@@ -200,13 +220,14 @@ TM.CXTM = (function () {
     WriterImpl.prototype.exportReifier = function (construct) {
         var reifier;
         if ((reifier = construct.getReifier())) {
-            return ' reifier="'+reifier.getId()+'"';
+            return ' reifier="'+this.id2cxtmid.get(reifier.getId())+'"';
         }
         return '';
     };
 
     WriterImpl.prototype.exportItemIdentifiers = function (ret, construct) {
-        this.exportIdentifiers(ret, 'itemIdentifiers', construct.getItemIdentifiers());
+        this.exportIdentifiers(ret, 'itemIdentifiers',
+            construct.getItemIdentifiers());
     };
 
     WriterImpl.prototype.exportIdentifiers = function (ret, name, iis) {

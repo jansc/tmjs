@@ -1,0 +1,40 @@
+<topicMap>
+<topic number="1">
+<itemIdentifiers>
+<locator>#theme</locator>
+</itemIdentifiers>
+</topic>
+<topic number="2">
+<itemIdentifiers>
+<locator>#theme2</locator>
+</itemIdentifiers>
+</topic>
+<topic number="3">
+<itemIdentifiers>
+<locator>http://www.example.org/topic</locator>
+</itemIdentifiers>
+<name number="1">
+<value>Name</value>
+<type topicref="4"></type>
+<variant number="1">
+<value>name</value>
+<datatype>http://www.w3.org/2001/XMLSchema#string</datatype>
+<scope>
+<scopingTopic topicref="1"></scopingTopic>
+</scope>
+</variant>
+<variant number="2">
+<value>name2</value>
+<datatype>http://www.w3.org/2001/XMLSchema#string</datatype>
+<scope>
+<scopingTopic topicref="2"></scopingTopic>
+</scope>
+</variant>
+</name>
+</topic>
+<topic number="4">
+<subjectIdentifiers>
+<locator>http://psi.topicmaps.org/iso13250/model/topic-name</locator>
+</subjectIdentifiers>
+</topic>
+</topicMap>

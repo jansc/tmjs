@@ -45,6 +45,7 @@ var compareCXTM = function(test, filename) {
             cxtm = writer.toString(tm);
             test.assertEqual(baseline, cxtm, "CXTM error in "+filename);
         } catch(e) {
+            console.dir(e);
             error = true;
         }
         test.assertEqual(false, error, "Exception in "+filename);
