@@ -940,6 +940,10 @@ TM = (function () {
         return null; // Make sure that the result is not undefined
     };
     
+    TopicMap.prototype.getLocator = function () {
+      return this.locator;
+    };
+    
     TopicMap.prototype.getTopics = function () {
         return this.topics;
     };
