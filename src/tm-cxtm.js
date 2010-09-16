@@ -43,6 +43,10 @@ TM.CXTM = (function () {
         return [];
     };
 
+    TypeInstanceAssociation.prototype.equals = function (other) {
+        return this.getId() === other.getId();
+    };
+
     TypeInstanceAssociation.prototype.getType = function () {
         return this.tm.createTopicBySubjectIdentifier(
             this.tm.createLocator(TM.TMDM.TYPE_INSTANCE));
