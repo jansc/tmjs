@@ -948,6 +948,10 @@ TM = (function () {
         return null; // Make sure that the result is not undefined
     };
     
+    TopicMap.prototype.getLocator = function () {
+      return this.locator;
+    };
+    
     TopicMap.prototype.getTopics = function () {
         return this.topics;
     };
@@ -1147,8 +1151,7 @@ TM = (function () {
     // Returns the Names of this topic where the name type is type. type is optional.
     Topic.prototype.getNames = function (type) {
         var ret = [], i;
-        if (type === null) { throw {name: 'IllegalArgumentException',
-                message: 'Topic.getOccurrences cannot be called without type'}; }
+
         for (i=0; i<this.names.length; i+=1) {
             if (type && this.names[i].getType().equals(type)) {
                 ret.push(this.names[i]);
