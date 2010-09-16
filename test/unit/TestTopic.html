@@ -206,6 +206,17 @@ var tmp = new Test.Unit.Runner({
         }, "topic.getRolesPlayed(null, type) is illegal");
     }},
 
+    testRolesPlayedRemoval: function () { with(this) {
+        var a, t, r;
+        t = createTopic();
+        a = createAssociation();
+        assertEqual(0, t.getRolesPlayed().length);
+        r = a.createRole(createTopic(), t);
+        assertEqual(1, t.getRolesPlayed().length);
+        r.remove();
+        assertEqual(0, t.getRolesPlayed().length);
+    }},
+
     testOccurrenceFilter: function() { with(this) {
         var topic = createTopic();
         var type = createTopic();

@@ -1,0 +1,70 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>FIXMETest</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <script type="text/javascript" src="../assets/jsunittest.js"></script>
+  <script type="text/javascript" src="../../src/tm-src.js"></script>
+  <script type="text/javascript" src="../../src/tm-jtm.js"></script>
+  <script type="text/javascript" src="datatypeaware.js"></script>
+  <script type="text/javascript" src="tmunittest.js"></script>
+  <link type="text/css" rel="stylesheet" href="../assets/unittest.css" />
+</head>
+<body>
+
+<!-- Log output -->
+<div id="testlog"> </div>
+
+<!-- here go any elements you do the testing on -->
+
+<!-- Tests -->
+<script type="text/javascript" language="javascript">
+// <![CDATA[
+
+var tmp = new Test.Unit.Runner({
+    // optional setup function, run before each individual test case
+    setup: function () { with(this) {
+        TMUnitTest.addCommonSetupFunctions(this);
+    }},
+    // optional teardown function, run after each individual test case
+    teardown: function () { with(this) {
+        TMUnitTest.addCommonTeardownFunctions(this);
+    }},
+
+    // test cases follow, each method which starts 
+    // with "test" is considered a test case
+    testTypeInstanceHelper: function () {
+        var tm, t1, t2, type, instance, typeInstance, a;
+        tm = this.createTopicMap();
+        this.assertNotNull(tm);
+        typeInstance = tm.createTopicBySubjectIdentifier(tm.createLocator(TM.TMDM.TYPE_INSTANCE));
+        this.assertNotNull(typeInstance);
+        type = tm.createTopicBySubjectIdentifier(tm.createLocator(TM.TMDM.TYPE));
+        this.assertNotNull(type);
+        instance = tm.createTopicBySubjectIdentifier(tm.createLocator(TM.TMDM.INSTANCE));
+        this.assertNotNull(instance);
+
+        t1 = tm.createTopic();
+        t2 = tm.createTopic();
+
+        a = tm.createAssociation(typeInstance);
+        a.createRole(type, t1);
+        a.createRole(instance, t2);
+
+        console.dir(tm);
+
+        this.assertEqual(1, tm.getAssociations().length);
+        this.assertEqual(0, t2.getTypes().length);
+
+        tm.sanitize();
+
+        this.assertEqual(0, tm.getAssociations().length);
+        this.assertEqual(1, t2.getTypes().length);
+        this.assertEqual(true, t1.equals(t2.getTypes()[0]));
+    }
+});
+// ]]>
+</script>
+</body>
+</html>
