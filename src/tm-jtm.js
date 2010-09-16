@@ -8,10 +8,6 @@ TM.JTM = (function() {
     ReaderImpl = function (tm) {
         this.tm = tm;
         this.defaultDatatype = this.tm.createLocator(TM.XSD.string);
-        // TODO: The default name type should only be created on demand.
-        // But who cares (for now)...?
-        this.defaultNametype = tm.createTopicBySubjectIdentifier(
-            tm.createLocator("http://psi.topicmaps.org/iso13250/model/topic-name"));
         /**
         * Internal function that takes a JTM-identifier string as a parameter
         * and returns a topic object - either an existing topic or a new topic
@@ -67,7 +63,7 @@ TM.JTM = (function() {
             throw {name: 'InvalidFormat',
                 message: 'Unknown version of JTM'};
         }
-        switch (obj.item_type) {
+        switch (obj.item_type.toLowerCase()) {
             case "topicmap": ret = this.parseTopicMap(obj); break;
             case "topic": ret = this.parseTopic(obj); break;
             case "name": ret = this.parseName(parent, obj); break;
@@ -83,6 +79,8 @@ TM.JTM = (function() {
 
     ReaderImpl.prototype.parseTopicMap = function (obj) {
         var i, len, arr;
+        this.parseItemIdentifiers(this.tm, obj.item_identifiers);
+        this.parseReifier(this.tm, obj.reifier);
         if (obj.topics && typeof obj.topics === 'object' && obj.topics instanceof Array) {
             arr = obj.topics;
             len = arr.length;
@@ -100,30 +98,42 @@ TM.JTM = (function() {
             }
             arr = null;
         }
+        this.tm.sanitize(); // remove duplicates and convert type-instance associations to types
         return true;
     };
 
     ReaderImpl.prototype.parseTopic = function (obj) {
-        var topic = null, parseIdentifier, arr, i;
-        parseIdentifier = function (tm, topic, arr, createFunc, addFunc) {
-            var i, len;
+        var topic = null, parseIdentifier, arr, i, identifier;
+        parseIdentifier = function (tm, topic, arr, getFunc, createFunc, addFunc) {
+            var i, len, tmp;
             if (arr && typeof arr === 'object' && arr instanceof Array) {
                 len = arr.length;
                 for (i = 0; i < len; i += 1) {
+                    identifier = decodeURI(arr[i]);
                     if (!topic) {
-                        topic = createFunc.apply(tm, [tm.createLocator(arr[i])]);
+                        topic = createFunc.apply(tm, [tm.createLocator(identifier)]);
                     } else {
-                        topic[addFunc](tm.createLocator(arr[i]));
+                        tmp = getFunc.apply(tm, [tm.createLocator(identifier)]);
+                        if (tmp && tmp.isTopic() && !topic.equals(tmp)) {
+                            topic.mergeIn(tmp);
+                        } else if (tmp && tmp.isTopic() && topic.equals(tmp)) {
+                            // Skip
+                        } else {
+                            topic[addFunc](tm.createLocator(identifier));
+                        }
                     }
                 }
             }
             return topic;
         };
         topic = parseIdentifier(this.tm, topic, obj.subject_identifiers,
+            this.tm.getTopicBySubjectIdentifier,
             this.tm.createTopicBySubjectIdentifier, 'addSubjectIdentifier');
         topic = parseIdentifier(this.tm, topic, obj.subject_locators,
+            this.tm.getTopicBySubjectLocator,
             this.tm.createTopicBySubjectLocator, 'addSubjectLocator');
         topic = parseIdentifier(this.tm, topic, obj.item_identifiers,
+            this.tm.getConstructByItemIdentifier,
             this.tm.createTopicByItemIdentifier, 'addItemIdentifier');
 
         arr = obj.names;
@@ -144,7 +154,7 @@ TM.JTM = (function() {
         var name, type, scope, arr, i;
         scope = this.parseScope(obj.scope);
         type = this.getTopicByReference(obj.type);
-        name = parent.createName(obj.value, type ? type : this.defaultNametype, scope);
+        name = parent.createName(obj.value, type, scope);
         arr = obj.variants;
         if (arr && typeof arr === 'object' && arr instanceof Array) {
             for (i = 0; i < arr.length; i += 1) {
@@ -210,17 +220,24 @@ TM.JTM = (function() {
 
 
     ReaderImpl.prototype.parseItemIdentifiers = function (construct, arr) {
-        var i;
+        var i, tm;
+        tm = construct.getTopicMap();
         if (arr && typeof arr === 'object' && arr instanceof Array) {
             for (i = 0; i < arr.length; i += 1) {
-                construct.addItemIdentifier(construct.getTopicMap().createLocator(arr[i]));
+                if (!tm.getConstructByItemIdentifier(tm.createLocator(arr[i]))) {
+                    construct.addItemIdentifier(tm.createLocator(arr[i]));
+                }
             }
         }
     };
 
     ReaderImpl.prototype.parseReifier = function (construct, reifier) {
         var reifierTopic = this.getTopicByReference(reifier);
-        construct.setReifier(reifierTopic);
+        if (reifierTopic && reifierTopic.getReified() === null || !reifierTopic) {
+            construct.setReifier(reifierTopic);
+        } else {
+            // Ignore the case that reifierTopic reifies another item
+        }
     };
 
     /**
@@ -230,7 +247,6 @@ TM.JTM = (function() {
     WriterImpl = function () {
         var that = this;
         this.defaultDatatype = TM.XSD.string;
-        this.defaultNametype = "http://psi.topicmaps.org/iso13250/model/topic-name";
 
         /**
          * Generates a JTM reference based on the topics subject identifier,
