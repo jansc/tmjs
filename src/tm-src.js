@@ -1,7 +1,7 @@
 /*jslint browser: true, devel: true, onevar: true, undef: true,
   nomen: false, eqeqeq: true, plusplus: true, bitwise: true,
   regexp: true, newcap: true, immed: true */
-/*global  window, exports*/ 
+/*global exports*/ 
 
 var TM, TopicMapSystemFactory;
 
@@ -25,7 +25,7 @@ TM = (function () {
     Version = '@VERSION';
 
     // -----------------------------------------------------------------------
-    // Our swiss army knife for mixin of functions
+    // Our swiss army knife for mixin of functions.
     // See http://javascript.crockford.com/inheritance.html
     Function.prototype.swiss = function (parnt) {
         var i, name;
@@ -207,13 +207,13 @@ TM = (function () {
     };
 
     /**
-    * Returns true if the other object is equal to this one. Equality must be
-    * the result of comparing the identity (<code>this == other</code>) of the
-    * two objects.
-    * Note: This equality test does not reflect any equality rule according to
-    * the Topic Maps - Data Model (TMDM) by intention.
-    * @param {String} other The object to compare this object against.
-    */
+     * Returns true if the other object is equal to this one. Equality must be
+     * the result of comparing the identity (<code>this == other</code>) of the
+     * two objects.
+     * Note: This equality test does not reflect any equality rule according to
+     * the Topic Maps - Data Model (TMDM) by intention.
+     * @param {String} other The object to compare this object against.
+     */
     Construct.prototype.equals = function (other) {
         return (this.id === other.id);
     };
@@ -370,7 +370,9 @@ TM = (function () {
         return this.type;
     };
     
-    /* Sets the type of this construct.
+    /**
+     * Sets the type of this construct.
+     * @throws {ModelConstraintException} If type is null.
      * @returns {Typed} The type itself (for chaining support)
      */
     Typed.prototype.setType = function (type) {
@@ -384,12 +386,14 @@ TM = (function () {
     
     // --------------------------------------------------------------------------
     /**
-    * @class Indicates that a statement (Topic Maps construct) has a scope.
-    * Associations, Occurrences, Names, and Variants are scoped.
-    */
+     * @class Indicates that a statement (Topic Maps construct) has a scope.
+     * Associations, Occurrences, Names, and Variants are scoped.
+     */
     Scoped = function () {};
     
-    /** Adds a topic to the scope.
+    /**
+     * Adds a topic to the scope.
+     * @throws {ModelConstraintException} If theme is null.
      * @returns {Typed} The type itself (for chaining support)
      */
     Scoped.prototype.addTheme = function (theme) {
@@ -413,7 +417,10 @@ TM = (function () {
         return this;
     };
     
-    /** Returns the topics which define the scope. */
+    /**
+     * Returns the topics which define the scope.
+     * @returns {Array} A possible empty Array with Topic objects.
+     */
     Scoped.prototype.getScope = function () {
         if (this.isVariant()) {
             var i, ret, tmp = new Hash(), parent_scope = this.parnt.getScope();
@@ -428,9 +435,10 @@ TM = (function () {
         return this.scope;
     };
     
-    /** Removes a topic from the scope. 
+    /**
+     * Removes a topic from the scope. 
      * @returns {Scoped} The scoped object itself (for chaining support)
-    */
+     */
     Scoped.prototype.removeTheme = function (theme) {
         var i, j, scope, found;
         for (i=0; i<this.scope.length; i+=1) {
@@ -462,17 +470,22 @@ TM = (function () {
     
     // --------------------------------------------------------------------------
     /**
-    * @class Indicates that a Construct is reifiable. Every Topic Maps
-    * construct that is not a Topic is reifiable.
-    */
+     * @class Indicates that a Construct is reifiable. Every Topic Maps
+     * construct that is not a Topic is reifiable.
+     */
     Reifiable = function () {};
     
-    /** Returns the reifier of this construct. */
+    /**
+     * Returns the reifier of this construct.
+     */
     Reifiable.prototype.getReifier = function () {
         return this.reifier;
     };
     
-    /** Sets the reifier of the construct.
+    /**
+     * Sets the reifier of the construct.
+     * @throws {ModelConstraintException} If reifier already reifies another
+     * construct.
      * @returns {Reifiable} The reified object itself (for chaining support)
      */
     Reifiable.prototype.setReifier = function (reifier) {
@@ -493,17 +506,22 @@ TM = (function () {
     
     // --------------------------------------------------------------------------
     /**
-    * @class Common base interface for Occurrences and Variants.
-    * Inherits Scoped, Reifiable
-    */
+     * @class Common base interface for Occurrences and Variants.
+     * Inherits Scoped, Reifiable
+     */
     DatatypeAware = function () {};
     
-    /** Returns the BigDecimal representation of the value. */
+    /**
+     * Returns the BigDecimal representation of the value.
+     */
     DatatypeAware.prototype.decimalValue = function () {
         // FIXME Implement!
     };
     
-    /** Returns the float representation of the value. */
+    /**
+     * Returns the float representation of the value.
+     * @throws {NumberFormatException} If the value is not convertable to float.
+     */
     DatatypeAware.prototype.floatValue = function () {
         var ret = parseFloat(this.value);
         if (isNaN(ret)) {
@@ -513,12 +531,16 @@ TM = (function () {
         return ret;
     };
     
-    /** Returns the Locator identifying the datatype of the value. */
+    /**
+     * Returns the Locator identifying the datatype of the value.
+     */
     DatatypeAware.prototype.getDatatype = function () {
         return this.datatype;
     };
     
-    /** Returns the lexical representation of the value. */
+    /**
+     * Returns the lexical representation of the value.
+     */
     DatatypeAware.prototype.getValue = function () {
         if (typeof this.value === 'object' && this.value instanceof Locator) {
             return this.value.getReference();
@@ -526,7 +548,10 @@ TM = (function () {
         return this.value.toString();
     };
     
-    /** Returns the BigInteger representation of the value. */
+    /**
+     * Returns the BigInteger representation of the value.
+     * @throws {NumberFormatException} If the value cannot be parsed as an int.
+     */
     DatatypeAware.prototype.integerValue = function () {
         var ret = parseInt(this.value, 10);
         if (isNaN(ret)) {
@@ -536,7 +561,11 @@ TM = (function () {
         return ret;
     };
     
-    /** Returns the Locator representation of the value. */
+    /**
+     * Returns the Locator representation of the value.
+     * @throws {ModelConstraintException} If the value is not an Locator
+     * object.
+     */
     DatatypeAware.prototype.locatorValue = function () {
         if (!(typeof this.value === 'object' && this.value instanceof Locator)) {
             throw {name: 'ModelConstraintException',
@@ -545,12 +574,17 @@ TM = (function () {
         return this.value;
     };
     
-    /** Returns the long representation of the value. */
+    /**
+     * Returns the long representation of the value.
+     */
     DatatypeAware.prototype.longValue = function () {
         // FIXME Implement!
     };
     
-    /** Sets the value and the datatype. */
+    /**
+     * Sets the value and the datatype.
+     * @throws {ModelConstraintException} If datatype or value is null.
+     */
     DatatypeAware.prototype.setValue = function (value, datatype) {
         var tm = this.getTopicMap();
         if (datatype === null) {
@@ -578,48 +612,52 @@ TM = (function () {
     
     // --------------------------------------------------------------------------
     /**
-    * Constructs a new Topic Map System Factoy. The constructor should not be
-    * called directly. Use the {TM.TopicMapSystemFactory.newInstance} instead.
-    * @class Represents a Topic Maps construct.
-    * @memberOf TM
-    */
+     * Constructs a new Topic Map System Factoy. The constructor should not be
+     * called directly. Use the {TM.TopicMapSystemFactory.newInstance} instead.
+     * @class Represents a Topic Maps construct.
+     * @memberOf TM
+     */
     TopicMapSystemFactory = function () {
         this.properties = {};
         this.features = {};
     };
     
     /**
-    * Returns the particular feature requested for in the underlying implementation
-    * of TopicMapSystem.
-    */
+     * Returns the particular feature requested for in the underlying implementation
+     * of TopicMapSystem.
+     */
     TopicMapSystemFactory.prototype.getFeature = function (featureName) {
         return this.features;
     };
     
     /**
-    * Gets the value of a property in the underlying implementation of
-    * TopicMapSystem.
-    */
+     * Gets the value of a property in the underlying implementation of
+     * TopicMapSystem.
+     */
     TopicMapSystemFactory.prototype.getProperty = function (propertyName) {
         return this.properties[propertyName];
     };
     
-    // Returns if the particular feature is supported by the TopicMapSystem.
+    /**
+     * Returns if the particular feature is supported by the TopicMapSystem.
+     */
     TopicMapSystemFactory.prototype.hasFeature = function (featureName) {
         return false;
     };
     
     /**
-    * Obtain a new instance of a TopicMapSystemFactory.
-    * @static
-    * @returns {TopicMapSystemFactory}
-    */
+     * Obtain a new instance of a TopicMapSystemFactory.
+     * @static
+     * @returns {TopicMapSystemFactory}
+     */
     TopicMapSystemFactory.newInstance = function () {
         return new TopicMapSystemFactory();
     };
     
-    // Creates a new TopicMapSystem instance using the currently configured
-    // factory parameters.
+    /**
+     * Creates a new TopicMapSystem instance using the currently configured
+     * factory parameters.
+     */
     TopicMapSystemFactory.prototype.newTopicMapSystem = function () {
         var backend = this.properties['com.semanticheadache.tmjs.backend'] || 'memory'; 
         if (backend === 'memory') {
@@ -627,24 +665,32 @@ TM = (function () {
         }
     };
     
-    // Sets a particular feature in the underlying implementation of TopicMapSystem.
+    /**
+     * Sets a particular feature in the underlying implementation of TopicMapSystem.
+     */
     TopicMapSystemFactory.prototype.setFeature = function (featureName, enable) {
         this.features[featureName] = enable;
     };
     
-    // Sets a property in the underlying implementation of TopicMapSystem.
+    /**
+     * Sets a property in the underlying implementation of TopicMapSystem.
+     */
     TopicMapSystemFactory.prototype.setProperty = function (propertyName, value) {
         this.properties[propertyName] = value;
     };
     
     /**
-    * Creates a new instance of TopicMamSystem.
-    * @class Implementation of the TopicMapSystem interface.
-    */
+     * Creates a new instance of TopicMamSystem.
+     * @class Implementation of the TopicMapSystem interface.
+     */
     TopicMapSystemMemImpl = function () {
         this.topicmaps = {};
     };
     
+    /**
+     * @throws {TopicMapExistsException} If a topic map with the given locator
+     * already exists.
+     */
     TopicMapSystemMemImpl.prototype.createTopicMap = function (locator) {
         if (this.topicmaps[locator.getReference()]) {
             throw {name: 'TopicMapExistsException',
@@ -677,8 +723,8 @@ TM = (function () {
     };
     
     /**
-    * @param {String} iri
-    */
+     * @param {String} iri
+     */
     TopicMapSystemMemImpl.prototype.createLocator = function (iri) {
         return new Locator(this, iri);
     };
@@ -844,6 +890,9 @@ TM = (function () {
         return null;
     };
     
+    /**
+     * @throws {ModelConstraintException} If type or scope is null.
+     */
     TopicMap.prototype.createAssociation = function (type, scope) {
         var a, i;
         if (type === null) {
@@ -884,6 +933,11 @@ TM = (function () {
         return t;
     };
     
+    /**
+     * @throws {ModelConstraintException} If no itemIdentifier is given.
+     * @throws {IdentityConstraintException} If another construct with the
+     * specified item identifier exists which is not a Topic.
+     */
     TopicMap.prototype.createTopicByItemIdentifier = function (itemIdentifier) {
         if (!itemIdentifier) { throw {name: 'ModelConstraintException',
             message: 'createTopicByItemIdentifier() needs an item identifier'}; }
@@ -901,6 +955,9 @@ TM = (function () {
         return t;
     };
     
+    /**
+     * @throws {ModelConstraintException} If no subjectIdentifier is given.
+     */
     TopicMap.prototype.createTopicBySubjectIdentifier = function (subjectIdentifier) {
         if (!subjectIdentifier) { throw {name: 'ModelConstraintException',
             message: 'createTopicBySubjectIdentifier() needs a subject identifier'}; }
@@ -913,6 +970,9 @@ TM = (function () {
         return t;
     };
     
+    /**
+     * @throws {ModelConstraintException} If no subjectLocator is given.
+     */
     TopicMap.prototype.createTopicBySubjectLocator = function (subjectLocator) {
         if (!subjectLocator) { throw {name: 'ModelConstraintException',
             message: 'createTopicBySubjectLocator() needs a subject locator'}; }
@@ -929,6 +989,9 @@ TM = (function () {
         return this.associations;
     };
     
+    /**
+     * @throws {ModelConstraintException} If id is null.
+     */
     TopicMap.prototype.getConstructById = function (id) {
         if (id === null) { throw {name: 'ModelConstraintException',
                 message: 'getConstructById(null) is illegal'}; }
@@ -937,6 +1000,9 @@ TM = (function () {
         return ret;
     };
     
+    /**
+     * @throws {ModelConstraintException} If itemIdentifier is null.
+     */
     TopicMap.prototype.getConstructByItemIdentifier = function (itemIdentifier) {
         if (itemIdentifier === null) { throw {name: 'ModelConstraintException',
                 message: 'getConstructByItemIdentifier(null) is illegal'}; }
@@ -945,6 +1011,10 @@ TM = (function () {
         return ret;
     };
     
+    /**
+     * @throws {UnsupportedOperationException} If the index type is not
+     * supported.
+     */
     TopicMap.prototype.getIndex = function (className) {
         var index;
         if (className === 'TypeInstanceIndex') {
@@ -1103,6 +1173,8 @@ TM = (function () {
     
     /**
      * Adds a subject identifier to this topic.
+     * @throws {ModelConstraintException} If subjectIdentifier is null or
+     * not defined.
      * @returns {Topic} The topic itself (for chaining support)
      */
     Topic.prototype.addSubjectIdentifier = function (subjectIdentifier) {
@@ -1122,6 +1194,8 @@ TM = (function () {
     
     /**
      * Adds a subject locator to this topic.
+     * @throws {ModelConstraintException} If subjectLocator is null or
+     * not defined.
      * @returns {Topic} The topic itself (for chaining support)
      */
     Topic.prototype.addSubjectLocator = function (subjectLocator) {
@@ -1141,6 +1215,7 @@ TM = (function () {
     
     /**
      * Adds a type to this topic.
+     * @throws {ModelConstraintException} If type is null or not defined.
      * @returns {Topic} The topic itself (for chaining support)
      */
     Topic.prototype.addType = function (type) {
@@ -1212,6 +1287,7 @@ TM = (function () {
     /**
      * Returns the Occurrences of this topic where the occurrence type is type. type
      * is optional.
+     * @throws {IllegalArgumentException} If type is null.
      */
     Topic.prototype.getOccurrences = function (type) {
         var ret = [], i;
@@ -1247,9 +1323,12 @@ TM = (function () {
         this.reified = reified;
     };
     
-    // Returns the roles played by this topic.
-    // Returns the roles played by this topic where the role type is type.
-    // assocType is optional
+    /**
+     * Returns the roles played by this topic.
+     * Returns the roles played by this topic where the role type is type.
+     * assocType is optional
+     * @throws {IllegalArgumentException} If type or assocType is null.
+     */
     Topic.prototype.getRolesPlayed = function (type, assocType) {
         if (type === null) { throw {name: 'IllegalArgumentException',
                 message: 'Topic.getRolesPlayed cannot be called without type'}; }
@@ -1285,23 +1364,31 @@ TM = (function () {
         }
     };
     
-    // Returns the subject identifiers assigned to this topic.
+    /**
+     * Returns the subject identifiers assigned to this topic.
+     */
     Topic.prototype.getSubjectIdentifiers = function () {
         return this.subjectIdentifiers;
     };
     
-    // Returns the subject locators assigned to this topic.
+    /**
+     * Returns the subject locators assigned to this topic.
+     */
     Topic.prototype.getSubjectLocators = function () {
         return this.subjectLocators;
     };
     
-    // Returns the types of which this topic is an instance of.
+    /**
+     * Returns the types of which this topic is an instance of.
+     */
     Topic.prototype.getTypes = function () {
         return this.types;
     };
     
     /**
      * Merges another topic into this topic.
+     * @throws {ModelConstraintException} If the topics reify different
+     * information items.
      * @returns {Topic} The topic itself (for chaining support)
      */
     Topic.prototype.mergeIn = function (other) {
@@ -1428,7 +1515,13 @@ TM = (function () {
         return this;
     };
     
-    // Removes this topic from the containing TopicMap instance.
+    /**
+     * Removes this topic from the containing TopicMap instance.
+     * @throws {TopicInUseException} If the topics is used as reifier,
+     * occurrence type, name type, association type, role type, topic type,
+     * association theme, occurrence theme, name theme, variant theme,
+     * or if it is used as a role player.
+     */
     Topic.prototype.remove = function () {
         var other, tiidx = this.parnt.typeInstanceIndex,
             sidx = this.parnt.scopedIndex;
@@ -1586,6 +1679,9 @@ TM = (function () {
         return this.parnt.parnt;
     };
     
+    /**
+     * @throws {ModelConstraintException} If scope is null.
+     */
     Name.prototype.createVariant = function (value, datatype, scope) {
         var scope_length = 0, i, variant;
         if (typeof scope === 'undefined' || scope === null) {
@@ -1617,6 +1713,7 @@ TM = (function () {
     };
     
     /**
+     * @throws {ModelConstraintException} If value is null.
      * @returns {Name} The name itself (for chaining support)
      */
     Name.prototype.setValue = function (value) {
@@ -1655,6 +1752,9 @@ TM = (function () {
         return this.variants;
     };
     
+    /**
+     * @throws {ModelConstraintException} If value or datatype is null.
+     */
     Variant = function (parnt, value, datatype) {
         if (value === null) { throw {name: 'ModelConstraintException',
             message: 'Creation of a variant with null value is not allowed'}; }
@@ -1748,6 +1848,7 @@ TM = (function () {
     };
     
     /**
+     * @throws {ModelConstraintException} If player is null.
      * @returns {Role} The role itself (for chaining support)
      */
     Role.prototype.setPlayer = function (player) {
@@ -1788,7 +1889,10 @@ TM = (function () {
         return this.parnt;
     };
     
-    // Creates a new Role representing a role in this association.
+    /**
+     * Creates a new Role representing a role in this association.
+     * @throws {ModelConstraintException} If type or player is null.
+     */
     Association.prototype.createRole = function (type, player) {
         if (!type) { throw {name: 'ModelConstraintException',
             message: 'type i Role.createPlayer cannot be null'}; }
@@ -1834,8 +1938,11 @@ TM = (function () {
         return this.parnt;
     };
     
-    // Returns the roles participating in this association.
-    // Returns all roles with the specified type.
+    /**
+     * Returns the roles participating in this association, or, if type
+     * is given, all roles with the specified type.
+     * @throws {IllegalArgumentException} If type is null.
+     */
     Association.prototype.getRoles = function (type) {
         if (type === null) { throw {name: 'IllegalArgumentException',
             message: 'Topic.getRoles cannot be called with type null'}; }
@@ -1849,7 +1956,9 @@ TM = (function () {
         return ret;
     };
 
-    // Returns the role types participating in this association.
+    /**
+     * Returns the role types participating in this association.
+     */
     Association.prototype.getRoleTypes = function () {
         // Create a hash with the object ids as keys to avoid duplicates
         var types = {}, typearr = [], i, t;
@@ -1871,44 +1980,48 @@ TM = (function () {
         this.opened = false;
     };
 
-    /** Close the index. */
+    /**
+     * Close the index.
+     */
     Index.prototype.close = function () {
         return;
     };
 
     /** 
-    * Indicates whether the index is updated automatically. 
-    * @returns {boolean}
-    */
+     * Indicates whether the index is updated automatically. 
+     * @returns {boolean}
+     */
     Index.prototype.isAutoUpdated = function () {
         return true;
     };
 
     /** Indicates if the index is open.
-    * @returns {boolean} true if index is already opened, false otherwise.
-    */
+     * @returns {boolean} true if index is already opened, false otherwise.
+     */
     Index.prototype.isOpen = function () {
         return this.opened;
     };
 
     /**
-    * Opens the index. This method must be invoked before using any other
-    * method (aside from isOpen()) exported by this interface or derived
-    * interfaces.
-    */
+     * Opens the index. This method must be invoked before using any other
+     * method (aside from isOpen()) exported by this interface or derived
+     * interfaces.
+     */
     Index.prototype.open = function () {
         this.opened = true;
     };
 
-    /** Synchronizes the index with data in the topic map. */
+    /**
+     * Synchronizes the index with data in the topic map.
+     */
     Index.prototype.reindex = function () {
         return;
     };
 
     /**
-    * Creates a new instance of TypeInstanceIndex.
-    * @class Implementation of the TypeInstanceIndex interface.
-    */
+     * Creates a new instance of TypeInstanceIndex.
+     * @class Implementation of the TypeInstanceIndex interface.
+     */
     TypeInstanceIndex = function (tm) {
         var eventHandler, that = this;
         this.tm = tm;
@@ -2147,11 +2260,11 @@ TM = (function () {
         'isOpen', 'open', 'reindex');
           
     /**
-    * Returns the associations in the topic map whose type property equals type.
-    *
-    * @param {Topic} type
-    * @returns {Array} A list of all associations in the topic map with the given type.
-    */
+     * Returns the associations in the topic map whose type property equals type.
+     *
+     * @param {Topic} type
+     * @returns {Array} A list of all associations in the topic map with the given type.
+     */
     TypeInstanceIndex.prototype.getAssociations = function (type) {
         var ret = this.type2associations.get(type.getId());
         if (!ret) { return []; }
@@ -2159,10 +2272,10 @@ TM = (function () {
     };
 
     /**
-    * Returns the topics in the topic map used in the type property of Associations.
-    *
-    * @returns {Array} A list of all topics that are used as an association type.
-    */
+     * Returns the topics in the topic map used in the type property of Associations.
+     *
+     * @returns {Array} A list of all topics that are used as an association type.
+     */
     TypeInstanceIndex.prototype.getAssociationTypes = function () {
         var ret = [], keys = this.type2associations.keys(), i;
         for (i=0; i<keys.length; i+=1) {
@@ -2172,11 +2285,11 @@ TM = (function () {
     };
 
     /**
-    * Returns the topic names in the topic map whose type property equals type.
-    *
-    * @param {Topic} type
-    * @returns {Array}
-    */
+     * Returns the topic names in the topic map whose type property equals type.
+     *
+     * @param {Topic} type
+     * @returns {Array}
+     */
     TypeInstanceIndex.prototype.getNames = function (type) {
         var ret = this.type2names.get(type.getId());
         if (!ret) { return []; }
@@ -2184,11 +2297,11 @@ TM = (function () {
     };
 
     /**
-    * Returns the topics in the topic map used in the type property of Names.
-    *
-    * @returns {Array} An array of topic types. Note that the array contains
-    * a reference to the actual topics, not copies of them.
-    */
+     * Returns the topics in the topic map used in the type property of Names.
+     *
+     * @returns {Array} An array of topic types. Note that the array contains
+     * a reference to the actual topics, not copies of them.
+     */
     TypeInstanceIndex.prototype.getNameTypes = function () {
         var ret = [], keys = this.type2names.keys(), i;
         for (i=0; i<keys.length; i+=1) {
@@ -2198,10 +2311,10 @@ TM = (function () {
     };
 
     /**
-    * Returns the occurrences in the topic map whose type property equals type.
-    *
-    * @returns {Array}
-    */
+     * Returns the occurrences in the topic map whose type property equals type.
+     *
+     * @returns {Array}
+     */
     TypeInstanceIndex.prototype.getOccurrences = function (type) {
         var ret = this.type2occurrences.get(type.getId());
         if (!ret) { return []; }
@@ -2209,12 +2322,12 @@ TM = (function () {
     };
 
     /**
-    * Returns the topics in the topic map used in the type property of
-    * Occurrences.
-    *
-    * @returns {Array} An array of topic types. Note that the array contains
-    * a reference to the actual topics, not copies of them.
-    */
+     * Returns the topics in the topic map used in the type property of
+     * Occurrences.
+     *
+     * @returns {Array} An array of topic types. Note that the array contains
+     * a reference to the actual topics, not copies of them.
+     */
     TypeInstanceIndex.prototype.getOccurrenceTypes = function () {
         var ret = [], keys = this.type2occurrences.keys(), i;
         for (i=0; i<keys.length; i+=1) {
@@ -2225,10 +2338,10 @@ TM = (function () {
 
 
     /**
-    * Returns the roles in the topic map whose type property equals type.
-    *
-    * @returns {Array}
-    */
+     * Returns the roles in the topic map whose type property equals type.
+     *
+     * @returns {Array}
+     */
     TypeInstanceIndex.prototype.getRoles = function (type) {
         var ret = this.type2roles.get(type.getId());
         if (!ret) { return []; }
@@ -2236,11 +2349,11 @@ TM = (function () {
     };
 
     /**
-    * Returns the topics in the topic map used in the type property of Roles.
-    *
-    * @returns {Array} An array of topic types. Note that the array contains
-    * a reference to the actual topics, not copies of them.
-    */
+     * Returns the topics in the topic map used in the type property of Roles.
+     *
+     * @returns {Array} An array of topic types. Note that the array contains
+     * a reference to the actual topics, not copies of them.
+     */
     TypeInstanceIndex.prototype.getRoleTypes = function () {
         var ret = [], keys = this.type2roles.keys(), i;
         for (i=0; i<keys.length; i+=1) {
@@ -2250,8 +2363,8 @@ TM = (function () {
     };
 
     /**
-    * Returns the topics which are an instance of the specified type.
-    */
+     * Returns the topics which are an instance of the specified type.
+     */
     TypeInstanceIndex.prototype.getTopics = function (type) {
         var ret = this.type2topics.get((type ? type.getId() : 'null'));
         if (!ret) { return []; }
@@ -2259,11 +2372,11 @@ TM = (function () {
     };
 
     /**
-    * Returns the topics which are an instance of the specified types.
-    * If matchall is true only topics that have all of the listed types
-    * are returned.
-    * @returns {Array} A list of Topic objects
-    */
+     * Returns the topics which are an instance of the specified types.
+     * If matchall is true only topics that have all of the listed types
+     * are returned.
+     * @returns {Array} A list of Topic objects
+     */
     TypeInstanceIndex.prototype.getTopicsByTypes = function (types, matchall) {
         var instances, i, j, ret;
         instances = IndexHelper.getForKeys(this.type2topics, types);
@@ -2285,9 +2398,9 @@ TM = (function () {
     };
 
     /**
-    * Returns the topics in topic map which are used as type in an
-    * "type-instance"-relationship.
-    */
+     * Returns the topics in topic map which are used as type in an
+     * "type-instance"-relationship.
+     */
     TypeInstanceIndex.prototype.getTopicTypes = function () {
         var ret = [], keys = this.type2topics.keys(), i;
         for (i=0; i<keys.length; i+=1) {
@@ -2304,10 +2417,10 @@ TM = (function () {
 
 
     /**
-    * Index for Scoped statements and their scope. This index provides access
-    * to Associations, Occurrences, Names, and Variants by their scope
-    * property and to Topics which are used as theme in a scope. 
-    */
+     * Index for Scoped statements and their scope. This index provides access
+     * to Associations, Occurrences, Names, and Variants by their scope
+     * property and to Topics which are used as theme in a scope. 
+     */
     ScopedIndex = function (tm) {
         var that = this, eventHandler;
         this.tm = tm;
@@ -2383,11 +2496,11 @@ TM = (function () {
     };
 
     /**
-    * Returns the Associations in the topic map whose scope property contains
-    * the specified theme. The return value may be empty but must never be null. 
-    * @param theme can be array or {Topic}
-    * @param [matchall] boolean
-    */
+     * Returns the Associations in the topic map whose scope property contains
+     * the specified theme. The return value may be empty but must never be null. 
+     * @param theme can be array or {Topic}
+     * @param [matchall] boolean
+     */
     ScopedIndex.prototype.getAssociations = function (theme) {
         var ret = this.theme2associations.get((theme ? theme.getId() : 'null'));
         if (!ret) { return []; }
@@ -2395,11 +2508,12 @@ TM = (function () {
     };
 
     /**
-    * Returns the Associations in the topic map whose scope property contains
-    * the specified theme. The return value may be empty but must never be null. 
-    * @param theme can be array or {Topic}
-    * @param [matchall] boolean
-    */
+     * Returns the Associations in the topic map whose scope property contains
+     * the specified theme. The return value may be empty but must never be null. 
+     * @param theme can be array or {Topic}
+     * @param [matchall] boolean
+     * @throws {IllegalArgumentException} If themes is null.
+     */
     ScopedIndex.prototype.getAssociationsByThemes = function (themes, matchall) {
         if (themes === null) { throw {name: 'IllegalArgumentException',
                 message: 'ScopedIndex.getAssociationsByThemes cannot be called without themes'}; }
@@ -2408,17 +2522,17 @@ TM = (function () {
     };
 
     /**
-    * Returns the topics in the topic map used in the scope property of
-    * Associations.
-    */
+     * Returns the topics in the topic map used in the scope property of
+     * Associations.
+     */
     ScopedIndex.prototype.getAssociationThemes = function () {
         return IndexHelper.getConstructThemes(this.tm, this.theme2associations);
     };
 
     /**
-    * Returns the Names in the topic map whose scope property contains the
-    * specified theme.
-    */
+     * Returns the Names in the topic map whose scope property contains the
+     * specified theme.
+     */
     ScopedIndex.prototype.getNames = function (theme) {
         var ret = this.theme2names.get((theme ? theme.getId() : 'null'));
         if (!ret) { return []; }
@@ -2426,9 +2540,10 @@ TM = (function () {
     };
 
     /**
-    * Returns the Names in the topic map whose scope property equals one of
-    * those themes at least.
-    */
+     * Returns the Names in the topic map whose scope property equals one of
+     * those themes at least.
+     * @throws {IllegalArgumentException} If themes is null.
+     */
     ScopedIndex.prototype.getNamesByThemes = function (themes, matchall) {
         if (themes === null) { throw {name: 'IllegalArgumentException',
                 message: 'ScopedIndex.getNamesByThemes cannot be called without themes'}; }
@@ -2437,16 +2552,16 @@ TM = (function () {
     };
 
     /**
-    * Returns the topics in the topic map used in the scope property of Names.
-    */
+     * Returns the topics in the topic map used in the scope property of Names.
+     */
     ScopedIndex.prototype.getNameThemes = function () {
         return IndexHelper.getConstructThemes(this.tm, this.theme2names);
     };
 
     /**
-    * Returns the Occurrences in the topic map whose scope property contains the
-    * specified theme.
-    */
+     * Returns the Occurrences in the topic map whose scope property contains the
+     * specified theme.
+     */
     ScopedIndex.prototype.getOccurrences = function (theme) {
         var ret = this.theme2occurrences.get((theme ? theme.getId() : 'null'));
         if (!ret) { return []; }
@@ -2454,9 +2569,10 @@ TM = (function () {
     };
 
     /**
-    * Returns the Occurrences in the topic map whose scope property equals one
-    * of those themes at least.
-    */
+     * Returns the Occurrences in the topic map whose scope property equals one
+     * of those themes at least.
+     * @throws {IllegalArgumentException} If themes is null.
+     */
     ScopedIndex.prototype.getOccurrencesByThemes = function (themes, matchall) {
         if (themes === null) { throw {name: 'IllegalArgumentException',
                 message: 'ScopedIndex.getOccurrencesByThemes cannot be called without themes'}; }
@@ -2465,21 +2581,21 @@ TM = (function () {
     };
 
     /**
-    * Returns the topics in the topic map used in the scope property of
-    * Occurrences.
-    */
+     * Returns the topics in the topic map used in the scope property of
+     * Occurrences.
+     */
     ScopedIndex.prototype.getOccurrenceThemes = function () {
         return IndexHelper.getConstructThemes(this.tm, this.theme2occurrences);
     };
 
     /**
-    * Returns the Variants in the topic map whose scope property contains the
-    * specified theme. The return value may be empty but must never be null. 
-    * @param {Topic} The Topic which must be part of the scope. This must not be
-    * null. 
-    * @returns {Array} An array of Variants.
-    * @throws {IllegalArgumentException} If theme is null.
-    */
+     * Returns the Variants in the topic map whose scope property contains the
+     * specified theme. The return value may be empty but must never be null. 
+     * @param {Topic} The Topic which must be part of the scope. This must not be
+     * null. 
+     * @returns {Array} An array of Variants.
+     * @throws {IllegalArgumentException} If theme is null.
+     */
     ScopedIndex.prototype.getVariants = function (theme) {
         if (theme === null) { throw {name: 'IllegalArgumentException',
             message: 'ScopedIndex.getVariants cannot be called without themes'};
@@ -2490,14 +2606,14 @@ TM = (function () {
     };
 
     /**
-    * Returns the Variants in the topic map whose scope property equals one of
-    * those themes at least.
-    * @param {Array} themes Scope of the Variants to be returned.
-    * @param {boolean} If true the scope property of a variant must match all
-    * themes, if false one theme must be matched at least.
-    * @returns {Array} An array of variants
-    * @throws {IllegalArgumentException} If themes is null.
-    */
+     * Returns the Variants in the topic map whose scope property equals one of
+     * those themes at least.
+     * @param {Array} themes Scope of the Variants to be returned.
+     * @param {boolean} If true the scope property of a variant must match all
+     * themes, if false one theme must be matched at least.
+     * @returns {Array} An array of variants
+     * @throws {IllegalArgumentException} If themes is null.
+     */
     ScopedIndex.prototype.getVariantsByThemes = function (themes, matchall) {
         if (themes === null) { throw {name: 'IllegalArgumentException',
                 message: 'ScopedIndex.getVariantsByThemes cannot be called without themes'}; }
@@ -2506,10 +2622,10 @@ TM = (function () {
     };
 
     /**
-    * Returns the topics in the topic map used in the scope property of Variants.
-    * The return value may be empty but must never be null.
-    * @returns {Array} An array of Topics.
-    */
+     * Returns the topics in the topic map used in the scope property of Variants.
+     * The return value may be empty but must never be null.
+     * @returns {Array} An array of Topics.
+     */
     ScopedIndex.prototype.getVariantThemes = function () {
         return IndexHelper.getConstructThemes(this.tm, this.theme2variants);
     };
@@ -2518,19 +2634,19 @@ TM = (function () {
 
 
     /**
-    * @class Helper class that is used to check if constructs belong to
-    * a given topic map.
-    */
+     * @class Helper class that is used to check if constructs belong to
+     * a given topic map.
+     */
     SameTopicMapHelper = {
         /**
-        * Checks if topic belongs to the topicmap 'topicmap'.
-        * topic can be instance of Topic or an Array with topics.
-        * topic map be null.
-        * @static
-        * @throws ModelConstraintException if the topic(s) don't
-        * belong to the same topic map.
-        * @returns false if the topic was null or true otherwise.
-        */
+         * Checks if topic belongs to the topicmap 'topicmap'.
+         * topic can be instance of Topic or an Array with topics.
+         * topic map be null.
+         * @static
+         * @throws ModelConstraintException if the topic(s) don't
+         * belong to the same topic map.
+         * @returns false if the topic was null or true otherwise.
+         */
         assertBelongsTo: function (topicmap, topic) {
             var i;
             if (!topic) { return false; }
@@ -2640,7 +2756,9 @@ TM = (function () {
         }
     };
 
-    /** Helper class for generating signatures of Topic Maps constructs. */
+    /**
+     * Helper class for generating signatures of Topic Maps constructs.
+     */
     SignatureGenerator = {
         makeNameValueSignature: function (name) {
             return name.getValue();
@@ -2708,7 +2826,9 @@ TM = (function () {
         }
     };
 
-    /** Utility class that removes duplicates according to the TMDM. */
+    /**
+     * Utility class that removes duplicates according to the TMDM.
+     */
     DuplicateRemover = {
         removeTopicMapDuplicates: function (tm) {
             var i, topics, associations, sig2ass = new Hash(), sig, existing;
@@ -2818,7 +2938,9 @@ TM = (function () {
             }
         },
 
-        /** Moves variants from the name source to the name target */
+        /**
+         * Moves variants from the name source to the name target
+         */
         moveVariants: function (source, target) {
             var arr, i, tmp, tmp2, signatures;
             arr = target.getVariants();
