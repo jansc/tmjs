@@ -181,6 +181,7 @@ TM = (function () {
     /** 
      * Adds an item identifier.
      * @param {Locator} itemIdentifier The item identifier to add.
+     * @returns {Construct} The construct itself (for chaining support)
      * @throws {ModelConstraintException} If the itemidentifier is null.
      * @throws {IdentityConstraintException} If another Topic Maps construct with
      *         the same item identifier exists.
@@ -202,6 +203,7 @@ TM = (function () {
         }
         this.itemIdentifiers.push(itemIdentifier);
         this.getTopicMap()._ii2construct.put(itemIdentifier.getReference(), this);
+        return this;
     };
 
     /**
@@ -280,6 +282,7 @@ TM = (function () {
      * Removes an item identifier.
      * @param {Locator} itemIdentifier The item identifier to be removed from
      * this construct, if present (<code>null</code> is ignored).
+     * @returns {Construct} The construct itself (for chaining support)
      */
     Construct.prototype.removeItemIdentifier = function (itemIdentifier) {
         if (itemIdentifier === null) {
@@ -293,6 +296,7 @@ TM = (function () {
             }
         }
         this.getTopicMap()._ii2construct.remove(itemIdentifier.getReference());
+        return this;
     };
     
     /**
@@ -366,13 +370,16 @@ TM = (function () {
         return this.type;
     };
     
-    // Sets the type of this construct.
+    /* Sets the type of this construct.
+     * @returns {Typed} The type itself (for chaining support)
+     */
     Typed.prototype.setType = function (type) {
         if (type === null) { throw {name: 'ModelConstraintException',
             message: 'Topic.setType cannot be called without type'}; }
         SameTopicMapHelper.assertBelongsTo(this.getTopicMap(), type);
         this.getTopicMap().setTypeEvent.fire(this, {old: this.type, type: type});
         this.type = type;
+        return this;
     };
     
     // --------------------------------------------------------------------------
@@ -382,7 +389,9 @@ TM = (function () {
     */
     Scoped = function () {};
     
-    /** Adds a topic to the scope. */
+    /** Adds a topic to the scope.
+     * @returns {Typed} The type itself (for chaining support)
+     */
     Scoped.prototype.addTheme = function (theme) {
         if (theme === null) { throw {name: 'ModelConstraintException',
             message: 'addTheme(null) is illegal'}; }
@@ -401,7 +410,7 @@ TM = (function () {
                 this.getTopicMap().addThemeEvent.fire(this.variants[i], {theme: theme});
             }
         }
-        return true;
+        return this;
     };
     
     /** Returns the topics which define the scope. */
@@ -419,7 +428,9 @@ TM = (function () {
         return this.scope;
     };
     
-    /** Removes a topic from the scope. */
+    /** Removes a topic from the scope. 
+     * @returns {Scoped} The scoped object itself (for chaining support)
+    */
     Scoped.prototype.removeTheme = function (theme) {
         var i, j, scope, found;
         for (i=0; i<this.scope.length; i+=1) {
@@ -445,6 +456,7 @@ TM = (function () {
                 }
             }
         }
+        return this;
     };
     
     
@@ -460,7 +472,9 @@ TM = (function () {
         return this.reifier;
     };
     
-    /** Sets the reifier of the construct. */
+    /** Sets the reifier of the construct.
+     * @returns {Reifiable} The reified object itself (for chaining support)
+     */
     Reifiable.prototype.setReifier = function (reifier) {
         if (reifier && reifier.getReified() !== null) {
             throw {name: 'ModelConstraintException',
@@ -474,6 +488,7 @@ TM = (function () {
             reifier._setReified(this);
         }
         this.reifier = reifier;
+        return this;
     };
     
     // --------------------------------------------------------------------------
@@ -485,6 +500,7 @@ TM = (function () {
     
     /** Returns the BigDecimal representation of the value. */
     DatatypeAware.prototype.decimalValue = function () {
+        // FIXME Implement!
     };
     
     /** Returns the float representation of the value. */
@@ -531,6 +547,7 @@ TM = (function () {
     
     /** Returns the long representation of the value. */
     DatatypeAware.prototype.longValue = function () {
+        // FIXME Implement!
     };
     
     /** Sets the value and the datatype. */
@@ -550,6 +567,7 @@ TM = (function () {
         }
         if (!datatype) {
             if (typeof value === 'number') {
+                // FIXME Could be XSD.float as well
                 this.datatype = tm.createLocator(XSD.integer);
             }
         }
@@ -745,6 +763,9 @@ TM = (function () {
         this.scopedIndex = new ScopedIndex(this);
     };
 
+    /**
+     * @returns {TopicMap} The topic map object itself (for chaining support)
+     */
     TopicMap.prototype.register_event_handler = function (type, handler) {
         switch (type) {
             case EventType.ADD_ASSOCIATION:
@@ -778,16 +799,23 @@ TM = (function () {
             case EventType.SET_TYPE:
                 this.setTypeEvent.registerHandler(handler); break;
         }
+        return this;
     };
 
     TopicMap.swiss(Reifiable, 'getReifier', 'setReifier');
     TopicMap.swiss(Construct, 'addItemIdentifier', 'getItemIdentifiers',
         'removeItemIdentifier', 'isTopic', 'isAssociation', 'isRole',
         'isOccurrence', 'isName', 'isVariant', 'isTopicMap');
-
+    /**
+     * Removes duplicate topic map objects. This function is quite expensive,
+     * so it should not be called too often. It is meant to remove duplicates
+     * after imports of topic maps.
+     * @returns {TopicMap} The topic map object itself (for chaining support)
+     */
     TopicMap.prototype.sanitize = function () {
         DuplicateRemover.removeTopicMapDuplicates(this);
         TypeInstanceHelper.convertAssociationsToType(this);
+        return this;
     };
     
     TopicMap.prototype.isTopicMap = function () {
@@ -813,6 +841,7 @@ TM = (function () {
         this.reifier = null;
         this.id = null;
         this.typeInstanceIndex = null;
+        return null;
     };
     
     TopicMap.prototype.createAssociation = function (type, scope) {
@@ -925,6 +954,8 @@ TM = (function () {
             index = new ScopedIndex(this);
             return index;
         }
+        // TODO: Should we throw an exception that indicates that the 
+        // index is not known? Check the TMAPI docs!
         throw {name: 'UnsupportedOperationException', 
             message: 'getIndex ist not (yet) supported'};
     };
@@ -1070,7 +1101,10 @@ TM = (function () {
         return this.parnt;
     };
     
-    // Adds a subject identifier to this topic.
+    /**
+     * Adds a subject identifier to this topic.
+     * @returns {Topic} The topic itself (for chaining support)
+     */
     Topic.prototype.addSubjectIdentifier = function (subjectIdentifier) {
         if (!subjectIdentifier) { throw {name: 'ModelConstraintException',
             message: 'addSubjectIdentifier() needs subject identifier'}; }
@@ -1083,9 +1117,13 @@ TM = (function () {
         }
         this.subjectIdentifiers.push(subjectIdentifier);
         this.parnt._si2topic.put(subjectIdentifier.getReference(), this);
+        return this;
     };
     
-    // Adds a subject locator to this topic.
+    /**
+     * Adds a subject locator to this topic.
+     * @returns {Topic} The topic itself (for chaining support)
+     */
     Topic.prototype.addSubjectLocator = function (subjectLocator) {
         if (!subjectLocator) { throw {name: 'ModelConstraintException',
             message: 'addSubjectLocator() needs subject locator'}; }
@@ -1098,15 +1136,20 @@ TM = (function () {
         }
         this.subjectLocators.push(subjectLocator);
         this.parnt._sl2topic.put(subjectLocator.getReference(), this);
+        return this;
     };
     
-    // Adds a type to this topic.
+    /**
+     * Adds a type to this topic.
+     * @returns {Topic} The topic itself (for chaining support)
+     */
     Topic.prototype.addType = function (type) {
         if (!type) { throw {name: 'ModelConstraintException',
             message: 'addType() needs type'}; }
         SameTopicMapHelper.assertBelongsTo(this.parnt, type);
         this.parnt.addTypeEvent.fire(this, {type: type});
         this.types.push(type);
+        return this;
     };
     
     // TODO: @type is optional In TMAPI 2.0
@@ -1149,7 +1192,10 @@ TM = (function () {
         return occ;
     };
     
-    // Returns the Names of this topic where the name type is type. type is optional.
+    /**
+     * Returns the Names of this topic where the name type is type.
+     *type is optional.
+     */
     Topic.prototype.getNames = function (type) {
         var ret = [], i;
 
@@ -1163,8 +1209,10 @@ TM = (function () {
         return ret;
     };
     
-    // Returns the Occurrences of this topic where the occurrence type is type. type
-    // is optional.
+    /**
+     * Returns the Occurrences of this topic where the occurrence type is type. type
+     * is optional.
+     */
     Topic.prototype.getOccurrences = function (type) {
         var ret = [], i;
         if (type === null) { throw {name: 'IllegalArgumentException',
@@ -1223,10 +1271,12 @@ TM = (function () {
     };
     
     // @private Registers role as a role played
+    // TODO: Rename to _addRolePlayed
     Topic.prototype.addRolePlayed = function (role) {
         this.rolesPlayed.push(role);
     };
     
+    // TODO: Rename to _removeRolePlayed
     Topic.prototype.removeRolePlayed = function (role) {
         for (var i=0; i<this.rolesPlayed.length; i+=1) {
             if (this.rolesPlayed[i].id === role.id) {
@@ -1250,7 +1300,10 @@ TM = (function () {
         return this.types;
     };
     
-    // Merges another topic into this topic.
+    /**
+     * Merges another topic into this topic.
+     * @returns {Topic} The topic itself (for chaining support)
+     */
     Topic.prototype.mergeIn = function (other) {
         var arr, i, tmp, tmp2, signatures, occ, name, tiidx, sidx;
         if (this.equals(other)) {
@@ -1372,6 +1425,7 @@ TM = (function () {
         }
 
         other.remove();
+        return this;
     };
     
     // Removes this topic from the containing TopicMap instance.
@@ -1396,9 +1450,13 @@ TM = (function () {
         this.parnt._id2construct.remove(this.id);
         this.parnt.removeTopicEvent.fire(this);
         this.id = null;
+        return this.parnt;
     };
     
-    // Removes a subject identifier from this topic.
+    /**
+     * Removes a subject identifier from this topic.
+     * @returns {Topic} The topic itself (for chaining support)
+     */
     Topic.prototype.removeSubjectIdentifier = function (subjectIdentifier) {
         for (var i=0; i<this.subjectIdentifiers.length; i+=1) {
             if (this.subjectIdentifiers[i].getReference() ===
@@ -1408,9 +1466,13 @@ TM = (function () {
             }
         }
         this.parnt._sl2topic.remove(subjectIdentifier.getReference());
+        return this;
     };
     
-    // Removes a subject locator from this topic.
+    /**
+     * Removes a subject locator from this topic.
+     * @returns {Topic} The topic itself (for chaining support)
+     */
     Topic.prototype.removeSubjectLocator = function (subjectLocator) {
         for (var i=0; i<this.subjectLocators.length; i+=1) {
             if (this.subjectLocators[i].getReference() ===
@@ -1420,9 +1482,13 @@ TM = (function () {
             }
         }
         this.parnt._sl2topic.remove(subjectLocator.getReference());
+        return this;
     };
     
-    // Removes a type from this topic.
+    /**
+     * Removes a type from this topic.
+     * @returns {Topic} The topic itself (for chaining support)
+     */
     Topic.prototype.removeType = function (type) {
         for (var i=0; i<this.types.length; i+=1) {
             if (this.types[i].equals(type)) {
@@ -1484,6 +1550,7 @@ TM = (function () {
         this.parnt.parnt.removeOccurrenceEvent.fire(this);
         this.parnt._removeOccurrence(this);
         this.id = null;
+        return this.parnt;
     };
     
     Name = function (parnt, value, type) {
@@ -1549,10 +1616,14 @@ TM = (function () {
         return variant;
     };
     
+    /**
+     * @returns {Name} The name itself (for chaining support)
+     */
     Name.prototype.setValue = function (value) {
         if (!value) { throw {name: 'ModelConstraintException',
             message: 'Name.setValue(null) is not allowed'}; }
         this.value = value;
+        return this;
     };
     
     Name.prototype.getValue = function (value) {
@@ -1565,8 +1636,9 @@ TM = (function () {
             this.parnt.parnt.removeThemeEvent.fire(this, {theme: this.scope[i]});
         }
         this.parnt.parnt.removeNameEvent.fire(this);
-        this.getParent()._removeName(this);
+        this.parnt._removeName(this);
         this.id = null;
+        return this.parnt;
     };
     
     Name.prototype._removeVariant = function (variant) {
@@ -1629,6 +1701,7 @@ TM = (function () {
         }
         this.getParent()._removeVariant(this);
         this.id = null;
+        return this.parnt;
     };
     
 
@@ -1658,6 +1731,7 @@ TM = (function () {
     };
     
     Role.prototype.remove = function () {
+        var parnt = this.parnt;
         this.parnt.parnt.removeRoleEvent.fire(this);
         this.parnt._removeRole(this);
         this.itemIdentifiers = null;
@@ -1666,12 +1740,16 @@ TM = (function () {
         this.player = null;
         this.reifier = null;
         this.id = null;
+        return parnt;
     };
     
     Role.prototype.getPlayer = function () {
         return this.player;
     };
     
+    /**
+     * @returns {Role} The role itself (for chaining support)
+     */
     Role.prototype.setPlayer = function (player) {
         if (!player) { throw {name: 'ModelConstraintException',
             message: 'player i Role.setPlayer cannot be null'}; }
@@ -1680,6 +1758,7 @@ TM = (function () {
         this.player.removeRolePlayed(this);
         player.addRolePlayed(this);
         this.player = player;
+        return this;
     };
     
     Association = function (par) {
@@ -1752,6 +1831,7 @@ TM = (function () {
         this.scope = null;
         this.type = null;
         this.reifier = null;
+        return this.parnt;
     };
     
     // Returns the roles participating in this association.
@@ -2048,7 +2128,7 @@ TM = (function () {
                     break;
             }
         };
-        //tm.addAssociationEvent.registerHandler(eventHandler);
+        tm.addAssociationEvent.registerHandler(eventHandler);
         tm.addNameEvent.registerHandler(eventHandler);
         tm.addOccurrenceEvent.registerHandler(eventHandler);
         tm.addRoleEvent.registerHandler(eventHandler);
@@ -2543,6 +2623,7 @@ TM = (function () {
     /** 
      * Internal function to add scope. scope may be Array, Topic or null.
      * @ignore
+     * FIXME: Move to a class
      */
     addScope = function (construct, scope) {
         var i;
