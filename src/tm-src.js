@@ -127,7 +127,8 @@ TM = (function () {
     TMDM = {
         'TYPE_INSTANCE': 'http://psi.topicmaps.org/iso13250/model/type-instance',
         'TYPE': 'http://psi.topicmaps.org/iso13250/model/type',
-        'INSTANCE': 'http://psi.topicmaps.org/iso13250/model/instance'
+        'INSTANCE': 'http://psi.topicmaps.org/iso13250/model/instance',
+        'TOPIC_NAME': 'http://psi.topicmaps.org/iso13250/model/topic-name'
     };
 
     // -----------------------------------------------------------------------
