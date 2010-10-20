@@ -423,7 +423,7 @@ TM = (function () {
      */
     Scoped.prototype.getScope = function () {
         if (this.isVariant()) {
-            var i, ret, tmp = new Hash(), parent_scope = this.parnt.getScope();
+            var i, tmp = new Hash(), parent_scope = this.parnt.getScope();
             for (i=0; i<parent_scope.length; i+=1) {
                 tmp.put(parent_scope[i].getId(), parent_scope[i]);
             }
@@ -894,7 +894,7 @@ TM = (function () {
      * @throws {ModelConstraintException} If type or scope is null.
      */
     TopicMap.prototype.createAssociation = function (type, scope) {
-        var a, i;
+        var a;
         if (type === null) {
             throw {name: 'ModelConstraintException',
                 message: 'Creating an association with type == null is not allowed'};
@@ -1106,7 +1106,7 @@ TM = (function () {
     };
     
     TopicMap.prototype._removeAssociation = function (association) {
-        var i, iis;
+        var i;
         // remove association from TopicMap.associations
         for (i=0; i<this.associations.length; i+=1) {
             if (association.id === this.associations[i].id) {
@@ -1231,7 +1231,7 @@ TM = (function () {
     // Creates a Name for this topic with the specified value, and scope.
     // Creates a Name for this topic with the specified type, value, and scope.
     Topic.prototype.createName = function (value, type, scope) {
-        var i, name;
+        var name;
         if (type) {
             SameTopicMapHelper.assertBelongsTo(this.parnt, type);
         }
@@ -1256,7 +1256,7 @@ TM = (function () {
     // Creates an Occurrence for this topic with the specified type, string value,
     // and scope.
     Topic.prototype.createOccurrence = function (type, value, datatype, scope) {
-        var occ, i;
+        var occ;
         SameTopicMapHelper.assertBelongsTo(this.parnt, type);
         SameTopicMapHelper.assertBelongsTo(this.parnt, scope);
     
@@ -1392,7 +1392,7 @@ TM = (function () {
      * @returns {Topic} The topic itself (for chaining support)
      */
     Topic.prototype.mergeIn = function (other) {
-        var arr, i, tmp, tmp2, signatures, occ, name, tiidx, sidx;
+        var arr, i, tmp, tmp2, signatures, tiidx, sidx;
         if (this.equals(other)) {
             return true;
         }
@@ -1523,7 +1523,7 @@ TM = (function () {
      * or if it is used as a role player.
      */
     Topic.prototype.remove = function () {
-        var other, tiidx = this.parnt.typeInstanceIndex,
+        var tiidx = this.parnt.typeInstanceIndex,
             sidx = this.parnt.scopedIndex;
         if (this.getReified() ||
             tiidx.getOccurrences(this).length ||
@@ -1647,7 +1647,6 @@ TM = (function () {
     };
     
     Name = function (parnt, value, type) {
-        var i;
         this.itemIdentifiers = [];
         this.parnt = parnt;
         this.value = value;
@@ -2378,7 +2377,7 @@ TM = (function () {
      * @returns {Array} A list of Topic objects
      */
     TypeInstanceIndex.prototype.getTopicsByTypes = function (types, matchall) {
-        var instances, i, j, ret;
+        var instances, i, j;
         instances = IndexHelper.getForKeys(this.type2topics, types);
         if (!matchall) {
             return instances;
@@ -2429,7 +2428,7 @@ TM = (function () {
         this.theme2occurrences = new Hash();
         this.theme2variants = new Hash();
         eventHandler = function (eventtype, source, obj) {
-            var existing, key, unscoped, i, remove_from_index, add_to_index;
+            var existing, key, unscoped, remove_from_index, add_to_index;
             add_to_index = function (hash, source, obj) {
                 key = (obj.theme ? obj.theme.getId() : 'null');
 
@@ -2699,7 +2698,7 @@ TM = (function () {
         },
 
         getConstructsByThemes: function (hash, themes, matchall) {
-            var constructs, i, j, ret;
+            var constructs, i, j;
             constructs = IndexHelper.getForKeys(hash, themes);
             if (!matchall) {
                 return constructs;
@@ -2996,10 +2995,19 @@ TM = (function () {
     };
 
     CopyHelper = {
+        copyAssociations: function (source, target, mergeMap) {
+        },
+        copyItemIdentifiers: function (source, target) {
+        },
+        copyReifier: function (source, target, mergeMap) {
+        },
+        copyScope: function (source, target, mergeMap) {
+        },
         copyTopicMap: function (source, target) {
         },
-
-        copyTopic: function (source, targettm) {
+        copyTopic: function (sourcetm, targettm, mergeMap) {
+        },
+        copyType: function (source, target, mergeMap) {
         }
     };
 
