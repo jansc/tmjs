@@ -23,14 +23,15 @@ See the file TODO for a list of missing features.
 
 # Features to be implemented in the near future
 
-* XTM 2.0 import/export
+* XTM 2.0 import/export (requires DOM)
 
 
 # More planned features (feedback welcome)
 
 * More import/export-formats
-* TMIP, TMRAP implementation
-* More backends: HTML 5 Web SQL Database, Google Gears(?)
+* TMRAP implementation
+* SDshare implementation?
+* More backends: HTML 5 Web SQL Database, persistent backend for node.js
 
 
 # Dependencies
