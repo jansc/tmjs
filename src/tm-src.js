@@ -1,6 +1,6 @@
 /*jslint browser: true, devel: true, onevar: true, undef: true,
   nomen: false, eqeqeq: true, plusplus: true, bitwise: true,
-  regexp: true, newcap: true, immed: true */
+  regexp: true, newcap: true, immed: true, indent: 4 */
 /*global exports*/ 
 
 var TM, TopicMapSystemFactory;
@@ -43,16 +43,36 @@ TM = (function () {
         this.length = 0;
     };
 
-    // Simple hash implementation
+    /**
+     * @class Simple hash implementation.
+     */
     Hash.prototype = {
+        /**
+         * Returns the object belonging to the key key or undefined if the
+         * key does not exist.
+         * @param key {String} The hash key.
+         * @returns {object} The stored object or undefined.
+         */        
         get: function (key) {
-           return this.hash[key];
+            return this.hash[key];
         },
 
+        /**
+         * Checks if the key exists in the hash table.
+         * @param key {String} The hash key.
+         * @returns {boolean} True if key exists in the hash table. False
+         *          otherwise.
+         */
         contains: function (key) {
-             return this.get(key) !== undefined;
+            return this.get(key) !== undefined;
         },
 
+        /**
+         * Stores an object in the hash table.
+         * @param key {String} The hash key.
+         * @param val {object} The value to be stored in the hash table.
+         * @returns val {object} A reference to the stored object.
+         */
         put: function (key, val) {
             if (!this.hash[key]) {
                 this.length += 1;
@@ -61,12 +81,22 @@ TM = (function () {
             return val;
         },
 
+        /**
+         * Removes the key and the corresponding value from the hash table.
+         * @param key {String} Removes value corresponding to key and the key
+         *             from the hash table
+         * @returns {Hash} The hash table itself.
+         */
         remove: function (key) {
             delete this.hash[key];
             this.length -= 1;
             return this;
         },
 
+        /**
+         * Returns an array with keys of the hash table.
+         * @returns {Array} An array with strings.
+         */
         keys: function () {
             var ret = [], key;
             for (key in this.hash) {
@@ -77,6 +107,11 @@ TM = (function () {
             return ret;
         },
 
+        /**
+         * Returns an array with all values of the hash table.
+         * @returns {Array} An array with all objects stored as a value in
+         *          the hash table.
+         */
         values: function () {
             var ret = [], key;
             for (key in this.hash) {
@@ -87,11 +122,22 @@ TM = (function () {
             return ret;
         },
 
+        /**
+         * Empties the hash table by removing the reference to all objects.
+         * Note that the store objects themselves are not touched.
+         * @returns undefined
+         */
         empty: function () {
             this.hash = {};
             this.length = 0;
         },
 
+        /**
+         * Returns the size of the hash table, that is the count of all
+         * key/value pairs.
+         * @returns {Number} The count of all key/value pairs stored in the
+         *          hash table.
+         */
         size: function () {
             return this.length;
         }
@@ -116,6 +162,9 @@ TM = (function () {
     EventType.REMOVE_TYPE = 14;
     EventType.SET_TYPE = 15;
 
+    /**
+     * @namespace Namespace for XML Schema URIs. // FIXME!!
+     */
     XSD = {
         'string': "http://www.w3.org/2001/XMLSchema#string",
         'integer': "http://www.w3.org/2001/XMLSchema#integer",
@@ -195,7 +244,7 @@ TM = (function () {
         existing = this.getTopicMap()._ii2construct.get(itemIdentifier.getReference());
         if (existing) {
             throw {name: 'IdentityConstraintException',
-                message: 'Topic Maps constructs with the same item identifier '+
+                message: 'Topic Maps constructs with the same item identifier ' +
                         'are not allowed',
                 reporter: this,
                 existing: existing,
@@ -288,7 +337,7 @@ TM = (function () {
         if (itemIdentifier === null) {
             return;
         }
-        for (var i=0; i<this.itemIdentifiers.length; i+=1) {
+        for (var i = 0; i < this.itemIdentifiers.length; i += 1) {
             if (this.itemIdentifiers[i].getReference() ===
                     itemIdentifier.getReference()) {
                 this.itemIdentifiers.splice(i, 1);
@@ -376,8 +425,10 @@ TM = (function () {
      * @returns {Typed} The type itself (for chaining support)
      */
     Typed.prototype.setType = function (type) {
-        if (type === null) { throw {name: 'ModelConstraintException',
-            message: 'Topic.setType cannot be called without type'}; }
+        if (type === null) {
+            throw {name: 'ModelConstraintException',
+            message: 'Topic.setType cannot be called without type'};
+        }
         SameTopicMapHelper.assertBelongsTo(this.getTopicMap(), type);
         this.getTopicMap().setTypeEvent.fire(this, {old: this.type, type: type});
         this.type = type;
@@ -397,10 +448,12 @@ TM = (function () {
      * @returns {Typed} The type itself (for chaining support)
      */
     Scoped.prototype.addTheme = function (theme) {
-        if (theme === null) { throw {name: 'ModelConstraintException',
-            message: 'addTheme(null) is illegal'}; }
+        if (theme === null) {
+            throw {name: 'ModelConstraintException',
+            message: 'addTheme(null) is illegal'}; 
+        }
         // Check if theme is part of the scope
-        for (var i=0; i<this.scope.length; i+=1) {
+        for (var i = 0; i < this.scope.length; i += 1) {
             if (this.scope[i] === theme) {
                 return false;
             }
@@ -410,7 +463,7 @@ TM = (function () {
         this.getTopicMap().addThemeEvent.fire(this, {theme: theme});
         // Special case for names: add the theme to all variants
         if (this.isName()) {
-            for (i=0; i<this.variants.length; i+=1) {
+            for (i = 0; i < this.variants.length; i += 1) {
                 this.getTopicMap().addThemeEvent.fire(this.variants[i], {theme: theme});
             }
         }
@@ -424,10 +477,10 @@ TM = (function () {
     Scoped.prototype.getScope = function () {
         if (this.isVariant()) {
             var i, tmp = new Hash(), parent_scope = this.parnt.getScope();
-            for (i=0; i<parent_scope.length; i+=1) {
+            for (i = 0; i < parent_scope.length; i += 1) {
                 tmp.put(parent_scope[i].getId(), parent_scope[i]);
             }
-            for (i=0; i<this.scope.length; i+=1) {
+            for (i = 0; i < this.scope.length; i += 1) {
                 tmp.put(this.scope[i].getId(), this.scope[i]);
             }
             return tmp.values();
@@ -441,7 +494,7 @@ TM = (function () {
      */
     Scoped.prototype.removeTheme = function (theme) {
         var i, j, scope, found;
-        for (i=0; i<this.scope.length; i+=1) {
+        for (i = 0; i < this.scope.length; i += 1) {
             if (this.scope[i] === theme) {
                 this.getTopicMap().removeThemeEvent.fire(this, {theme: this.scope[i]});
                 this.scope.splice(i, 1);
@@ -450,11 +503,11 @@ TM = (function () {
         }
         // Special case for names: remove the theme from index for all variants
         if (this.isName()) {
-            for (i=0; i<this.variants.length; i+=1) {
+            for (i = 0; i < this.variants.length; i += 1) {
                 scope = this.variants[i].scope;
                 // Check if the the variant has theme as scope
                 found = false;
-                for (j=0; j<scope.length; j+=1) {
+                for (j = 0; j < scope.length; j += 1) {
                     if (theme.equals(scope[j])) {
                         found = true;
                     }
@@ -526,7 +579,7 @@ TM = (function () {
         var ret = parseFloat(this.value);
         if (isNaN(ret)) {
             throw {name: 'NumberFormatException',
-                message: '"'+this.value+'" is not a float'};
+                message: '"' + this.value + '" is not a float'};
         }
         return ret;
     };
@@ -556,7 +609,7 @@ TM = (function () {
         var ret = parseInt(this.value, 10);
         if (isNaN(ret)) {
             throw {name: 'NumberFormatException',
-                message: '"'+this.value+'" is not an integer'};
+                message: '"' + this.value + '" is not an integer'};
         }
         return ret;
     };
@@ -569,7 +622,7 @@ TM = (function () {
     DatatypeAware.prototype.locatorValue = function () {
         if (!(typeof this.value === 'object' && this.value instanceof Locator)) {
             throw {name: 'ModelConstraintException',
-                message: '"'+this.value+'" is not a locator'};
+                message: '"' + this.value + '" is not a locator'};
         }
         return this.value;
     };
@@ -718,7 +771,9 @@ TM = (function () {
         } else {
             tm = this.topicmaps[locator];
         }
-        if (!tm) { return null; }
+        if (!tm) {
+            return null;
+        }
         return tm;
     };
     
@@ -773,10 +828,10 @@ TM = (function () {
         };
         EventHandler.prototype = {
             registerHandler: function (handler) {
-               this.handlers.push(handler);
+                this.handlers.push(handler);
             },
             removeHandler: function (handler) {
-                for (var i = 0; i<this.handlers.length; i+=1) {
+                for (var i = 0; i < this.handlers.length; i += 1) {
                     if (handler.toString() ===
                         this.handlers[i].toString()) {
                         this.handlers.splice(i, 1);
@@ -785,7 +840,7 @@ TM = (function () {
             },
             fire: function (source, obj) {
                 obj = obj || {};
-                for (var i = 0; i<this.handlers.length; i+=1) {
+                for (var i = 0; i < this.handlers.length; i += 1) {
                     this.handlers[i](this.eventtype, source, obj);
                 }
             }
@@ -814,36 +869,51 @@ TM = (function () {
      */
     TopicMap.prototype.register_event_handler = function (type, handler) {
         switch (type) {
-            case EventType.ADD_ASSOCIATION:
-                this.addAssociationEvent.registerHandler(handler); break;
-            case EventType.ADD_NAME:
-                this.addNameEvent.registerHandler(handler); break;
-            case EventType.ADD_OCCURRENCE:
-                this.addOccurrenceEvent.registerHandler(handler); break;
-            case EventType.ADD_ROLE:
-                this.addRoleEvent.registerHandler(handler); break;
-            case EventType.ADD_THEME:
-                this.addThemeEvent.registerHandler(handler); break;
-            case EventType.ADD_TOPIC:
-                this.addTopicEvent.registerHandler(handler); break;
-            case EventType.ADD_TYPE:
-                this.addTypeEvent.registerHandler(handler); break;
-            case EventType.REMOVE_ASSOCIATION:
-                this.removeAssociationEvent.registerHandler(handler); break;
-            case EventType.REMOVE_NAME:
-                this.removeNameEvent.registerHandler(handler); break;
-            case EventType.REMOVE_OCCURRENCE:
-                this.removeOccurrenceEvent.registerHandler(handler); break;
-            case EventType.REMOVE_ROLE:
-                this.removeRoleEvent.registerHandler(handler); break;
-            case EventType.REMOVE_THEME:
-                this.removeThemeEvent.registerHandler(handler); break;
-            case EventType.REMOVE_TOPIC:
-                this.removeTopicEvent.registerHandler(handler); break;
-            case EventType.REMOVE_TYPE:
-                this.removeTypeEvent.registerHandler(handler); break;
-            case EventType.SET_TYPE:
-                this.setTypeEvent.registerHandler(handler); break;
+        case EventType.ADD_ASSOCIATION:
+            this.addAssociationEvent.registerHandler(handler);
+            break;
+        case EventType.ADD_NAME:
+            this.addNameEvent.registerHandler(handler);
+            break;
+        case EventType.ADD_OCCURRENCE:
+            this.addOccurrenceEvent.registerHandler(handler);
+            break;
+        case EventType.ADD_ROLE:
+            this.addRoleEvent.registerHandler(handler);
+            break;
+        case EventType.ADD_THEME:
+            this.addThemeEvent.registerHandler(handler);
+            break;
+        case EventType.ADD_TOPIC:
+            this.addTopicEvent.registerHandler(handler);
+            break;
+        case EventType.ADD_TYPE:
+            this.addTypeEvent.registerHandler(handler);
+            break;
+        case EventType.REMOVE_ASSOCIATION:
+            this.removeAssociationEvent.registerHandler(handler);
+            break;
+        case EventType.REMOVE_NAME:
+            this.removeNameEvent.registerHandler(handler);
+            break;
+        case EventType.REMOVE_OCCURRENCE:
+            this.removeOccurrenceEvent.registerHandler(handler);
+            break;
+        case EventType.REMOVE_ROLE:
+            this.removeRoleEvent.registerHandler(handler);
+            break;
+        case EventType.REMOVE_THEME:
+            this.removeThemeEvent.registerHandler(handler);
+            break;
+        case EventType.REMOVE_TOPIC:
+            this.removeTopicEvent.registerHandler(handler);
+            break;
+        case EventType.REMOVE_TYPE:
+            this.removeTypeEvent.registerHandler(handler);
+            break;
+        case EventType.SET_TYPE:
+            this.setTypeEvent.registerHandler(handler);
+            break;
         }
         return this;
     };
@@ -929,7 +999,7 @@ TM = (function () {
     
     TopicMap.prototype.createTopic = function () {
         var t = this._createEmptyTopic();
-        t.addItemIdentifier(this.createLocator('urn:x-tmjs:'+t.getId()));
+        t.addItemIdentifier(this.createLocator('urn:x-tmjs:' + t.getId()));
         return t;
     };
     
@@ -939,13 +1009,15 @@ TM = (function () {
      * specified item identifier exists which is not a Topic.
      */
     TopicMap.prototype.createTopicByItemIdentifier = function (itemIdentifier) {
-        if (!itemIdentifier) { throw {name: 'ModelConstraintException',
-            message: 'createTopicByItemIdentifier() needs an item identifier'}; }
+        if (!itemIdentifier) {
+            throw {name: 'ModelConstraintException',
+            message: 'createTopicByItemIdentifier() needs an item identifier'};
+        }
         var t = this.getConstructByItemIdentifier(itemIdentifier);
         if (t) {
             if (!t.isTopic()) {
                 throw {name: 'IdentityConstraintException',
-                message: 'Another construct with the specified item identifier '+
+                message: 'Another construct with the specified item identifier ' +
                     'exists which is not a Topic.'};
             }
             return t;
@@ -959,8 +1031,10 @@ TM = (function () {
      * @throws {ModelConstraintException} If no subjectIdentifier is given.
      */
     TopicMap.prototype.createTopicBySubjectIdentifier = function (subjectIdentifier) {
-        if (!subjectIdentifier) { throw {name: 'ModelConstraintException',
-            message: 'createTopicBySubjectIdentifier() needs a subject identifier'}; }
+        if (!subjectIdentifier) {
+            throw {name: 'ModelConstraintException',
+            message: 'createTopicBySubjectIdentifier() needs a subject identifier'};
+        }
         var t = this.getTopicBySubjectIdentifier(subjectIdentifier);
         if (t) {
             return t;
@@ -974,8 +1048,10 @@ TM = (function () {
      * @throws {ModelConstraintException} If no subjectLocator is given.
      */
     TopicMap.prototype.createTopicBySubjectLocator = function (subjectLocator) {
-        if (!subjectLocator) { throw {name: 'ModelConstraintException',
-            message: 'createTopicBySubjectLocator() needs a subject locator'}; }
+        if (!subjectLocator) {
+            throw {name: 'ModelConstraintException',
+            message: 'createTopicBySubjectLocator() needs a subject locator'};
+        }
         var t = this.getTopicBySubjectLocator(subjectLocator);
         if (t) {
             return t;
@@ -993,10 +1069,14 @@ TM = (function () {
      * @throws {ModelConstraintException} If id is null.
      */
     TopicMap.prototype.getConstructById = function (id) {
-        if (id === null) { throw {name: 'ModelConstraintException',
-                message: 'getConstructById(null) is illegal'}; }
+        if (id === null) {
+            throw {name: 'ModelConstraintException',
+                message: 'getConstructById(null) is illegal'};
+        }
         var ret = this._id2construct.get(id);
-        if (!ret) { return null; }
+        if (!ret) {
+            return null;
+        }
         return ret;
     };
     
@@ -1004,10 +1084,14 @@ TM = (function () {
      * @throws {ModelConstraintException} If itemIdentifier is null.
      */
     TopicMap.prototype.getConstructByItemIdentifier = function (itemIdentifier) {
-        if (itemIdentifier === null) { throw {name: 'ModelConstraintException',
-                message: 'getConstructByItemIdentifier(null) is illegal'}; }
+        if (itemIdentifier === null) {
+            throw {name: 'ModelConstraintException',
+                message: 'getConstructByItemIdentifier(null) is illegal'};
+        }
         var ret = this._ii2construct.get(itemIdentifier.getReference());
-        if (!ret) { return null; }
+        if (!ret) {
+            return null;
+        }
         return ret;
     };
     
@@ -1051,7 +1135,7 @@ TM = (function () {
     };
     
     TopicMap.prototype.getLocator = function () {
-      return this.locator;
+        return this.locator;
     };
     
     TopicMap.prototype.getTopics = function () {
@@ -1078,7 +1162,7 @@ TM = (function () {
     // Remove item identifiers
     TopicMap.prototype._removeConstruct = function (construct) {
         var iis = construct.getItemIdentifiers(), i;
-        for (i=0; i<iis.length; i+=1) {
+        for (i = 0; i < iis.length; i += 1) {
             this._ii2construct.remove(iis[i].getReference());
         }
         this._id2construct.remove(construct.getId());
@@ -1088,16 +1172,16 @@ TM = (function () {
         var i, sis = topic.getSubjectIdentifiers(),
             slos = topic.getSubjectLocators();
         // remove subject identifiers from TopicMap._si2topic
-        for (i=0; i<sis.length; i+=1) {
+        for (i = 0; i < sis.length; i += 1) {
             this._si2topic.remove(sis[i].getReference());
         }
         // remove subject locators from TopicMap._sl2topic
-        for (i=0; i<slos.length; i+=1) {
+        for (i = 0; i < slos.length; i += 1) {
             this._sl2topic.remove(slos[i].getReference());
         }
         this._removeConstruct(topic);
         // remove topic from TopicMap.topics
-        for (i=0; i<this.topics.length; i+=1) {
+        for (i = 0; i < this.topics.length; i += 1) {
             if (topic.id === this.topics[i].id) {
                 this.topics.splice(i, 1);
                 break;
@@ -1108,7 +1192,7 @@ TM = (function () {
     TopicMap.prototype._removeAssociation = function (association) {
         var i;
         // remove association from TopicMap.associations
-        for (i=0; i<this.associations.length; i+=1) {
+        for (i = 0; i < this.associations.length; i += 1) {
             if (association.id === this.associations[i].id) {
                 this.associations.splice(i, 1);
                 break;
@@ -1116,7 +1200,7 @@ TM = (function () {
         }
         this._removeConstruct(association);
         // remove association from TopicMap.associations
-        for (i=0; i<this.associations.length; i+=1) {
+        for (i = 0; i < this.associations.length; i += 1) {
             if (association.id === this.associations[i].id) {
                 this.associations.splice(i, 1);
                 break;
@@ -1178,10 +1262,12 @@ TM = (function () {
      * @returns {Topic} The topic itself (for chaining support)
      */
     Topic.prototype.addSubjectIdentifier = function (subjectIdentifier) {
-        if (!subjectIdentifier) { throw {name: 'ModelConstraintException',
-            message: 'addSubjectIdentifier() needs subject identifier'}; }
+        if (!subjectIdentifier) {
+            throw {name: 'ModelConstraintException',
+            message: 'addSubjectIdentifier() needs subject identifier'};
+        }
         // Ignore if the identifier already exists
-        for (var i=0; i<this.subjectIdentifiers.length; i+=1) {
+        for (var i = 0; i < this.subjectIdentifiers.length; i += 1) {
             if (this.subjectIdentifiers[i].getReference() ===
                 subjectIdentifier.getReference()) {
                 return;
@@ -1199,10 +1285,12 @@ TM = (function () {
      * @returns {Topic} The topic itself (for chaining support)
      */
     Topic.prototype.addSubjectLocator = function (subjectLocator) {
-        if (!subjectLocator) { throw {name: 'ModelConstraintException',
-            message: 'addSubjectLocator() needs subject locator'}; }
+        if (!subjectLocator) {
+            throw {name: 'ModelConstraintException',
+            message: 'addSubjectLocator() needs subject locator'};
+        }
         // Ignore if the identifier already exists
-        for (var i=0; i<this.subjectLocators.length; i+=1) {
+        for (var i = 0; i < this.subjectLocators.length; i += 1) {
             if (this.subjectLocators[i].getReference() ===
                 subjectLocator.getReference()) {
                 return;
@@ -1219,8 +1307,10 @@ TM = (function () {
      * @returns {Topic} The topic itself (for chaining support)
      */
     Topic.prototype.addType = function (type) {
-        if (!type) { throw {name: 'ModelConstraintException',
-            message: 'addType() needs type'}; }
+        if (!type) {
+            throw {name: 'ModelConstraintException',
+            message: 'addType() needs type'};
+        }
         SameTopicMapHelper.assertBelongsTo(this.parnt, type);
         this.parnt.addTypeEvent.fire(this, {type: type});
         this.types.push(type);
@@ -1274,7 +1364,7 @@ TM = (function () {
     Topic.prototype.getNames = function (type) {
         var ret = [], i;
 
-        for (i=0; i<this.names.length; i+=1) {
+        for (i = 0; i < this.names.length; i += 1) {
             if (type && this.names[i].getType().equals(type)) {
                 ret.push(this.names[i]);
             } else if (!type) {
@@ -1291,9 +1381,11 @@ TM = (function () {
      */
     Topic.prototype.getOccurrences = function (type) {
         var ret = [], i;
-        if (type === null) { throw {name: 'IllegalArgumentException',
-                message: 'Topic.getOccurrences cannot be called without type'}; }
-        for (i=0; i<this.occurrences.length; i+=1) {
+        if (type === null) {
+            throw {name: 'IllegalArgumentException',
+                message: 'Topic.getOccurrences cannot be called without type'};
+        }
+        for (i = 0; i < this.occurrences.length; i += 1) {
             if (type && this.occurrences[i].getType().equals(type)) {
                 ret.push(this.occurrences[i]);
             } else if (!type) {
@@ -1305,7 +1397,7 @@ TM = (function () {
     
     Topic.prototype._removeOccurrence = function (occ) {
         // remove this from TopicMap.topics
-        for (var i=0; i<this.occurrences.length; i+=1) {
+        for (var i = 0; i < this.occurrences.length; i += 1) {
             if (this.occurrences[i].equals(occ)) {
                 this.occurrences.splice(i, 1);
                 break;
@@ -1330,12 +1422,16 @@ TM = (function () {
      * @throws {IllegalArgumentException} If type or assocType is null.
      */
     Topic.prototype.getRolesPlayed = function (type, assocType) {
-        if (type === null) { throw {name: 'IllegalArgumentException',
-                message: 'Topic.getRolesPlayed cannot be called without type'}; }
-        if (assocType === null) { throw {name: 'IllegalArgumentException',
-                message: 'Topic.getRolesPlayed cannot be called with assocType===null'}; }
+        if (type === null) {
+            throw {name: 'IllegalArgumentException',
+                message: 'Topic.getRolesPlayed cannot be called without type'};
+        }
+        if (assocType === null) {
+            throw {name: 'IllegalArgumentException',
+                message: 'Topic.getRolesPlayed cannot be called with assocType===null'};
+        }
         var ret = [], i;
-        for (i=0; i<this.rolesPlayed.length; i+=1) {
+        for (i = 0; i < this.rolesPlayed.length; i += 1) {
             if (!type) {
                 ret.push(this.rolesPlayed[i]);
             } else if (this.rolesPlayed[i].getType().equals(type)) {
@@ -1357,7 +1453,7 @@ TM = (function () {
     
     // TODO: Rename to _removeRolePlayed
     Topic.prototype.removeRolePlayed = function (role) {
-        for (var i=0; i<this.rolesPlayed.length; i+=1) {
+        for (var i = 0; i < this.rolesPlayed.length; i += 1) {
             if (this.rolesPlayed[i].id === role.id) {
                 this.rolesPlayed.splice(i, 1);
             }
@@ -1401,7 +1497,8 @@ TM = (function () {
         if (this.getReified() && other.getReified() &&
             !this.getReified().equals(other.getReified())) {
             throw {name: 'ModelConstraintException',
-                message: 'The topics reify different Topic Maps constructs and cannot be merged!'};
+                message: 'The topics reify different Topic Maps constructs and cannot be merged!'
+            };
         }
 
         if (!this.getReified() && other.getReified()) {
@@ -1456,12 +1553,12 @@ TM = (function () {
         // merge roles played
         arr = this.getRolesPlayed();
         signatures = {};
-        for (i=0; i<arr.length; i+=1) {
+        for (i = 0; i < arr.length; i += 1) {
             tmp2 = arr[i].getParent();
             signatures[SignatureGenerator.makeAssociationSignature(tmp2)] = tmp2;
         }
         arr = other.getRolesPlayed();
-        for (i=0; i<arr.length; i+=1) {
+        for (i = 0; i < arr.length; i += 1) {
             tmp = arr[i];
             tmp.setPlayer(this);
             if ((tmp2 = signatures[SignatureGenerator.makeAssociationSignature(tmp.getParent())])) {
@@ -1474,11 +1571,11 @@ TM = (function () {
         // merge names
         arr = this.getNames();
         signatures = {};
-        for (i=0; i<arr.length; i+=1) {
+        for (i = 0; i < arr.length; i += 1) {
             signatures[SignatureGenerator.makeNameSignature(arr[i])] = arr[i];
         }
         arr = other.getNames();
-        for (i=0; i<arr.length; i+=1) {
+        for (i = 0; i < arr.length; i += 1) {
             tmp = arr[i];
             if ((tmp2 = signatures[SignatureGenerator.makeNameSignature(arr[i])])) {
                 MergeHelper.moveItemIdentifiers(tmp, tmp2);
@@ -1494,11 +1591,11 @@ TM = (function () {
         // merge occurrences
         arr = this.getOccurrences();
         signatures = {};
-        for (i=0; i<arr.length; i+=1) {
+        for (i = 0; i < arr.length; i += 1) {
             signatures[SignatureGenerator.makeOccurrenceSignature(arr[i])] = arr[i];
         }
         arr = other.getOccurrences();
-        for (i=0; i<arr.length; i+=1) {
+        for (i = 0; i < arr.length; i += 1) {
             tmp = arr[i];
             if ((tmp2 = signatures[SignatureGenerator.makeOccurrenceSignature(arr[i])])) {
                 MergeHelper.moveItemIdentifiers(tmp, tmp2);
@@ -1551,7 +1648,7 @@ TM = (function () {
      * @returns {Topic} The topic itself (for chaining support)
      */
     Topic.prototype.removeSubjectIdentifier = function (subjectIdentifier) {
-        for (var i=0; i<this.subjectIdentifiers.length; i+=1) {
+        for (var i = 0; i < this.subjectIdentifiers.length; i += 1) {
             if (this.subjectIdentifiers[i].getReference() ===
                 subjectIdentifier.getReference()) {
                 this.subjectIdentifiers.splice(i, 1);
@@ -1567,7 +1664,7 @@ TM = (function () {
      * @returns {Topic} The topic itself (for chaining support)
      */
     Topic.prototype.removeSubjectLocator = function (subjectLocator) {
-        for (var i=0; i<this.subjectLocators.length; i+=1) {
+        for (var i = 0; i < this.subjectLocators.length; i += 1) {
             if (this.subjectLocators[i].getReference() ===
                 subjectLocator.getReference()) {
                 this.subjectLocators.splice(i, 1);
@@ -1583,7 +1680,7 @@ TM = (function () {
      * @returns {Topic} The topic itself (for chaining support)
      */
     Topic.prototype.removeType = function (type) {
-        for (var i=0; i<this.types.length; i+=1) {
+        for (var i = 0; i < this.types.length; i += 1) {
             if (this.types[i].equals(type)) {
                 this.types.splice(i, 1);
                 this.parnt.removeTypeEvent.fire(this, {type: type});
@@ -1593,7 +1690,7 @@ TM = (function () {
     };
     
     Topic.prototype._removeName = function (name) {
-        for (var i=0; i<this.names.length; i+=1) {
+        for (var i = 0; i < this.names.length; i += 1) {
             if (this.names[i].equals(name)) {
                 this.names.splice(i, 1);
                 break;
@@ -1637,7 +1734,7 @@ TM = (function () {
     
     Occurrence.prototype.remove = function () {
         var i;
-        for (i=0; i<this.scope.length; i+=1) {
+        for (i = 0; i < this.scope.length; i += 1) {
             this.parnt.parnt.removeThemeEvent.fire(this, {theme: this.scope[i]});
         }
         this.parnt.parnt.removeOccurrenceEvent.fire(this);
@@ -1703,7 +1800,7 @@ TM = (function () {
         }*/
         variant = new Variant(this, value, datatype);
         addScope(variant, scope);
-        for (i=0; i<this.scope.length; i+=1) {
+        for (i = 0; i < this.scope.length; i += 1) {
             this.getTopicMap().addThemeEvent.fire(variant,
                 {theme: this.scope[i]});
         }
@@ -1716,8 +1813,10 @@ TM = (function () {
      * @returns {Name} The name itself (for chaining support)
      */
     Name.prototype.setValue = function (value) {
-        if (!value) { throw {name: 'ModelConstraintException',
-            message: 'Name.setValue(null) is not allowed'}; }
+        if (!value) {
+            throw {name: 'ModelConstraintException',
+            message: 'Name.setValue(null) is not allowed'};
+        }
         this.value = value;
         return this;
     };
@@ -1728,7 +1827,7 @@ TM = (function () {
     
     Name.prototype.remove = function () {
         var i;
-        for (i=0; i<this.scope.length; i+=1) {
+        for (i = 0; i < this.scope.length; i += 1) {
             this.parnt.parnt.removeThemeEvent.fire(this, {theme: this.scope[i]});
         }
         this.parnt.parnt.removeNameEvent.fire(this);
@@ -1738,7 +1837,7 @@ TM = (function () {
     };
     
     Name.prototype._removeVariant = function (variant) {
-        for (var i=0; i<this.variants.length; i+=1) {
+        for (var i = 0; i < this.variants.length; i += 1) {
             if (this.variants[i].equals(variant)) {
                 this.variants.splice(i, 1);
                 break;
@@ -1755,11 +1854,14 @@ TM = (function () {
      * @throws {ModelConstraintException} If value or datatype is null.
      */
     Variant = function (parnt, value, datatype) {
-        if (value === null) { throw {name: 'ModelConstraintException',
-            message: 'Creation of a variant with null value is not allowed'}; }
+        if (value === null) {
+            throw {name: 'ModelConstraintException',
+                message: 'Creation of a variant with null value is not allowed'};
+        }
         if (datatype === null) {
             throw {name: 'ModelConstraintException',
-            message: 'Creation of a variant with datatype == null is not allowed'}; }
+            message: 'Creation of a variant with datatype == null is not allowed'};
+        }
         this.itemIdentifiers = [];
         this.scope = [];
         this.parnt = parnt;
@@ -1795,7 +1897,7 @@ TM = (function () {
     
     Variant.prototype.remove = function () {
         var i;
-        for (i=0; i<this.scope.length; i+=1) {
+        for (i = 0; i < this.scope.length; i += 1) {
             this.getTopicMap().removeThemeEvent.fire(this, {theme: this.scope[i]});
         }
         this.getParent()._removeVariant(this);
@@ -1851,10 +1953,14 @@ TM = (function () {
      * @returns {Role} The role itself (for chaining support)
      */
     Role.prototype.setPlayer = function (player) {
-        if (!player) { throw {name: 'ModelConstraintException',
-            message: 'player i Role.setPlayer cannot be null'}; }
+        if (!player) {
+            throw {name: 'ModelConstraintException',
+            message: 'player i Role.setPlayer cannot be null'};
+        }
         SameTopicMapHelper.assertBelongsTo(this.parnt.parnt, player);
-        if (this.player.equals(player)) { return; }
+        if (this.player.equals(player)) {
+            return;
+        }
         this.player.removeRolePlayed(this);
         player.addRolePlayed(this);
         this.player = player;
@@ -1893,10 +1999,14 @@ TM = (function () {
      * @throws {ModelConstraintException} If type or player is null.
      */
     Association.prototype.createRole = function (type, player) {
-        if (!type) { throw {name: 'ModelConstraintException',
-            message: 'type i Role.createPlayer cannot be null'}; }
-        if (!player) { throw {name: 'ModelConstraintException',
-            message: 'player i Role.createRole cannot be null'}; }
+        if (!type) {
+            throw {name: 'ModelConstraintException',
+                message: 'type i Role.createPlayer cannot be null'};
+        }
+        if (!player) {
+            throw {name: 'ModelConstraintException',
+                message: 'player i Role.createRole cannot be null'};
+        }
         SameTopicMapHelper.assertBelongsTo(this.parnt, type);
         SameTopicMapHelper.assertBelongsTo(this.parnt, player);
         var role = new Role(this, type, player);
@@ -1907,7 +2017,7 @@ TM = (function () {
     };
     
     Association.prototype._removeRole = function (role) {
-        for (var i=0; i<this.roles.length; i+=1) {
+        for (var i = 0; i < this.roles.length; i += 1) {
             if (role.id === this.roles[i].id) {
                 this.roles.splice(i, 1);
                 break;
@@ -1919,7 +2029,7 @@ TM = (function () {
     
     Association.prototype.remove = function () {
         var i;
-        for (i=0; i<this.scope.length; i+=1) {
+        for (i = 0; i < this.scope.length; i += 1) {
             this.parnt.removeThemeEvent.fire(this, {theme: this.scope[i]});
         }
         this.parnt.removeAssociationEvent.fire(this);
@@ -1943,11 +2053,15 @@ TM = (function () {
      * @throws {IllegalArgumentException} If type is null.
      */
     Association.prototype.getRoles = function (type) {
-        if (type === null) { throw {name: 'IllegalArgumentException',
-            message: 'Topic.getRoles cannot be called with type null'}; }
-        if (!type) { return this.roles; }
+        if (type === null) {
+            throw {name: 'IllegalArgumentException',
+                message: 'Topic.getRoles cannot be called with type null'};
+        }
+        if (!type) {
+            return this.roles;
+        }
         var ret = [], i; 
-        for (i=0; i<this.roles.length; i+=1) {
+        for (i = 0; i < this.roles.length; i += 1) {
             if (this.roles[i].getType().equals(type)) {
                 ret.push(this.roles[i]);
             }
@@ -1961,7 +2075,7 @@ TM = (function () {
     Association.prototype.getRoleTypes = function () {
         // Create a hash with the object ids as keys to avoid duplicates
         var types = {}, typearr = [], i, t;
-        for (i=0; i<this.roles.length; i+=1) {
+        for (i = 0; i < this.roles.length; i += 1) {
             types[this.roles[i].getType().getId()] =
                 this.roles[i].getType();
         }
@@ -2036,208 +2150,210 @@ TM = (function () {
         eventHandler = function (eventtype, source, obj) {
             var existing, untyped, types, type, i;
             switch (eventtype) {
-                case EventType.ADD_ASSOCIATION:
+            case EventType.ADD_ASSOCIATION:
+                break;
+            case EventType.ADD_NAME:
+                existing = that.type2names.get(obj.type.getId());
+                if (typeof existing === 'undefined') {
+                    existing = new Hash();
+                }
+                existing.put(source.getId(), source);
+                that.type2names.put(obj.type.getId(), existing);
+                break;
+            case EventType.ADD_OCCURRENCE:
+                existing = that.type2occurrences.get(obj.type.getId());
+                if (typeof existing === 'undefined') {
+                    existing = new Hash();
+                }
+                existing.put(source.getId(), source);
+                that.type2occurrences.put(obj.type.getId(), existing);
+                break;
+            case EventType.ADD_ROLE:
+                existing = that.type2roles.get(obj.type.getId());
+                if (typeof existing === 'undefined') {
+                    existing = new Hash();
+                }
+                existing.put(source.getId(), source);
+                that.type2roles.put(obj.type.getId(), existing);
+                break;
+            case EventType.ADD_TOPIC:
+                existing = that.type2topics.get('null');
+                if (typeof existing === 'undefined') {
+                    existing = new Hash();
+                }
+                existing.put(source.getId(), source);
+                that.type2topics.put('null', existing);
+                break;
+            case EventType.ADD_TYPE:
+                // check if source exists with type null, remove it there
+                untyped = that.type2topics.get('null');
+                if (untyped && untyped.get(source.getId())) {
+                    untyped.remove(source.getId());
+                    that.type2topics.put('null', untyped);
+                }
+                    
+                existing = that.type2topics.get(obj.type.getId());
+                if (typeof existing === 'undefined') {
+                    existing = new Hash();
+                }
+                existing.put(source.getId(), source);
+                that.type2topics.put(obj.type.getId(), existing);
+                break;
+            case EventType.REMOVE_ASSOCIATION:
+                type = source.getType();
+                if (!type) {
                     break;
-                case EventType.ADD_NAME:
+                }
+                existing = that.type2associations.get(type.getId());
+                for (i = 0; i < existing.length; i += 1) {
+                    if (existing[i].equals(source)) {
+                        existing.splice(i, 1);
+                        break;
+                    }    
+                }
+                if (existing.length > 0) {
+                    that.type2associations.put(type.getId(),
+                            existing);
+                } else {
+                    that.type2associations.remove(type.getId());
+                }
+                break;
+            case EventType.REMOVE_NAME:
+                type = source.getType();
+                existing = that.type2names.get(type.getId());
+                existing.remove(source.getId());
+                if (existing.length > 0) {
+                    that.type2names.put(type.getId(), existing);
+                } else {
+                    that.type2names.remove(type.getId());
+                }
+                break;
+            case EventType.REMOVE_OCCURRENCE:
+                type = source.getType();
+                existing = that.type2occurrences.get(type.getId());
+                existing.remove(source.getId());
+                if (existing.length > 0) {
+                    that.type2occurrences.put(type.getId(), existing);
+                } else {
+                    that.type2occurrences.remove(type.getId());
+                }
+                break;
+            case EventType.REMOVE_ROLE:
+                type = source.getType();
+                existing = that.type2roles.get(type.getId());
+                existing.remove(source.getId());
+                if (existing.length > 0) {
+                    that.type2roles.put(type.getId(), existing);
+                } else {
+                    that.type2roles.remove(type.getId());
+                }
+                break;
+            case EventType.REMOVE_TOPIC:
+                // two cases:
+                //  topic has types
+                types = source.getTypes();
+                for (i = 0; i < types.length; i += 1) {
+                    existing = that.type2topics.get(types[i].getId());
+                    existing.remove(source.getId());
+                    if (!existing.size()) {
+                        that.type2topics.remove(types[i].getId());
+                    }
+                }
+                // topic used as type 
+                that.type2topics.remove(source.getId());
+                that.type2associations.remove(source.getId());
+                that.type2roles.remove(source.getId());
+                that.type2occurrences.remove(source.getId());
+                that.type2variants.remove(source.getId());
+                break;
+            case EventType.REMOVE_TYPE:
+                existing = that.type2topics.get(obj.type.getId());
+                existing.remove(source.getId());
+                if (!existing.size()) {
+                    that.type2topics.remove(obj.type.getId());
+                }
+                if (source.getTypes().length === 0) {
+                    untyped = that.type2topics.get('null');
+                    if (typeof untyped === 'undefined') {
+                        untyped = new Hash();
+                    }
+                    untyped.put(source.getId(), source);
+                }
+                break;
+            case EventType.SET_TYPE:
+                if (source.isAssociation()) {
+                    // remove source from type2associations(obj.old.getId());
+                    if (obj.old) {
+                        existing = that.type2associations.get(obj.old.getId());
+                        for (i = 0; i < existing.length; i += 1) {
+                            if (existing[i].equals(source)) {
+                                existing.splice(i, 1);
+                                break;
+                            }    
+                        }
+                        if (existing.length > 0) {
+                            that.type2associations.put(obj.old.getId(),
+                                    existing);
+                        } else {
+                            that.type2associations.remove(obj.old.getId());
+                        }
+                    }
+                    existing = that.type2associations.get(obj.type.getId());
+                    if (typeof existing === 'undefined') {
+                        existing = [];
+                    }
+                    existing.push(source);
+                    that.type2associations.put(obj.type.getId(), existing);
+                } else if (source.isName()) {
+                    existing = that.type2names.get(obj.old.getId());
+                    if (existing) {
+                        existing.remove(source.getId());
+                        if (existing.length > 0) {
+                            that.type2names.put(obj.old.getId(), existing);
+                        } else {
+                            that.type2names.remove(obj.old.getId());
+                        }
+                    }
                     existing = that.type2names.get(obj.type.getId());
                     if (typeof existing === 'undefined') {
                         existing = new Hash();
                     }
                     existing.put(source.getId(), source);
                     that.type2names.put(obj.type.getId(), existing);
-                    break;
-                case EventType.ADD_OCCURRENCE:
+                } else if (source.isOccurrence()) {
+                    existing = that.type2occurrences.get(obj.old.getId());
+                    if (existing) {
+                        existing.remove(source.getId());
+                        if (existing.length > 0) {
+                            that.type2occurrences.put(obj.old.getId(), existing);
+                        } else {
+                            that.type2occurrences.remove(obj.old.getId());
+                        }
+                    }
                     existing = that.type2occurrences.get(obj.type.getId());
                     if (typeof existing === 'undefined') {
                         existing = new Hash();
                     }
                     existing.put(source.getId(), source);
                     that.type2occurrences.put(obj.type.getId(), existing);
-                    break;
-                case EventType.ADD_ROLE:
+                } else if (source.isRole()) {
+                    existing = that.type2roles.get(obj.old.getId());
+                    if (existing) {
+                        existing.remove(source.getId());
+                        if (existing.length > 0) {
+                            that.type2roles.put(obj.old.getId(), existing);
+                        } else {
+                            that.type2roles.remove(obj.old.getId());
+                        }
+                    }
                     existing = that.type2roles.get(obj.type.getId());
                     if (typeof existing === 'undefined') {
                         existing = new Hash();
                     }
                     existing.put(source.getId(), source);
                     that.type2roles.put(obj.type.getId(), existing);
-                    break;
-                case EventType.ADD_TOPIC:
-                    existing = that.type2topics.get('null');
-                    if (typeof existing === 'undefined') {
-                        existing = new Hash();
-                    }
-                    existing.put(source.getId(), source);
-                    that.type2topics.put('null', existing);
-                    break;
-                case EventType.ADD_TYPE:
-                    // check if source exists with type null, remove it there
-                    untyped = that.type2topics.get('null');
-                    if (untyped && untyped.get(source.getId())) {
-                        untyped.remove(source.getId());
-                        that.type2topics.put('null', untyped);
-                    }
-                    
-                    existing = that.type2topics.get(obj.type.getId());
-                    if (typeof existing === 'undefined') {
-                        existing = new Hash();
-                    }
-                    existing.put(source.getId(), source);
-                    that.type2topics.put(obj.type.getId(), existing);
-                    break;
-                case EventType.REMOVE_ASSOCIATION:
-                    type = source.getType();
-                    if (!type) { break; }
-                    existing = that.type2associations.get(type.getId());
-                    for (i=0; i<existing.length; i+=1) {
-                        if (existing[i].equals(source)) {
-                            existing.splice(i, 1);
-                            break;
-                        }    
-                    }
-                    if (existing.length > 0) {
-                        that.type2associations.put(type.getId(),
-                                existing);
-                    } else {
-                        that.type2associations.remove(type.getId());
-                    }
-                    break;
-                case EventType.REMOVE_NAME:
-                    type = source.getType();
-                    existing = that.type2names.get(type.getId());
-                    existing.remove(source.getId());
-                    if (existing.length > 0) {
-                        that.type2names.put(type.getId(), existing);
-                    } else {
-                        that.type2names.remove(type.getId());
-                    }
-                    break;
-                case EventType.REMOVE_OCCURRENCE:
-                    type = source.getType();
-                    existing = that.type2occurrences.get(type.getId());
-                    existing.remove(source.getId());
-                    if (existing.length > 0) {
-                        that.type2occurrences.put(type.getId(), existing);
-                    } else {
-                        that.type2occurrences.remove(type.getId());
-                    }
-                    break;
-                case EventType.REMOVE_ROLE:
-                    type = source.getType();
-                    existing = that.type2roles.get(type.getId());
-                    existing.remove(source.getId());
-                    if (existing.length > 0) {
-                        that.type2roles.put(type.getId(), existing);
-                    } else {
-                        that.type2roles.remove(type.getId());
-                    }
-                    break;
-                case EventType.REMOVE_TOPIC:
-                    // two cases:
-                    //  topic has types
-                    types = source.getTypes();
-                    for (i=0; i<types.length; i+=1) {
-                        existing = that.type2topics.get(types[i].getId());
-                        existing.remove(source.getId());
-                        if (!existing.size()) {
-                            that.type2topics.remove(types[i].getId());
-                        }
-                    }
-                    // topic used as type 
-                    that.type2topics.remove(source.getId());
-                    that.type2associations.remove(source.getId());
-                    that.type2roles.remove(source.getId());
-                    that.type2occurrences.remove(source.getId());
-                    that.type2variants.remove(source.getId());
-                    break;
-                case EventType.REMOVE_TYPE:
-                    existing = that.type2topics.get(obj.type.getId());
-                    existing.remove(source.getId());
-                    if (!existing.size()) {
-                        that.type2topics.remove(obj.type.getId());
-                    }
-                    if (source.getTypes().length === 0) {
-                        untyped = that.type2topics.get('null');
-                        if (typeof untyped === 'undefined') {
-                            untyped = new Hash();
-                        }
-                        untyped.put(source.getId(), source);
-                    }
-                    break;
-                case EventType.SET_TYPE:
-                    if (source.isAssociation()) {
-                        // remove source from type2associations(obj.old.getId());
-                        if (obj.old) {
-                            existing = that.type2associations.get(obj.old.getId());
-                            for (i=0; i<existing.length; i+=1) {
-                                if (existing[i].equals(source)) {
-                                    existing.splice(i, 1);
-                                    break;
-                                }    
-                            }
-                            if (existing.length > 0) {
-                                that.type2associations.put(obj.old.getId(),
-                                        existing);
-                            } else {
-                                that.type2associations.remove(obj.old.getId());
-                            }
-                        }
-                        existing = that.type2associations.get(obj.type.getId());
-                        if (typeof existing === 'undefined') {
-                            existing = [];
-                        }
-                        existing.push(source);
-                        that.type2associations.put(obj.type.getId(), existing);
-                    } else if (source.isName()) {
-                        existing = that.type2names.get(obj.old.getId());
-                        if (existing) {
-                            existing.remove(source.getId());
-                            if (existing.length > 0) {
-                                that.type2names.put(obj.old.getId(), existing);
-                            } else {
-                                that.type2names.remove(obj.old.getId());
-                            }
-                        }
-                        existing = that.type2names.get(obj.type.getId());
-                        if (typeof existing === 'undefined') {
-                            existing = new Hash();
-                        }
-                        existing.put(source.getId(), source);
-                        that.type2names.put(obj.type.getId(), existing);
-                    } else if (source.isOccurrence()) {
-                        existing = that.type2occurrences.get(obj.old.getId());
-                        if (existing) {
-                            existing.remove(source.getId());
-                            if (existing.length > 0) {
-                                that.type2occurrences.put(obj.old.getId(), existing);
-                            } else {
-                                that.type2occurrences.remove(obj.old.getId());
-                            }
-                        }
-                        existing = that.type2occurrences.get(obj.type.getId());
-                        if (typeof existing === 'undefined') {
-                            existing = new Hash();
-                        }
-                        existing.put(source.getId(), source);
-                        that.type2occurrences.put(obj.type.getId(), existing);
-                    } else if (source.isRole()) {
-                        existing = that.type2roles.get(obj.old.getId());
-                        if (existing) {
-                            existing.remove(source.getId());
-                            if (existing.length > 0) {
-                                that.type2roles.put(obj.old.getId(), existing);
-                            } else {
-                                that.type2roles.remove(obj.old.getId());
-                            }
-                        }
-                        existing = that.type2roles.get(obj.type.getId());
-                        if (typeof existing === 'undefined') {
-                            existing = new Hash();
-                        }
-                        existing.put(source.getId(), source);
-                        that.type2roles.put(obj.type.getId(), existing);
-                    }
-                    break;
+                }
+                break;
             }
         };
         tm.addAssociationEvent.registerHandler(eventHandler);
@@ -2266,7 +2382,9 @@ TM = (function () {
      */
     TypeInstanceIndex.prototype.getAssociations = function (type) {
         var ret = this.type2associations.get(type.getId());
-        if (!ret) { return []; }
+        if (!ret) {
+            return [];
+        }
         return ret;
     };
 
@@ -2277,7 +2395,7 @@ TM = (function () {
      */
     TypeInstanceIndex.prototype.getAssociationTypes = function () {
         var ret = [], keys = this.type2associations.keys(), i;
-        for (i=0; i<keys.length; i+=1) {
+        for (i = 0; i < keys.length; i += 1) {
             ret.push(this.tm.getConstructById(keys[i]));
         }
         return ret;
@@ -2291,7 +2409,9 @@ TM = (function () {
      */
     TypeInstanceIndex.prototype.getNames = function (type) {
         var ret = this.type2names.get(type.getId());
-        if (!ret) { return []; }
+        if (!ret) {
+            return [];
+        }
         return ret.values();
     };
 
@@ -2303,7 +2423,7 @@ TM = (function () {
      */
     TypeInstanceIndex.prototype.getNameTypes = function () {
         var ret = [], keys = this.type2names.keys(), i;
-        for (i=0; i<keys.length; i+=1) {
+        for (i = 0; i < keys.length; i += 1) {
             ret.push(this.tm.getConstructById(keys[i]));
         }
         return ret;
@@ -2316,7 +2436,9 @@ TM = (function () {
      */
     TypeInstanceIndex.prototype.getOccurrences = function (type) {
         var ret = this.type2occurrences.get(type.getId());
-        if (!ret) { return []; }
+        if (!ret) {
+            return [];
+        }
         return ret.values();
     };
 
@@ -2329,7 +2451,7 @@ TM = (function () {
      */
     TypeInstanceIndex.prototype.getOccurrenceTypes = function () {
         var ret = [], keys = this.type2occurrences.keys(), i;
-        for (i=0; i<keys.length; i+=1) {
+        for (i = 0; i < keys.length; i += 1) {
             ret.push(this.tm.getConstructById(keys[i]));
         }
         return ret;
@@ -2343,7 +2465,9 @@ TM = (function () {
      */
     TypeInstanceIndex.prototype.getRoles = function (type) {
         var ret = this.type2roles.get(type.getId());
-        if (!ret) { return []; }
+        if (!ret) {
+            return [];
+        }
         return ret.values();
     };
 
@@ -2355,7 +2479,7 @@ TM = (function () {
      */
     TypeInstanceIndex.prototype.getRoleTypes = function () {
         var ret = [], keys = this.type2roles.keys(), i;
-        for (i=0; i<keys.length; i+=1) {
+        for (i = 0; i < keys.length; i += 1) {
             ret.push(this.tm.getConstructById(keys[i]));
         }
         return ret;
@@ -2366,7 +2490,9 @@ TM = (function () {
      */
     TypeInstanceIndex.prototype.getTopics = function (type) {
         var ret = this.type2topics.get((type ? type.getId() : 'null'));
-        if (!ret) { return []; }
+        if (!ret) {
+            return [];
+        }
         return ret.values();
     };
 
@@ -2384,8 +2510,8 @@ TM = (function () {
         }
         // If matchall is true, we check all values for all types in {types}
         // It's a hack, but will do for now
-        for (i=0; i<instances.length; i+=1) {
-            for (j=0; j<types.length; j+=1) {
+        for (i = 0; i < instances.length; i += 1) {
+            for (j = 0; j < types.length; j += 1) {
                 if (!ArrayHelper.contains(instances[i].getTypes(), types[j])) {
                     instances.splice(i, 1);
                     i -= 1;
@@ -2402,7 +2528,7 @@ TM = (function () {
      */
     TypeInstanceIndex.prototype.getTopicTypes = function () {
         var ret = [], keys = this.type2topics.keys(), i;
-        for (i=0; i<keys.length; i+=1) {
+        for (i = 0; i < keys.length; i += 1) {
             if (keys[i] !== 'null') {
                 ret.push(this.tm.getConstructById(keys[i]));
             }
@@ -2459,28 +2585,28 @@ TM = (function () {
                 }
             };
             switch (eventtype) {
-                case EventType.ADD_THEME:
-                    if (source.isAssociation()) {
-                        add_to_index(that.theme2associations, source, obj);
-                    } else if (source.isName()) {
-                        add_to_index(that.theme2names, source, obj);
-                    } else if (source.isOccurrence()) {
-                        add_to_index(that.theme2occurrences, source, obj);
-                    } else if (source.isVariant()) {
-                        add_to_index(that.theme2variants, source, obj);
-                    }
-                    break;
-                case EventType.REMOVE_THEME:
-                    if (source.isAssociation()) {
-                        remove_from_index(that.theme2associations, source, obj);
-                    } else if (source.isName()) {
-                        remove_from_index(that.theme2names, source, obj);
-                    } else if (source.isOccurrence()) {
-                        remove_from_index(that.theme2occurrences, source, obj);
-                    } else if (source.isVariant()) {
-                        remove_from_index(that.theme2variants, source, obj);
-                    }
-                    break;
+            case EventType.ADD_THEME:
+                if (source.isAssociation()) {
+                    add_to_index(that.theme2associations, source, obj);
+                } else if (source.isName()) {
+                    add_to_index(that.theme2names, source, obj);
+                } else if (source.isOccurrence()) {
+                    add_to_index(that.theme2occurrences, source, obj);
+                } else if (source.isVariant()) {
+                    add_to_index(that.theme2variants, source, obj);
+                }
+                break;
+            case EventType.REMOVE_THEME:
+                if (source.isAssociation()) {
+                    remove_from_index(that.theme2associations, source, obj);
+                } else if (source.isName()) {
+                    remove_from_index(that.theme2names, source, obj);
+                } else if (source.isOccurrence()) {
+                    remove_from_index(that.theme2occurrences, source, obj);
+                } else if (source.isVariant()) {
+                    remove_from_index(that.theme2variants, source, obj);
+                }
+                break;
             }
         };
         tm.addThemeEvent.registerHandler(eventHandler);
@@ -2502,7 +2628,9 @@ TM = (function () {
      */
     ScopedIndex.prototype.getAssociations = function (theme) {
         var ret = this.theme2associations.get((theme ? theme.getId() : 'null'));
-        if (!ret) { return []; }
+        if (!ret) {
+            return [];
+        }
         return ret.values();
     };
 
@@ -2514,8 +2642,10 @@ TM = (function () {
      * @throws {IllegalArgumentException} If themes is null.
      */
     ScopedIndex.prototype.getAssociationsByThemes = function (themes, matchall) {
-        if (themes === null) { throw {name: 'IllegalArgumentException',
-                message: 'ScopedIndex.getAssociationsByThemes cannot be called without themes'}; }
+        if (themes === null) {
+            throw {name: 'IllegalArgumentException',
+                message: 'ScopedIndex.getAssociationsByThemes cannot be called without themes'};
+        }
         return IndexHelper.getConstructsByThemes(this.theme2associations,
             themes, matchall);
     };
@@ -2534,7 +2664,9 @@ TM = (function () {
      */
     ScopedIndex.prototype.getNames = function (theme) {
         var ret = this.theme2names.get((theme ? theme.getId() : 'null'));
-        if (!ret) { return []; }
+        if (!ret) {
+            return [];
+        }
         return ret.values();
     };
 
@@ -2544,8 +2676,10 @@ TM = (function () {
      * @throws {IllegalArgumentException} If themes is null.
      */
     ScopedIndex.prototype.getNamesByThemes = function (themes, matchall) {
-        if (themes === null) { throw {name: 'IllegalArgumentException',
-                message: 'ScopedIndex.getNamesByThemes cannot be called without themes'}; }
+        if (themes === null) {
+            throw {name: 'IllegalArgumentException',
+                message: 'ScopedIndex.getNamesByThemes cannot be called without themes'};
+        }
         return IndexHelper.getConstructsByThemes(this.theme2names,
             themes, matchall);
     };
@@ -2563,7 +2697,9 @@ TM = (function () {
      */
     ScopedIndex.prototype.getOccurrences = function (theme) {
         var ret = this.theme2occurrences.get((theme ? theme.getId() : 'null'));
-        if (!ret) { return []; }
+        if (!ret) {
+            return [];
+        }
         return ret.values();
     };
 
@@ -2573,8 +2709,10 @@ TM = (function () {
      * @throws {IllegalArgumentException} If themes is null.
      */
     ScopedIndex.prototype.getOccurrencesByThemes = function (themes, matchall) {
-        if (themes === null) { throw {name: 'IllegalArgumentException',
-                message: 'ScopedIndex.getOccurrencesByThemes cannot be called without themes'}; }
+        if (themes === null) {
+            throw {name: 'IllegalArgumentException',
+                message: 'ScopedIndex.getOccurrencesByThemes cannot be called without themes'};
+        }
         return IndexHelper.getConstructsByThemes(this.theme2occurrences,
             themes, matchall);
     };
@@ -2596,11 +2734,14 @@ TM = (function () {
      * @throws {IllegalArgumentException} If theme is null.
      */
     ScopedIndex.prototype.getVariants = function (theme) {
-        if (theme === null) { throw {name: 'IllegalArgumentException',
-            message: 'ScopedIndex.getVariants cannot be called without themes'};
+        if (theme === null) {
+            throw {name: 'IllegalArgumentException',
+                message: 'ScopedIndex.getVariants cannot be called without themes'};
         }
         var ret = this.theme2variants.get((theme ? theme.getId() : 'null'));
-        if (!ret) { return []; }
+        if (!ret) {
+            return [];
+        }
         return ret.values();
     };
 
@@ -2614,8 +2755,10 @@ TM = (function () {
      * @throws {IllegalArgumentException} If themes is null.
      */
     ScopedIndex.prototype.getVariantsByThemes = function (themes, matchall) {
-        if (themes === null) { throw {name: 'IllegalArgumentException',
-                message: 'ScopedIndex.getVariantsByThemes cannot be called without themes'}; }
+        if (themes === null) {
+            throw {name: 'IllegalArgumentException',
+                message: 'ScopedIndex.getVariantsByThemes cannot be called without themes'};
+        }
         return IndexHelper.getConstructsByThemes(this.theme2variants,
             themes, matchall);
     };
@@ -2648,14 +2791,16 @@ TM = (function () {
          */
         assertBelongsTo: function (topicmap, topic) {
             var i;
-            if (!topic) { return false; }
+            if (!topic) {
+                return false;
+            }
             if (topic && topic instanceof Topic &&
                     !topicmap.equals(topic.getTopicMap())) {
                 throw {name: 'ModelConstraintException',
                     message: 'scope topic belongs to different topic map'};
             }
             if (topic && topic instanceof Array) {
-                for (i=0; i<topic.length; i+=1) {
+                for (i = 0; i < topic.length; i += 1) {
                     if (!topicmap.equals(topic[i].getTopicMap())) {
                         throw {name: 'ModelConstraintException',
                             message: 'scope topic belong to different topic maps'};
@@ -2673,12 +2818,12 @@ TM = (function () {
     IndexHelper = {
         getForKeys: function (hash, keys) {
             var i, j, tmp = new Hash(), value_hash, value_keys;
-            for (i=0;i<keys.length;i+=1) {
+            for (i = 0; i < keys.length; i += 1) {
                 value_hash = hash.get(keys[i].getId());
                 if (value_hash) {
                     value_keys = value_hash.keys();
                     // we use a hash to store instances to avoid duplicates
-                    for (j=0; j<value_keys.length; j+=1) {
+                    for (j = 0; j < value_keys.length; j += 1) {
                         tmp.put(value_hash.get(value_keys[j]).getId(),
                                 value_hash.get(value_keys[j]));
                     }
@@ -2689,7 +2834,7 @@ TM = (function () {
 
         getConstructThemes: function (tm, hash) {
             var ret = [], keys = hash.keys(), i;
-            for (i=0; i<keys.length; i+=1) {
+            for (i = 0; i < keys.length; i += 1) {
                 if (keys[i] !== 'null') {
                     ret.push(tm.getConstructById(keys[i]));
                 }
@@ -2705,8 +2850,8 @@ TM = (function () {
             }
             // If matchall is true, we check all values for all types in {types}
             // It's a hack, but will do for now
-            for (i=0; i<constructs.length; i+=1) {
-                for (j=0; j<themes.length; j+=1) {
+            for (i = 0; i < constructs.length; i += 1) {
+                for (j = 0; j < themes.length; j += 1) {
                     if (!ArrayHelper.contains(constructs[i].getScope(), themes[j])) {
                         constructs.splice(i, 1);
                         i -= 1;
@@ -2728,7 +2873,9 @@ TM = (function () {
         contains: function (arr, elem) {
             for (var key in arr) {
                 if (arr.hasOwnProperty(key)) {
-                    if (arr[key].equals(elem)) { return true; }
+                    if (arr[key].equals(elem)) {
+                        return true;
+                    }
                 }
             }
             return false;
@@ -2744,7 +2891,7 @@ TM = (function () {
         var i;
         if (scope && typeof scope === 'object') {
             if (scope instanceof Array) {
-                for (i=0; i<scope.length; i+=1) {
+                for (i = 0; i < scope.length; i += 1) {
                     construct.addTheme(scope[i]);
                 }
             } else if (scope instanceof Topic) {
@@ -2791,7 +2938,7 @@ TM = (function () {
 
         makeScopeSignature: function (scope) {
             var i, arr = [];
-            for (i=0; i<scope.length; i+=1) {
+            for (i = 0; i < scope.length; i += 1) {
                 arr.push(scope[i].getId());
             }
             arr.sort();
@@ -2801,7 +2948,7 @@ TM = (function () {
         makeAssociationSignature: function (ass) {
             var roles, i, tmp = [];
             roles = ass.getRoles();
-            for (i=0; i<roles.length; i+=1) {
+            for (i = 0; i < roles.length; i += 1) {
                 tmp.push(SignatureGenerator.makeRoleSignature(roles[i]));
             }
             tmp.sort();
@@ -2832,12 +2979,12 @@ TM = (function () {
         removeTopicMapDuplicates: function (tm) {
             var i, topics, associations, sig2ass = new Hash(), sig, existing;
             topics = tm.getTopics();
-            for (i=0; i<topics.length; i+=1) {
+            for (i = 0; i < topics.length; i += 1) {
                 DuplicateRemover.removeOccurrencesDuplicates(topics[i].getOccurrences());
                 DuplicateRemover.removeNamesDuplicates(topics[i].getNames());
             }
             associations = tm.getAssociations();
-            for (i=0; i<associations.length; i+=1) {
+            for (i = 0; i < associations.length; i += 1) {
                 DuplicateRemover.removeAssociationDuplicates(associations[i]);
                 sig = SignatureGenerator.makeAssociationSignature(associations[i]);
                 if ((existing = sig2ass.get(sig))) {
@@ -2853,7 +3000,7 @@ TM = (function () {
 
         removeOccurrencesDuplicates: function (occurrences) {
             var i, sig2occ = new Hash(), occ, sig, existing;
-            for (i=0; i<occurrences.length; i+=1) {
+            for (i = 0; i < occurrences.length; i += 1) {
                 occ = occurrences[i];
                 sig = SignatureGenerator.makeOccurrenceSignature(occ);
                 if ((existing = sig2occ.get(sig))) {
@@ -2868,7 +3015,7 @@ TM = (function () {
 
         removeNamesDuplicates: function (names) {
             var i, sig2names = new Hash(), name, sig, existing;
-            for (i=0; i<names.length; i+=1) {
+            for (i = 0; i < names.length; i += 1) {
                 name = names[i];
                 DuplicateRemover.removeVariantsDuplicates(name.getVariants());
                 sig = SignatureGenerator.makeNameSignature(name);
@@ -2885,7 +3032,7 @@ TM = (function () {
 
         removeVariantsDuplicates: function (variants) {
             var i, sig2variants = new Hash(), variant, sig, existing;
-            for (i=0; i<variants.length; i+=1) {
+            for (i = 0; i < variants.length; i += 1) {
                 variant = variants[i];
                 sig = SignatureGenerator.makeVariantSignature(variant);
                 if ((existing = sig2variants.get(sig))) {
@@ -2900,7 +3047,7 @@ TM = (function () {
 
         removeAssociationDuplicates: function (assoc) {
             var i, roles = assoc.getRoles(), sig2role = new Hash(), sig, existing;
-            for (i=0; i<roles.length; i+=1) {
+            for (i = 0; i < roles.length; i += 1) {
                 sig = SignatureGenerator.makeRoleSignature(roles[i]);
                 if ((existing = sig2role.get(sig))) {
                     MergeHelper.moveConstructCharacteristics(roles[i], existing);
@@ -2944,11 +3091,11 @@ TM = (function () {
             var arr, i, tmp, tmp2, signatures;
             arr = target.getVariants();
             signatures = {};
-            for (i=0; i<arr.length; i+=1) {
+            for (i = 0; i < arr.length; i += 1) {
                 signatures[SignatureGenerator.makeVariantSignature(arr[i])] = arr[i];
             }
             arr = source.getVariants();
-            for (i=0; i<arr.length; i+=1) {
+            for (i = 0; i < arr.length; i += 1) {
                 tmp = arr[i];
                 if ((tmp2 = signatures[SignatureGenerator.makeVariantSignature(arr[i])])) {
                     MergeHelper.moveItemIdentifiers(tmp, tmp2);
@@ -2977,11 +3124,11 @@ TM = (function () {
         moveRoleCharacteristics: function (source, target) {
             var i, roles, sigs = new Hash();
             roles = target.getRoles();
-            for (i=0; i<roles.length; i+=1) {
+            for (i = 0; i < roles.length; i += 1) {
                 sigs.put(roles[i], SignatureGenerator.makeRoleSignature(roles[i]));
             }
             roles = source.getRoles();
-            for (i=0; i<roles.length; i+=1) {
+            for (i = 0; i < roles.length; i += 1) {
                 MergeHelper.moveItemIdentifiers(roles[i],
                     sigs.get(SignatureGenerator.makeRoleSignature(roles[i])));
                 roles[i].remove();
@@ -3031,7 +3178,7 @@ TM = (function () {
                 index.reindex();
             }
             associations = index.getAssociations(typeInstance);
-            for (i=0; i<associations.length; i+=1) {
+            for (i = 0; i < associations.length; i += 1) {
                 ass = associations[i];
                 if (ass.getScope().length > 0 ||
                     ass.getReifier() !== null ||
