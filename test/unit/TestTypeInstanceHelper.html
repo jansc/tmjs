@@ -52,8 +52,6 @@ var tmp = new Test.Unit.Runner({
         a.createRole(type, t1);
         a.createRole(instance, t2);
 
-        console.dir(tm);
-
         this.assertEqual(1, tm.getAssociations().length);
         this.assertEqual(0, t2.getTypes().length);
 
