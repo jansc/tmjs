@@ -3207,7 +3207,8 @@ TM = (function () {
         TopicMapSystemFactory: TopicMapSystemFactory,
         XSD: XSD,
         TMDM: TMDM,
-        Hash: Hash // needed by CXTM export
+        Hash: Hash, // needed by CXTM export
+        Version: Version
     };
 }());
 
