@@ -1,12 +1,13 @@
 /*jslint browser: true, devel: true, onevar: true, undef: true, nomen: false, eqeqeq: true, plusplus: true, bitwise: true,
-  regexp: true, newcap: true, immed: true */
+  regexp: true, newcap: true, immed: true, indent: 4 */
 /*global TM, window, DOMParser, ActiveXObject*/ 
 
-TM.JTM = (function() {
+TM.JTM = (function () {
     var ReaderImpl, WriterImpl;
 
     ReaderImpl = function (tm) {
         this.tm = tm;
+        this.version = null; // Keep the JTM version number
         this.defaultDatatype = this.tm.createLocator(TM.XSD.string);
         /**
         * Internal function that takes a JTM-identifier string as a parameter
@@ -19,16 +20,19 @@ TM.JTM = (function() {
             if (typeof locator === 'undefined' || locator === null) {
                 return null;
             }
-            switch(locator.substr(0, 3)) {
-                case 'si:' : return this.tm.createTopicBySubjectIdentifier(
+            switch (locator.substr(0, 3)) {
+            case 'si:' :
+                return this.tm.createTopicBySubjectIdentifier(
                     this.tm.createLocator(locator.substr(3)));
-                case 'sl:' : return this.tm.createTopicBySubjectLocator(
+            case 'sl:' :
+                return this.tm.createTopicBySubjectLocator(
                     this.tm.createLocator(locator.substr(3)));
-                case 'ii:' : return this.tm.createTopicByItemIdentifier(
+            case 'ii:' :
+                return this.tm.createTopicByItemIdentifier(
                     this.tm.createLocator(locator.substr(3)));
             }
             throw {name: 'InvalidFormat',
-                message: 'Invaild topic reference \''+locator+'\''};
+                message: 'Invaild topic reference \'' + locator + '\''};
         };
     };
 
@@ -44,7 +48,7 @@ TM.JTM = (function() {
     *        a name, variant, occurrence or role.
     */
     ReaderImpl.prototype.fromString = function (str, parent) {
-        var obj = eval(str); // FIXME Use the JSON object instead
+        var obj = JSON.parse(str); // FIXME Use the JSON object instead
         return this.fromObject(obj);
     };
 
@@ -59,19 +63,35 @@ TM.JTM = (function() {
     */
     ReaderImpl.prototype.fromObject = function (obj, parent) {
         var ret;
+        // TODO Reader for 1.0 and 1.1!
         if (obj.version !== '1.0') {
             throw {name: 'InvalidFormat',
                 message: 'Unknown version of JTM'};
         }
         switch (obj.item_type.toLowerCase()) {
-            case "topicmap": ret = this.parseTopicMap(obj); break;
-            case "topic": ret = this.parseTopic(obj); break;
-            case "name": ret = this.parseName(parent, obj); break;
-            case "variant": ret = this.parseVariant(parent, obj); break;
-            case "occurrence": ret = this.parseOccurrence(parent, obj); break;
-            case "association": ret = this.parseAssociation(obj); break;
-            case "role": ret = this.parseRole(parent, obj); break;
-            default: throw {name: 'InvalidFormat',
+        case "topicmap":
+            ret = this.parseTopicMap(obj);
+            break;
+        case "topic":
+            ret = this.parseTopic(obj);
+            break;
+        case "name":
+            ret = this.parseName(parent, obj);
+            break;
+        case "variant":
+            ret = this.parseVariant(parent, obj);
+            break;
+        case "occurrence":
+            ret = this.parseOccurrence(parent, obj);
+            break;
+        case "association":
+            ret = this.parseAssociation(obj);
+            break;
+        case "role":
+            ret = this.parseRole(parent, obj);
+            break;
+        default:
+            throw {name: 'InvalidFormat',
                 message: 'Unknown item_type property'};
         }
         return ret;
@@ -84,7 +104,7 @@ TM.JTM = (function() {
         if (obj.topics && typeof obj.topics === 'object' && obj.topics instanceof Array) {
             arr = obj.topics;
             len = arr.length;
-            for (i = 0; i < len; i+= 1) {
+            for (i = 0; i < len; i += 1) {
                 this.parseTopic(arr[i]);
             }
             arr = null;
@@ -93,7 +113,7 @@ TM.JTM = (function() {
             obj.associations instanceof Array) {
             arr = obj.associations;
             len = arr.length;
-            for (i = 0; i < len; i+= 1) {
+            for (i = 0; i < len; i += 1) {
                 this.parseAssociation(arr[i]);
             }
             arr = null;
@@ -116,9 +136,7 @@ TM.JTM = (function() {
                         tmp = getFunc.apply(tm, [tm.createLocator(identifier)]);
                         if (tmp && tmp.isTopic() && !topic.equals(tmp)) {
                             topic.mergeIn(tmp);
-                        } else if (tmp && tmp.isTopic() && topic.equals(tmp)) {
-                            // Skip
-                        } else {
+                        } else if (!(tmp && tmp.isTopic() && topic.equals(tmp))) {
                             topic[addFunc](tm.createLocator(identifier));
                         }
                     }
@@ -166,7 +184,7 @@ TM.JTM = (function() {
     };
 
     ReaderImpl.prototype.parseVariant = function (parent, obj) {
-        var variant, type, scope;
+        var variant, scope;
         scope = this.parseScope(obj.scope);
         variant = parent.createVariant(obj.value, 
             obj.datatype ? this.tm.createLocator(obj.datatype) : this.defaultDatatype, scope);
@@ -200,7 +218,7 @@ TM.JTM = (function() {
     };
 
     ReaderImpl.prototype.parseRole = function (parent, obj) {
-        var role, type, player, scope;
+        var role, type, player;
         type = this.getTopicByReference(obj.type);
         player = this.getTopicByReference(obj.player);
         role = parent.createRole(type, player);
@@ -235,18 +253,50 @@ TM.JTM = (function() {
         var reifierTopic = this.getTopicByReference(reifier);
         if (reifierTopic && reifierTopic.getReified() === null || !reifierTopic) {
             construct.setReifier(reifierTopic);
-        } else {
-            // Ignore the case that reifierTopic reifies another item
-        }
+        } // else: Ignore the case that reifierTopic reifies another item
     };
 
     /**
     * @class Exports topic maps constructs as JTM 1.0 JavaScript objects.
     * See http://www.cerny-online.com/jtm/1.0/ for the JSON Topic Maps specification.
+    * @param {String} version Version number of the JTM export. Valid values are '1.0'
+    *                 and '1.1'. Version 1.1 produces more compact files. The default
+    *                 value is '1.0', but this may change in the future.
     */
-    WriterImpl = function () {
-        var that = this;
+    WriterImpl = function (version) {
+        var that = this, referenceToCURIEorURI;
         this.defaultDatatype = TM.XSD.string;
+        this.prefixes = new TM.Hash();
+        this.version = version || '1.0';
+
+        referenceToCURIEorURI = function (reference) {
+            var key;
+            if (that.version === '1.0') {
+                return reference;
+            }
+            // TODO Sort keys after descending length - longest first to find the best prefix
+            for (key in this.prefixes) {
+                if (this.prefixes.hasOwnProperty(key)) {
+                    if (reference.substring(0, this.prefixes[key].length) === this.prefixes[key]) {
+                        return '[' + key + ':' + reference.substr(this.prefixes[key].length) + ']';
+                    }
+                }
+            }
+            return reference;
+        };  
+
+        /**
+        * Sets prefixes for JTM 1.1 export. prefixes is an object with the
+        * prefix as key and its corresponding reference as value.
+        */
+        this.setPrefixes = function (prefixes) {
+            var key;
+            for (key in prefixes) {
+                if (prefixes.hasOwnProperty(key)) {
+                    this.prefixes.put(key, prefixes[key]);
+                }
+            }
+        };
 
         /**
          * Generates a JTM reference based on the topics subject identifier,
@@ -259,15 +309,15 @@ TM.JTM = (function() {
             var arr;
             arr = t.getSubjectIdentifiers();
             if (arr.length > 0) {
-                return 'si:'+arr[0].getReference();
+                return 'si:' + referenceToCURIEorURI(arr[0].getReference());
             }
             arr = t.getSubjectLocators();
             if (arr.length > 0) {
-                return 'sl:'+arr[0].getReference();
+                return 'sl:' + referenceToCURIEorURI(arr[0].getReference());
             }
             arr = t.getItemIdentifiers();
             if (arr.length > 0) {
-                return 'ii:'+arr[0].getReference();
+                return 'ii:' + referenceToCURIEorURI(arr[0].getReference());
             }
             // ModelConstraintExeption: TMDM says that t MUST have on of these
         };
@@ -277,7 +327,7 @@ TM.JTM = (function() {
             if (len > 0) {
                 obj[attr] = [];
                 for (i = 0; i < len; i += 1) {
-                    obj[attr].push(arr[i].getReference());
+                    obj[attr].push(referenceToCURIEorURI(arr[i].getReference()));
                 }
             }
         
@@ -339,6 +389,14 @@ TM.JTM = (function() {
                     obj.occurrences.push(that.exportOccurrence(arr[i]));
                 }
             }
+            arr = t.getTypes();
+            len = arr.length;
+            if (len > 0) {
+                obj.instance_of = [];
+                for (i = 0; i < len; i += 1) {
+                    obj.instance_of.push(that.getTopicReference(arr[i]));
+                }
+            }
             return obj;
         };
 
@@ -348,9 +406,13 @@ TM.JTM = (function() {
                 'value': name.getValue()
             };
             tmp = name.getType();
-            if (tmp) { obj.type = that.getTopicReference(tmp); }
+            if (tmp) {
+                obj.type = that.getTopicReference(tmp);
+            }
             tmp = name.getReifier();
-            if (tmp) { obj.reifier = that.getTopicReference(tmp); }
+            if (tmp) {
+                obj.reifier = that.getTopicReference(tmp);
+            }
             
             that.exportIdentifiers(obj, name.getItemIdentifiers(), 'item_identifiers');
             that.exportScope(obj, name);
@@ -366,33 +428,37 @@ TM.JTM = (function() {
         };
 
         this.exportVariant = function (variant) {
-            var arr, i, len, obj, tmp;
+            var obj, tmp;
             obj = {
                 'value': variant.getValue()
             };
             tmp = variant.getDatatype();
             if (tmp && tmp !== variant.getTopicMap().createLocator(that.defaultDatatype)) {
-                obj.datatype = tmp.getReference();
+                obj.datatype = referenceToCURIEorURI(tmp.getReference());
             }
             tmp = variant.getReifier();
-            if (tmp) { obj.reifier = that.getTopicReference(tmp); }
+            if (tmp) {
+                obj.reifier = that.getTopicReference(tmp);
+            }
             
             that.exportIdentifiers(obj, variant.getItemIdentifiers(), 'item_identifiers');
             that.exportScope(obj, variant);
         };
 
         this.exportOccurrence = function (occ) {
-            var arr, i, len, obj, tmp;
+            var obj, tmp;
             obj = {
                 value: occ.getValue(),
                 type: that.getTopicReference(occ.getType())
             };
             tmp = occ.getDatatype();
             if (tmp && tmp !== occ.getTopicMap().createLocator(that.defaultDatatype)) {
-                obj.datatype = tmp.getReference();
+                obj.datatype = referenceToCURIEorURI(tmp.getReference());
             }
             tmp = occ.getReifier();
-            if (tmp) { obj.reifier = that.getTopicReference(tmp); }
+            if (tmp) {
+                obj.reifier = that.getTopicReference(tmp);
+            }
             
             that.exportIdentifiers(obj, occ.getItemIdentifiers(), 'item_identifiers');
             that.exportScope(obj, occ);
@@ -406,7 +472,9 @@ TM.JTM = (function() {
                 roles: []
             };
             tmp = association.getReifier();
-            if (tmp) { obj.reifier = that.getTopicReference(tmp); }
+            if (tmp) {
+                obj.reifier = that.getTopicReference(tmp);
+            }
             that.exportIdentifiers(obj, association.getItemIdentifiers(), 'item_identifiers');
             that.exportScope(obj, association);
             arr = association.getRoles();
@@ -417,13 +485,15 @@ TM.JTM = (function() {
         };
 
         this.exportRole = function (role) {
-            var arr, i, obj, tmp;
+            var obj, tmp;
             obj = {
                 player: that.getTopicReference(role.getPlayer()),
                 type: that.getTopicReference(role.getType())
             };
             tmp = role.getReifier();
-            if (tmp) { obj.reifier = that.getTopicReference(tmp); }
+            if (tmp) {
+                obj.reifier = that.getTopicReference(tmp);
+            }
             that.exportIdentifiers(obj, role.getItemIdentifiers(), 'item_identifiers');
             return obj;
         };
