@@ -799,7 +799,7 @@ TM = (function () {
     };
     
     TopicMapSystemMemImpl.prototype.close = function () {
-        this.toipcmaps = null; // release references
+        this.topicmaps = null; // release references
     };
     
     TopicMap = function (tms, locator) {
@@ -944,6 +944,9 @@ TM = (function () {
     };
     
     TopicMap.prototype.remove = function () {
+        if (this.topicmapsystem === null) {
+            return null;
+        }
         this.topicmapsystem._removeTopicMap(this);
         this.topicmapsystem = null;
         this.itemIdentifiers = null;
