@@ -1,0 +1,9 @@
+{"version": "1.0",
+ "item_type": "topicmap",
+  "associations":[
+    {"type": "ii:#assoctype",
+     "scope": ["ii:#theme1", "ii:#theme2"],
+     "roles": [{"type": "ii:#roletype",
+                "player": "ii:#topic"}]
+    }
+]}

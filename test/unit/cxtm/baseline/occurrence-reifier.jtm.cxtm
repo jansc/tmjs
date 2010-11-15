@@ -1,0 +1,22 @@
+<topicMap>
+<topic number="1">
+<itemIdentifiers>
+<locator>#reifier</locator>
+</itemIdentifiers>
+</topic>
+<topic number="2">
+<itemIdentifiers>
+<locator>http://www.example.org/topic</locator>
+</itemIdentifiers>
+<occurrence number="1" reifier="1">
+<value>Value</value>
+<datatype>http://www.w3.org/2001/XMLSchema#string</datatype>
+<type topicref="3"></type>
+</occurrence>
+</topic>
+<topic number="3">
+<subjectIdentifiers>
+<locator>http://psi.example.org/type</locator>
+</subjectIdentifiers>
+</topic>
+</topicMap>

@@ -1,0 +1,6 @@
+{"parent": ["ii:http://www.example.org/topic"],
+ "value": "Name",
+ "variants": [{"value": "name", "scope": ["ii:#theme"]}, {"value": "name2", "scope": ["ii:#theme2"]}],
+  "version": "1.0",
+  "item_type": "name"
+}

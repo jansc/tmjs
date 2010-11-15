@@ -1,0 +1,9 @@
+{"version": "1.0",
+ "item_type": "topicmap",
+  "associations":[
+    {"type": "ii:#assoctype",
+     "roles": [{"type": "ii:#roletype",
+                "player": "ii:#topic",
+                "item_identifiers": ["http://www.example.org/jtm#role-id"]}]
+    }
+]}

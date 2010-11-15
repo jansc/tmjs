@@ -1,0 +1,11 @@
+{"version": "1.0",
+ "item_type": "topicmap",
+  "topics":[
+    {"item_identifiers": ["http://www.example.org/topic"],
+     "occurrences": [
+        {"value": "http://www.exmaple.org/a",
+         "datatype": "http://www.w3.org/2001/XMLSchema#anyURI",
+         "type": "si:http://psi.example.org/type"
+        }
+     ]}
+]}

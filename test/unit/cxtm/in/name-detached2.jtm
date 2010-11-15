@@ -1,0 +1,6 @@
+{"version": "1.0",
+  "item_type": "NaMe",
+  "parent": ["ii:http://www.example.org/topic"],
+  "value": "Name",
+  "type": "si:http://psi.topicmaps.org/iso13250/model/topic-name"
+}
