@@ -63,10 +63,9 @@ TM.JTM = (function () {
     */
     ReaderImpl.prototype.fromObject = function (obj, parent) {
         var ret;
-        // TODO Reader for 1.0 and 1.1!
-        if (obj.version !== '1.0') {
+        if (obj.version !== '1.0' && obj.version !== '1.1') {
             throw {name: 'InvalidFormat',
-                message: 'Unknown version of JTM'};
+                message: 'Unknown version of JTM: '+obj.version};
         }
         switch (obj.item_type.toLowerCase()) {
         case "topicmap":
@@ -259,6 +258,7 @@ TM.JTM = (function () {
     /**
     * @class Exports topic maps constructs as JTM 1.0 JavaScript objects.
     * See http://www.cerny-online.com/jtm/1.0/ for the JSON Topic Maps specification.
+    * JSON 1.1 is described at http://www.cerny-online.com/jtm/1.1/
     * @param {String} version Version number of the JTM export. Valid values are '1.0'
     *                 and '1.1'. Version 1.1 produces more compact files. The default
     *                 value is '1.0', but this may change in the future.
@@ -270,16 +270,19 @@ TM.JTM = (function () {
         this.version = version || '1.0';
 
         referenceToCURIEorURI = function (reference) {
-            var key;
+            var key, keys, i, value;
             if (that.version === '1.0') {
                 return reference;
             }
-            // TODO Sort keys after descending length - longest first to find the best prefix
-            for (key in this.prefixes) {
-                if (this.prefixes.hasOwnProperty(key)) {
-                    if (reference.substring(0, this.prefixes[key].length) === this.prefixes[key]) {
-                        return '[' + key + ':' + reference.substr(this.prefixes[key].length) + ']';
-                    }
+            // TODO Sort keys after descending value length - longest first
+            // to find the best prefix
+            keys = that.prefixes.keys();
+            for (i = 0; i < keys.length; i += 1) {
+                key = keys[i];
+                value = that.prefixes.get(key);
+                if (reference.substring(0, value.length) ===  value) {
+                    return '[' + key + ':' +
+                        reference.substr(value.length) + ']';
                 }
             }
             return reference;
@@ -508,7 +511,7 @@ TM.JTM = (function () {
     * the parent element is dropped.
     */
     WriterImpl.prototype.toObject = function (construct, includeParent) {
-        var obj, tm;
+        var obj, tm, keys, i;
         includeParent = includeParent || false;
         tm = construct.getTopicMap();
 
@@ -534,7 +537,16 @@ TM.JTM = (function () {
             obj = this.exportVariant(construct);
             obj.item_type = 'variant';
         }
-        obj.version = '1.0';
+        obj.version = this.version;
+        if (this.version === '1.1' && this.prefixes) {
+            if (this.prefixes.size()) {
+                keys = this.prefixes.keys();
+                obj.prefixes = {};
+                for (i = 0; i < keys.length; i += 1) {
+                    obj.prefixes[keys[i]] = this.prefixes.get(keys[i]);
+                }
+            }
+        }
         if (!construct.isTopic() && construct.getReifier()) {
             obj.reifier = this.getTopicReference(construct.getReifier());
         }
