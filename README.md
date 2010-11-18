@@ -23,15 +23,17 @@ See the file TODO for a list of missing features.
 
 # Features to be implemented in the near future
 
+* Full TMAPI support (including createOccurrence()-calls for JavaScript types)
+* Full CXTM support
+* More tests
+* JTM 1.1 import/export
 * XTM 2.0 import/export (requires DOM)
 
 
 # More planned features (feedback welcome)
 
-* More import/export-formats
-* TMRAP implementation
-* SDshare implementation?
 * More backends: HTML 5 Web SQL Database, persistent backend for node.js
+* More import/export-formats: CTM
 
 
 # Dependencies

@@ -1,10 +1,11 @@
 TODO
 
 * Implement TopicMap.mergeIn()
-* Add documentation
+* Add more documentation
 * Implement locator functions
 * Implement LiteralIndex
 * Implement/remove hashCode-functions
+* JTM 1.1 import/export (started)
 * XTM 2.0 import (started)
 * XTM 2.0 export
 
