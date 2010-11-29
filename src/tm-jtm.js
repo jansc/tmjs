@@ -8,7 +8,30 @@ TM.JTM = (function () {
     ReaderImpl = function (tm) {
         this.tm = tm;
         this.version = null; // Keep the JTM version number
+        this.prefixes = {};
         this.defaultDatatype = this.tm.createLocator(TM.XSD.string);
+
+        this.curieToLocator = function (loc) {
+            var curie, prefix, pos;
+            if (this.version === '1.1' &&
+                loc.substr(0, 1) === '[' &&
+                    loc.substr(loc.length - 1, 1) === ']') {
+                curie = loc.substr(1, loc.length - 1);
+                pos = curie.indexOf(':');
+                if (pos !== -1) {
+                    // Lookup prefix and replace with URL
+                    prefix = curie.substr(0, pos);
+                    if (this.prefixes[prefix]) {
+                        loc = this.prefixes[prefix] +
+                            curie.substr(pos + 1, curie.length - 1);
+                        return loc;
+                    }
+                }
+                // TODO: Failure?
+            }
+            return loc;
+        };
+
         /**
         * Internal function that takes a JTM-identifier string as a parameter
         * and returns a topic object - either an existing topic or a new topic
@@ -23,13 +46,13 @@ TM.JTM = (function () {
             switch (locator.substr(0, 3)) {
             case 'si:' :
                 return this.tm.createTopicBySubjectIdentifier(
-                    this.tm.createLocator(locator.substr(3)));
+                    this.tm.createLocator(this.curieToLocator(locator.substr(3))));
             case 'sl:' :
                 return this.tm.createTopicBySubjectLocator(
-                    this.tm.createLocator(locator.substr(3)));
+                    this.tm.createLocator(this.curieToLocator(locator.substr(3))));
             case 'ii:' :
                 return this.tm.createTopicByItemIdentifier(
-                    this.tm.createLocator(locator.substr(3)));
+                    this.tm.createLocator(this.curieToLocator(locator.substr(3))));
             }
             throw {name: 'InvalidFormat',
                 message: 'Invaild topic reference \'' + locator + '\''};
@@ -48,7 +71,7 @@ TM.JTM = (function () {
     *        a name, variant, occurrence or role.
     */
     ReaderImpl.prototype.fromString = function (str, parent) {
-        var obj = JSON.parse(str); // FIXME Use the JSON object instead
+        var obj = JSON.parse(str);
         return this.fromObject(obj);
     };
 
@@ -65,7 +88,10 @@ TM.JTM = (function () {
         var ret;
         if (obj.version !== '1.0' && obj.version !== '1.1') {
             throw {name: 'InvalidFormat',
-                message: 'Unknown version of JTM: '+obj.version};
+                message: 'Unknown version of JTM: ' + obj.version};
+        }
+        if (obj.prefixes) {
+            this.prefixes = obj.prefixes;
         }
         switch (obj.item_type.toLowerCase()) {
         case "topicmap":
@@ -122,13 +148,13 @@ TM.JTM = (function () {
     };
 
     ReaderImpl.prototype.parseTopic = function (obj) {
-        var topic = null, parseIdentifier, arr, i, identifier;
+        var that = this, topic = null, parseIdentifier, arr, i, identifier;
         parseIdentifier = function (tm, topic, arr, getFunc, createFunc, addFunc) {
             var i, len, tmp;
             if (arr && typeof arr === 'object' && arr instanceof Array) {
                 len = arr.length;
                 for (i = 0; i < len; i += 1) {
-                    identifier = decodeURI(arr[i]);
+                    identifier = decodeURI(that.curieToLocator(arr[i]));
                     if (!topic) {
                         topic = createFunc.apply(tm, [tm.createLocator(identifier)]);
                     } else {
@@ -186,7 +212,9 @@ TM.JTM = (function () {
         var variant, scope;
         scope = this.parseScope(obj.scope);
         variant = parent.createVariant(obj.value, 
-            obj.datatype ? this.tm.createLocator(obj.datatype) : this.defaultDatatype, scope);
+            obj.datatype ?
+                this.tm.createLocator(this.curieToLocator(obj.datatype)) :
+                    this.defaultDatatype, scope);
         this.parseItemIdentifiers(variant, obj.item_identifiers);
         this.parseReifier(variant, obj.reifier);
     };
@@ -196,7 +224,9 @@ TM.JTM = (function () {
         scope = this.parseScope(obj.scope);
         type = this.getTopicByReference(obj.type);
         occurrence = parent.createOccurrence(type, obj.value,
-            obj.datatype ? this.tm.createLocator(obj.datatype) : this.defaultDatatype, scope);
+            obj.datatype ?
+                this.tm.createLocator(this.curieToLocator(obj.datatype)) :
+                    this.defaultDatatype, scope);
         this.parseItemIdentifiers(occurrence, obj.item_identifiers);
         this.parseReifier(occurrence, obj.reifier);
     };
@@ -237,12 +267,13 @@ TM.JTM = (function () {
 
 
     ReaderImpl.prototype.parseItemIdentifiers = function (construct, arr) {
-        var i, tm;
+        var i, tm, identifier;
         tm = construct.getTopicMap();
         if (arr && typeof arr === 'object' && arr instanceof Array) {
             for (i = 0; i < arr.length; i += 1) {
-                if (!tm.getConstructByItemIdentifier(tm.createLocator(arr[i]))) {
-                    construct.addItemIdentifier(tm.createLocator(arr[i]));
+                identifier = this.curieToLocator(arr[i]);
+                if (!tm.getConstructByItemIdentifier(tm.createLocator(identifier))) {
+                    construct.addItemIdentifier(tm.createLocator(identifier));
                 }
             }
         }
