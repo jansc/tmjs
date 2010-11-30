@@ -1,0 +1,14 @@
+{"version": "1.1",
+ "prefixes": {
+    "xsd": "http://this.is/not-allowed/"
+ },
+ "item_type": "topicmap",
+  "topics":[
+    {"item_identifiers": ["http://www.example.org/topic"],
+     "occurrences": [
+        {"value": "http://www.exmaple.org/a",
+         "datatype": "[xsd:anyURI]",
+         "type": "si:http://psi.example.org/type"
+        }
+     ]}
+]}

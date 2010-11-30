@@ -6,6 +6,7 @@ TM.JTM = (function () {
     var ReaderImpl, WriterImpl;
 
     ReaderImpl = function (tm) {
+        var that = this;
         this.tm = tm;
         this.version = null; // Keep the JTM version number
         this.prefixes = {};
@@ -13,16 +14,16 @@ TM.JTM = (function () {
 
         this.curieToLocator = function (loc) {
             var curie, prefix, pos;
-            if (this.version === '1.1' &&
+            if (that.version === '1.1' &&
                 loc.substr(0, 1) === '[' &&
                     loc.substr(loc.length - 1, 1) === ']') {
-                curie = loc.substr(1, loc.length - 1);
+                curie = loc.substr(1, loc.length - 2);
                 pos = curie.indexOf(':');
                 if (pos !== -1) {
                     // Lookup prefix and replace with URL
                     prefix = curie.substr(0, pos);
-                    if (this.prefixes[prefix]) {
-                        loc = this.prefixes[prefix] +
+                    if (that.prefixes[prefix]) {
+                        loc = that.prefixes[prefix] +
                             curie.substr(pos + 1, curie.length - 1);
                         return loc;
                     }
@@ -90,8 +91,12 @@ TM.JTM = (function () {
             throw {name: 'InvalidFormat',
                 message: 'Unknown version of JTM: ' + obj.version};
         }
+        this.version = obj.version;
         if (obj.prefixes) {
             this.prefixes = obj.prefixes;
+        }
+        if (!this.prefixes.xsd) {
+            this.prefixes.xsd = 'http://www.w3.org/2001/XMLSchema#';
         }
         switch (obj.item_type.toLowerCase()) {
         case "topicmap":
@@ -148,7 +153,7 @@ TM.JTM = (function () {
     };
 
     ReaderImpl.prototype.parseTopic = function (obj) {
-        var that = this, topic = null, parseIdentifier, arr, i, identifier;
+        var that = this, topic = null, parseIdentifier, arr, i, identifier, type;
         parseIdentifier = function (tm, topic, arr, getFunc, createFunc, addFunc) {
             var i, len, tmp;
             if (arr && typeof arr === 'object' && arr instanceof Array) {
@@ -178,6 +183,13 @@ TM.JTM = (function () {
         topic = parseIdentifier(this.tm, topic, obj.item_identifiers,
             this.tm.getConstructByItemIdentifier,
             this.tm.createTopicByItemIdentifier, 'addItemIdentifier');
+
+        if (this.version === '1.1' && (arr = obj.instance_of)) {
+            for (i = 0; i < arr.length; i += 1) {
+                type = this.getTopicByReference(arr[i]);
+                topic.addType(type);
+            }
+        }
 
         arr = obj.names;
         if (arr && typeof arr === 'object' && arr instanceof Array) {

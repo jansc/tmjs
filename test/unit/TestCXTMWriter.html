@@ -2,7 +2,7 @@
         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
-  <title>FIXMETest</title>
+  <title>TestCXTMWriter</title>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
   <script type="text/javascript" src="../assets/jsunittest.js"></script>
   <script type="text/javascript" src="../../src/tm-src.js"></script>
@@ -24,45 +24,6 @@
 <script type="text/javascript" language="javascript">
 // <![CDATA[
 var okCount = 0, failCount = 0, exceptionCount = 0;
-var compareCXTM = function(test, filename) {
-        var tm, writer, reader, cxtm, jtm = null, baseline = null, obj, error = false;
-        $.ajax({async: false, url: './cxtm/in/'+filename,
-                success: function (data, statusText, xmlHttpRequest) { jtm = data; }});
-        $.ajax({async: false, url: './cxtm/baseline/'+filename+'.cxtm',
-                success: function (data, statusText, xmlHttpRequest) { baseline = data; }});
-        tm = test.createTopicMap(filename);
-        test.assertNotNull(jtm);
-        test.assertNotNull(baseline);
-        test.assertNotNull(tm);
-        obj = $.parseJSON(jtm);
-        test.assertNotNull(obj);
-
-        try {
-            reader = new TM.JTM.Reader(tm);
-            reader.fromObject(obj);
-            writer = new TM.CXTM.Writer();
-            test.assertNotNull(writer);
-            cxtm = writer.toString(tm);
-            test.assertEqual(baseline, cxtm, "CXTM error in "+filename);
-        } catch(e) {
-            console.dir(e);
-            error = true;
-        }
-        test.assertEqual(false, error, "Exception in "+filename);
-        if (!error) {
-            if (baseline !== null && baseline === cxtm) {
-                okCount += 1;
-                console.log(filename+" OK");
-            } else {
-                failCount += 1;
-                console.log(filename+" failed");
-            }
-        } else {
-            exceptionCount += 1;
-            console.log("An exception was thrown in "+filename);
-        }
-        tm.remove();
-    };
 
 var tmp = new Test.Unit.Runner({
     // optional setup function, run before each individual test case
@@ -75,11 +36,11 @@ var tmp = new Test.Unit.Runner({
     }},
 
     testCXTMAssociation: function () {
-         compareCXTM(this, 'association.jtm');
+         this.compareCXTM(this, 'association.jtm', 'jtm');
     },
 
     testCXTMOccurrence: function () {
-         compareCXTM(this, 'occurrence.jtm');
+         this.compareCXTM(this, 'occurrence.jtm', 'jtm');
     },
 
     testCXTMAll: function () {
@@ -224,7 +185,7 @@ var tmp = new Test.Unit.Runner({
                          ];
 
         for (i=0; i<files.length; i+=1) {
-            compareCXTM(this, files[i]);
+            this.compareCXTM(this, files[i], 'jtm');
         }
         console.log("ok = "+okCount+", failed = "+failCount+", failed with exception = "+exceptionCount);
     }
