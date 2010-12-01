@@ -35,6 +35,46 @@ var tmp = new Test.Unit.Runner({
         TMUnitTest.addCommonTeardownFunctions(this);
     }},
 
+    testCXTMAssociationDetachedNoItemtype: function () {
+         this.importInvalidCXTM(this, 'association-detached-no-itemtype.jtm', 'jtm');
+    },
+
+    testCXTMAssociationDetachedNoRoles: function () {
+         this.importInvalidCXTM(this, 'association-detached-noroles.jtm', 'jtm');
+    },
+
+    testCXTMAssociationDetachedNoRoles2: function () {
+         this.importInvalidCXTM(this, 'association-detached-noroles2.jtm', 'jtm');
+    },
+
+    testCXTMAssociationNoRoles: function () {
+         this.importInvalidCXTM(this, 'association-noroles.jtm', 'jtm');
+    },
+
+    testCXTMAssociationNoRoles2: function () {
+         this.importInvalidCXTM(this, 'association-noroles2.jtm', 'jtm');
+    },
+
+    testCXTMInstanceOf: function () {
+         this.importInvalidCXTM(this, 'instance_of.jtm', 'jtm');
+    },
+
+    testCXTMNameDetachedNoItemType: function () {
+         this.importInvalidCXTM(this, 'name-detached-no-itemtype.jtm', 'jtm');
+    },
+
+    testCXTMPrefixDeclaration: function () {
+         this.importInvalidCXTM(this, 'prefix-declaration.jtm', 'jtm');
+    },
+
+    testCXTMTopicDetachedNoItemtype: function () {
+         this.importInvalidCXTM(this, 'topic-detached-no-itemtype.jtm', 'jtm');
+    },
+
+    testCXTMTopicMapNoItemtype: function () {
+         this.importInvalidCXTM(this, 'topicmap-no-itemtype.jtm', 'jtm');
+    },
+
     testCXTMAssociation: function () {
          this.compareCXTM(this, 'association.jtm', 'jtm');
     },
@@ -43,145 +83,165 @@ var tmp = new Test.Unit.Runner({
          this.compareCXTM(this, 'occurrence.jtm', 'jtm');
     },
 
+    testCXTMOccurrenceDetached: function () {
+         this.compareCXTM(this, 'occurrence-detached.jtm', 'jtm');
+    },
+
+    testCXTMOccurrenceDetached2: function () {
+         this.compareCXTM(this, 'occurrence-detached2.jtm', 'jtm');
+    },
+
+    testCXTMAssociationDetached: function () {
+         this.compareCXTM(this, 'association-detached.jtm', 'jtm');
+    },
+
+    testCXTMNameDetached: function () {
+         this.compareCXTM(this, 'name-detached.jtm', 'jtm');
+    },
+
+    testCXTMNameDetached2: function () {
+         this.compareCXTM(this, 'name-detached2.jtm', 'jtm');
+    },
+
+    testCXTMNameDetached3: function () {
+         this.compareCXTM(this, 'name-detached3.jtm', 'jtm');
+    },
+
+    testCXTMNameDetachedDefaultType: function () {
+         this.compareCXTM(this, 'name-detached-default-type.jtm', 'jtm');
+    },
+
     testCXTMAll: function () {
         var file, files = [
                      'association-binary-duplicate.xtm2.jtm',
-                     'merge-itemid-with-types.xtm2.jtm',
-                     //'occurrence-detached2.jtm',
-                     'subjloc-duplicate.xtm2.jtm',
                      'association-binary.xtm2.jtm',
-                     'merge-itemid-with-variants.xtm2.jtm',
-                     'occurrence-duplicate-iid.xtm2.jtm',
-                     'subjloc-fragment.xtm2.jtm',
-                     //'association-detached.jtm',
-                     'merge-itemid.xtm2.jtm',
-                     'occurrence-duplicate-iid2.xtm2.jtm',
-                     'subjloc-multiple.xtm2.jtm',
                      'association-duplicate-iid.xtm2.jtm',
-                     'merge-subjid.xtm2.jtm',
-                     'occurrence-duplicate-reifier.xtm2.jtm',
-                     'subjloc-relative.xtm2.jtm',
                      'association-duplicate-reified.xtm2.jtm',
-                     'merge-subjloc.xtm2.jtm',
-                     'occurrence-duplicate.xtm2.jtm',
-                     'subjloc.xtm2.jtm',
                      'association-duplicate-role.xtm2.jtm',
-                     'merge-three-way.xtm2.jtm',
-                     'occurrence-reifier-slo.jtm',
-                     'tm-reifier.xtm2.jtm',
                      'association-instanceof-duplicate.xtm2.jtm',
-                     'name-default-type.jtm',
-                     'occurrence-reifier.jtm',
-                     'topic-detached.jtm',
                      'association-instanceof-scope.xtm2.jtm',
-                     //'name-detached-default-type.jtm',
-                     'occurrence-reifier.xtm2.jtm',
-                     'topic-item-identifier.jtm',
                      'association-reifier-null.jtm',
-                     //'name-detached.jtm',
-                     'occurrence-resourcedata-uri-relative.xtm2.jtm',
-                     'topic-subject-identifier.jtm',
                      'association-reifier-slo.jtm',
-                     //'name-detached2.jtm',
-                     'occurrence-resourcedata-uri.xtm2.jtm',
-                     'topic-subject-locator.jtm',
                      'association-reifier.jtm',
-                     //'name-detached3.jtm',
-                     'occurrence-resourceref-relative.xtm2.jtm',
-                     'topic-type-duplicate.xtm2.jtm',
                      'association-reifier.xtm2.jtm',
-                     'name-duplicate-iid.xtm2.jtm',
-                     'occurrence-resourceref.xtm2.jtm',
-                     'topic-type.xtm2.jtm',
                      'association-scope.jtm',
-                     'name-duplicate-merge.xtm2.jtm',
-                     'occurrence-scope-duplicate-merged.xtm2.jtm',
-                     'topic.xtm2.jtm',
                      'association-scope.xtm2.jtm',
-                     'name-duplicate-reified.xtm2.jtm',
-                     'occurrence-scope-duplicate.xtm2.jtm',
-                     'topicmap-reifier-null.jtm',
                      'association-ternary.xtm2.jtm',
-                     'name-duplicate-reified2.xtm2.jtm',
-                     'occurrence-scope.xtm2.jtm',
-                     'topicmap-reifier-slo.jtm',
-                     'association.jtm',
-                     'name-duplicate.xtm2.jtm',
-                     'occurrence-uri.jtm',
-                     'topicmap-reifier.jtm',
                      'association.xtm2.jtm',
-                     'name-escaping.xtm2.jtm',
-                     'occurrence.jtm',
-                     'variant-datatype-unknown.xtm2.jtm',
                      'empty.jtm',
-                     'name-reifier-slo.jtm',
-                     'occurrence.xtm2.jtm',
-                     'variant-duplicate-iid.xtm2.jtm',
                      'empty.xtm2.jtm',
-                     'name-reifier.jtm',
-                     'role-duplicate-iid.xtm2.jtm',
-                     'variant-duplicate-reifier.xtm2.jtm',
                      'empty2.jtm',
-                     'name-reifier.xtm2.jtm',
-                     'role-duplicate-iid2.xtm2.jtm',
-                     'variant-duplicate-reifier2.xtm2.jtm',
                      'empty3.jtm',
-                     'name-scope-duplicate-merged.xtm2.jtm',
-                     'role-duplicate-reified.xtm2.jtm',
-                     'variant-duplicate.xtm2.jtm',
                      'empty4.jtm',
-                     'name-scope-duplicate.xtm2.jtm',
-                     'role-duplicate-reified2.xtm2.jtm',
-                     'variant-inherit.xtm2.jtm',
                      'itemid-association.xtm2.jtm',
-                     'name-scope-multiple.xtm2.jtm',
-                     'role-duplicate-reified3.xtm2.jtm',
-                     'variant-reifier-slo.jtm',
                      'itemid-duplicate.xtm2.jtm',
-                     'name-scope.jtm',
-                     'role-duplicate-reified4.xtm2.jtm',
-                     'variant-reifier.jtm',
                      'itemid-fragment.xtm2.jtm',
-                     'name-scope.xtm2.jtm',
-                     'role-iid.jtm',
-                     'variant-reifier.xtm2.jtm',
                      'itemid-name.xtm2.jtm',
-                     'name-type-after-bad.xtm2.jtm',
-                     'role-reifier-slo.jtm',
-                     'variant-resourcedata-uri.xtm2.jtm',
                      'itemid-occurrence.xtm2.jtm',
-                     'name-type-after.xtm2.jtm',
-                     'role-reifier.jtm',
-                     'variant-resourceref-relative.xtm2.jtm',
                      'itemid-relative.xtm2.jtm',
-                     'name-type-before.xtm2.jtm',
-                     'role-reifier.xtm2.jtm',
-                     'variant-resourceref.xtm2.jtm',
                      'itemid-role.xtm2.jtm',
-                     'name-type-scope.xtm2.jtm',
-                     'subjid-duplicate.xtm2.jtm',
-                     'variant-scope-duplicate.xtm2.jtm',
                      'itemid-tm.xtm2.jtm',
-                     'name-type.xtm2.jtm',
-                     'subjid-escaping.xtm2.jtm',
-                     'variant-scope-multiple.xtm2.jtm',
                      'itemid-variant.xtm2.jtm',
-                     'name-unicode.xtm2.jtm',
-                     'subjid-escaping2.xtm2.jtm',
-                     'variant.jtm',
                      'itemid.xtm2.jtm',
-                     'name.jtm',
-                     'subjid-fragment.xtm2.jtm',
-                     'variant.xtm2.jtm',
                      'merge-itemid-with-association.xtm2.jtm',
-                     'name.xtm2.jtm',
-                     'subjid-relative.xtm2.jtm',
                      'merge-itemid-with-names.xtm2.jtm',
-                     'occurrence-datatype-unknown.xtm2.jtm',
-                     'subjid-sameas-itemid.xtm2.jtm',
                      'merge-itemid-with-occurrences.xtm2.jtm',
-                     //'occurrence-detached.jtm',
-                     'subjid.xtm2.jtm'
+                     'merge-itemid-with-types.xtm2.jtm',
+                     'merge-itemid-with-variants.xtm2.jtm',
+                     'merge-itemid.xtm2.jtm',
+                     'merge-subjid.xtm2.jtm',
+                     'merge-subjloc.xtm2.jtm',
+                     'merge-three-way.xtm2.jtm',
+                     'name-default-type.jtm',
+                     'name-duplicate-iid.xtm2.jtm',
+                     'name-duplicate-merge.xtm2.jtm',
+                     'name-duplicate-reified.xtm2.jtm',
+                     'name-duplicate-reified2.xtm2.jtm',
+                     'name-duplicate.xtm2.jtm',
+                     'name-escaping.xtm2.jtm',
+                     'name-reifier-slo.jtm',
+                     'name-reifier.jtm',
+                     'name-reifier.xtm2.jtm',
+                     'name-scope-duplicate-merged.xtm2.jtm',
+                     'name-scope-duplicate.xtm2.jtm',
+                     'name-scope-multiple.xtm2.jtm',
+                     'name-scope.jtm',
+                     'name-scope.xtm2.jtm',
+                     'name-type-after-bad.xtm2.jtm',
+                     'name-type-after.xtm2.jtm',
+                     'name-type-before.xtm2.jtm',
+                     'name-type-scope.xtm2.jtm',
+                     'name-type.xtm2.jtm',
+                     'name-unicode.xtm2.jtm',
+                     'name.jtm',
+                     'name.xtm2.jtm',
+                     'occurrence-datatype-unknown.xtm2.jtm',
+                     'occurrence-duplicate-iid.xtm2.jtm',
+                     'occurrence-duplicate-iid2.xtm2.jtm',
+                     'occurrence-duplicate-reifier.xtm2.jtm',
+                     'occurrence-duplicate.xtm2.jtm',
+                     'occurrence-reifier-slo.jtm',
+                     'occurrence-reifier.jtm',
+                     'occurrence-reifier.xtm2.jtm',
+                     'occurrence-resourcedata-uri-relative.xtm2.jtm',
+                     'occurrence-resourcedata-uri.xtm2.jtm',
+                     'occurrence-resourceref-relative.xtm2.jtm',
+                     'occurrence-resourceref.xtm2.jtm',
+                     'occurrence-scope-duplicate-merged.xtm2.jtm',
+                     'occurrence-scope-duplicate.xtm2.jtm',
+                     'occurrence-scope.xtm2.jtm',
+                     'occurrence-uri.jtm',
+                     'occurrence.jtm',
+                     'occurrence.xtm2.jtm',
+                     'role-duplicate-iid.xtm2.jtm',
+                     'role-duplicate-iid2.xtm2.jtm',
+                     'role-duplicate-reified.xtm2.jtm',
+                     'role-duplicate-reified2.xtm2.jtm',
+                     'role-duplicate-reified3.xtm2.jtm',
+                     'role-duplicate-reified4.xtm2.jtm',
+                     'role-iid.jtm',
+                     'role-reifier-slo.jtm',
+                     'role-reifier.jtm',
+                     'role-reifier.xtm2.jtm',
+                     'subjid-duplicate.xtm2.jtm',
+                     'subjid-escaping.xtm2.jtm',
+                     'subjid-escaping2.xtm2.jtm',
+                     'subjid-fragment.xtm2.jtm',
+                     'subjid-relative.xtm2.jtm',
+                     'subjid-sameas-itemid.xtm2.jtm',
+                     'subjid.xtm2.jtm',
+                     'subjloc-duplicate.xtm2.jtm',
+                     'subjloc-fragment.xtm2.jtm',
+                     'subjloc-multiple.xtm2.jtm',
+                     'subjloc-relative.xtm2.jtm',
+                     'subjloc.xtm2.jtm',
+                     'tm-reifier.xtm2.jtm',
+                     'topic-detached.jtm',
+                     'topic-item-identifier.jtm',
+                     'topic-subject-identifier.jtm',
+                     'topic-subject-locator.jtm',
+                     'topic-type-duplicate.xtm2.jtm',
+                     'topic-type.xtm2.jtm',
+                     'topic.xtm2.jtm',
+                     'topicmap-reifier-null.jtm',
+                     'topicmap-reifier-slo.jtm',
+                     'topicmap-reifier.jtm',
+                     'variant-datatype-unknown.xtm2.jtm',
+                     'variant-duplicate-iid.xtm2.jtm',
+                     'variant-duplicate-reifier.xtm2.jtm',
+                     'variant-duplicate-reifier2.xtm2.jtm',
+                     'variant-duplicate.xtm2.jtm',
+                     'variant-inherit.xtm2.jtm',
+                     'variant-reifier-slo.jtm',
+                     'variant-reifier.jtm',
+                     'variant-reifier.xtm2.jtm',
+                     'variant-resourcedata-uri.xtm2.jtm',
+                     'variant-resourceref-relative.xtm2.jtm',
+                     'variant-resourceref.xtm2.jtm',
+                     'variant-scope-duplicate.xtm2.jtm',
+                     'variant-scope-multiple.xtm2.jtm',
+                     'variant.jtm',
+                     'variant.xtm2.jtm'
                          ];
 
         for (i=0; i<files.length; i+=1) {

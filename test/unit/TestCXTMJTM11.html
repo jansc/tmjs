@@ -34,6 +34,23 @@ var tmp = new Test.Unit.Runner({
         TMUnitTest.addCommonTeardownFunctions(this);
     }},
 
+    testCXTMIllegalCurie: function () {
+         this.importInvalidCXTM(this, 'illegal-curie.jtm', 'jtm11');
+    },
+
+    testCXTMIllegalCurie2: function () {
+         this.importInvalidCXTM(this, 'illegal-curie2.jtm', 'jtm11');
+    },
+
+    testCXTMMissingPrefixDeclaration: function () {
+         this.importInvalidCXTM(this, 'missing-prefix-declaration.jtm', 'jtm11');
+    },
+
+    testCXTMXSDRedeclaration: function () {
+         this.importInvalidCXTM(this, 'xsd-redeclaration.jtm', 'jtm11');
+    },
+
+
     testCXTMAll: function () {
         var file, files = [
             'empty.jtm',

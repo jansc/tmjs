@@ -1,0 +1,5 @@
+{"version": "1.0",
+  "type": "ii:#assoctype",
+  "roles": [{"type": "ii:#roletype",
+                "player": "ii:#topic"}]
+}

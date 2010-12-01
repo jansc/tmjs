@@ -1,0 +1,5 @@
+{"version": "1.0",
+  "parent": ["ii:http://www.example.org/topic"],
+  "value": "Name",
+  "type": "si:http://psi.topicmaps.org/iso13250/model/topic-name"
+}
