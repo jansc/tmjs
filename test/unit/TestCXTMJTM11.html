@@ -1,0 +1,75 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>TestCXTMWriter</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <script type="text/javascript" src="../assets/jsunittest.js"></script>
+  <script type="text/javascript" src="../../src/tm-src.js"></script>
+  <script type="text/javascript" src="../../src/tm-jtm.js"></script>
+  <script type="text/javascript" src="../../src/tm-cxtm.js"></script>
+  <script type="text/javascript" src="datatypeaware.js"></script>
+  <script type="text/javascript" src="tmunittest.js"></script>
+  <script type="text/javascript" src="jquery.min.js"></script>
+  <link type="text/css" rel="stylesheet" href="../assets/unittest.css" />
+</head>
+<body>
+
+<!-- Log output -->
+<div id="testlog"> </div>
+
+<!-- here go any elements you do the testing on -->
+
+<!-- Tests -->
+<script type="text/javascript" language="javascript">
+// <![CDATA[
+var okCount = 0, failCount = 0, exceptionCount = 0;
+var tmp = new Test.Unit.Runner({
+    // optional setup function, run before each individual test case
+    setup: function () { with(this) {
+        TMUnitTest.addCommonSetupFunctions(this);
+    }},
+    // optional teardown function, run after each individual test case
+    teardown: function () { with(this) {
+        TMUnitTest.addCommonTeardownFunctions(this);
+    }},
+
+    testCXTMIllegalCurie: function () {
+         this.importInvalidCXTM(this, 'illegal-curie.jtm', 'jtm11');
+    },
+
+    testCXTMIllegalCurie2: function () {
+         this.importInvalidCXTM(this, 'illegal-curie2.jtm', 'jtm11');
+    },
+
+    testCXTMMissingPrefixDeclaration: function () {
+         this.importInvalidCXTM(this, 'missing-prefix-declaration.jtm', 'jtm11');
+    },
+
+    testCXTMXSDRedeclaration: function () {
+         this.importInvalidCXTM(this, 'xsd-redeclaration.jtm', 'jtm11');
+    },
+
+
+    testCXTMAll: function () {
+        var file, files = [
+            'empty.jtm',
+            'explicit-xsd-prefix.jtm',
+            'implicit-xsd-prefix.jtm',
+            'instance_of.jtm',
+            'topic-item-identifier-prefix.jtm',
+            'topic-subject-identifier-prefix.jtm',
+            'topic-subject-identifier-prefix2.jtm',
+            'topic-subject-locator-prefix.jtm'
+        ];
+        for (i=0; i<files.length; i+=1) {
+            this.compareCXTM(this, files[i], 'jtm11');
+        }
+        console.log("ok = "+okCount+", failed = "+failCount+", failed with exception = "+exceptionCount);
+    }
+
+});
+// ]]>
+</script>
+</body>
+</html>

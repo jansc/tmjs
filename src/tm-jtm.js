@@ -6,6 +6,7 @@ TM.JTM = (function () {
     var ReaderImpl, WriterImpl;
 
     ReaderImpl = function (tm) {
+        var that = this;
         this.tm = tm;
         this.version = null; // Keep the JTM version number
         this.prefixes = {};
@@ -13,21 +14,29 @@ TM.JTM = (function () {
 
         this.curieToLocator = function (loc) {
             var curie, prefix, pos;
-            if (this.version === '1.1' &&
-                loc.substr(0, 1) === '[' &&
-                    loc.substr(loc.length - 1, 1) === ']') {
-                curie = loc.substr(1, loc.length - 1);
+            if (that.version === '1.1' &&
+                loc.substr(0, 1) === '[') {
+                if (loc.substr(loc.length - 1, 1) !== ']') {
+                    throw {name: 'InvalidFormat',
+                        message: 'Invaild CURIE: missing tailing bracket'};
+                }
+                curie = loc.substr(1, loc.length - 2);
                 pos = curie.indexOf(':');
                 if (pos !== -1) {
                     // Lookup prefix and replace with URL
                     prefix = curie.substr(0, pos);
-                    if (this.prefixes[prefix]) {
-                        loc = this.prefixes[prefix] +
+                    if (that.prefixes[prefix]) {
+                        loc = that.prefixes[prefix] +
                             curie.substr(pos + 1, curie.length - 1);
                         return loc;
+                    } else {
+                        throw {name: 'InvalidFormat',
+                            message: 'Missing prefix declaration: ' + prefix};
                     }
+                } else {
+                    throw {name: 'InvalidFormat',
+                        message: 'Invaild CURIE: missing colon'};
                 }
-                // TODO: Failure?
             }
             return loc;
         };
@@ -86,12 +95,30 @@ TM.JTM = (function () {
     */
     ReaderImpl.prototype.fromObject = function (obj, parent) {
         var ret;
+        parent = parent || null;
         if (obj.version !== '1.0' && obj.version !== '1.1') {
             throw {name: 'InvalidFormat',
                 message: 'Unknown version of JTM: ' + obj.version};
         }
-        if (obj.prefixes) {
+        this.version = obj.version;
+        if (obj.version === '1.1' && obj.prefixes) {
             this.prefixes = obj.prefixes;
+            // Check if xsd is defined and if it is valid:
+            if (obj.prefixes && obj.prefixes.xsd &&
+                obj.prefixes.xsd !== 'http://www.w3.org/2001/XMLSchema#') {
+                throw {name: 'InvalidFormat',
+                    message: 'The XSD prefix MUST have the value "http://www.w3.org/2001/XMLSchema#"'};
+            }
+        } else if (obj.prefixes) {
+            throw {name: 'InvalidFormat',
+                message: 'Prefixes are invalid in JTM 1.0: ' + obj.version};
+        }
+        if (!this.prefixes.xsd) {
+            this.prefixes.xsd = 'http://www.w3.org/2001/XMLSchema#';
+        }
+        if (!obj.item_type) {
+            throw {name: 'InvalidFormat',
+                message: 'Missing item_type'};
         }
         switch (obj.item_type.toLowerCase()) {
         case "topicmap":
@@ -122,6 +149,37 @@ TM.JTM = (function () {
         return ret;
     };
 
+    /**
+     * FIXME: Work in progress. We have to specify *how* the information
+     * item can be created.
+     *
+     * Internal function that parses a parent field. From the JTM spec:
+     * "The value of the parent member is an array of item identifiers,
+     * each prefixed by "ii:". For occurrences and names the parent array
+     * may as well contain subject identifiers prefixed by "si:" and
+     * subject locators prefixed by "sl:".
+     */
+    ReaderImpl.prototype.parseParentAsTopic = function (obj, allowTopic) {
+        var parent = null, tmp, i;
+        if (!obj.parent) {
+            parent = this.tm.createTopic();
+        } else if (!(obj.parent instanceof Array) || obj.parent.length === 0) {
+            throw {name: 'InvalidFormat',
+                message: 'Missing parent topic reference in occurrence'};
+        }
+        if (obj.parent) {
+            for (i = 0; i < obj.parent.length; i += 1) {
+                tmp = this.getTopicByReference(obj.parent[i]);
+                if (!parent) {
+                    parent = tmp;
+                } else {
+                    parent.mergeIn(tmp);
+                }
+            }
+        }
+        return parent;
+    };
+
     ReaderImpl.prototype.parseTopicMap = function (obj) {
         var i, len, arr;
         this.parseItemIdentifiers(this.tm, obj.item_identifiers);
@@ -148,7 +206,7 @@ TM.JTM = (function () {
     };
 
     ReaderImpl.prototype.parseTopic = function (obj) {
-        var that = this, topic = null, parseIdentifier, arr, i, identifier;
+        var that = this, topic = null, parseIdentifier, arr, i, identifier, type;
         parseIdentifier = function (tm, topic, arr, getFunc, createFunc, addFunc) {
             var i, len, tmp;
             if (arr && typeof arr === 'object' && arr instanceof Array) {
@@ -179,6 +237,16 @@ TM.JTM = (function () {
             this.tm.getConstructByItemIdentifier,
             this.tm.createTopicByItemIdentifier, 'addItemIdentifier');
 
+        if ((arr = obj.instance_of) && this.version === '1.1') {
+            for (i = 0; i < arr.length; i += 1) {
+                type = this.getTopicByReference(arr[i]);
+                topic.addType(type);
+            }
+        } else if (obj.instance_of && this.version === '1.0') {
+            throw {name: 'InvalidFormat',
+                message: 'instance_of is invalid in JTM 1.0'};
+        }
+
         arr = obj.names;
         if (arr && typeof arr === 'object' && arr instanceof Array) {
             for (i = 0; i < arr.length; i += 1) {
@@ -195,6 +263,9 @@ TM.JTM = (function () {
 
     ReaderImpl.prototype.parseName = function (parent, obj) {
         var name, type, scope, arr, i;
+        if (!parent) {
+            parent = this.parseParentAsTopic(obj);
+        }
         scope = this.parseScope(obj.scope);
         type = this.getTopicByReference(obj.type);
         name = parent.createName(obj.value, type, scope);
@@ -221,6 +292,9 @@ TM.JTM = (function () {
 
     ReaderImpl.prototype.parseOccurrence = function (parent, obj) {
         var occurrence, type, scope;
+        if (!parent) {
+            parent = this.parseParentAsTopic(obj);
+        }
         scope = this.parseScope(obj.scope);
         type = this.getTopicByReference(obj.type);
         occurrence = parent.createOccurrence(type, obj.value,
@@ -238,9 +312,16 @@ TM.JTM = (function () {
         association = this.tm.createAssociation(type, scope);
         arr = obj.roles;
         if (arr && typeof arr === 'object' && arr instanceof Array) {
+            if (arr.length === 0) {
+                throw {name: 'InvalidFormat',
+                    message: 'Association needs roles'};
+            }
             for (i = 0; i < arr.length; i += 1) {
                 this.parseRole(association, arr[i]);
             }
+        } else {
+            throw {name: 'InvalidFormat',
+                message: 'Association needs roles'};
         }
         this.parseItemIdentifiers(association, obj.item_identifiers);
         this.parseReifier(association, obj.reifier);

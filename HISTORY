@@ -1,3 +1,21 @@
+== 0.4.0 2010-12-01
+* JTM 1.1 support. Lots of bugfixes in JTM 1.0 reader/writer
+* CXTM export
+* Implemented all CXTM tests for JTM 1.0 and JTM 1.1
+* Added more documentation
+* Fixed indentation for JSLint
+* Added export of TM.version
+* Added support for TMAPI-function chaining
+* Added locator for default name type
+* Changed the public duplicate removal API
+* Added getLocator method for TopicMap (by Daniel Exner)
+* Removed check for types in getNames (by Daniel Exner)
+
+Minor changes:
+* Removed debug info
+* Unit test overview page renamed to index.html
+* Removed unused variable declarations
+
 == 0.3.1 2010-08-09
 * API for duplicate suppression (tm.sanitize())
 * Restructured code of JTM.Writer, changed API, supports now export of fragments

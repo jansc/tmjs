@@ -100,6 +100,80 @@ addCommonSetupFunctions:
                 dt.floatValue();
             }, "Expected a failure for converting the value to 'Float'");
         };
+        obj.compareCXTM = function(test, filename, cxtmdir) {
+            var tm, writer, reader, cxtm, jtm = null, baseline = null, obj, error = false;
+            $.ajax({async: false, url: './cxtm/' + cxtmdir + '/in/'+filename,
+                success: function (data, statusText, xmlHttpRequest) { jtm = data; }});
+            $.ajax({async: false, url: './cxtm/' + cxtmdir + '/baseline/'+filename+'.cxtm',
+                success: function (data, statusText, xmlHttpRequest) { baseline = data; }});
+            tm = test.createTopicMap(filename);
+            test.assertNotNull(jtm);
+            test.assertNotNull(baseline);
+            test.assertNotNull(tm);
+            obj = $.parseJSON(jtm);
+            test.assertNotNull(obj);
+
+            try {
+                reader = new TM.JTM.Reader(tm);
+                reader.fromObject(obj);
+                writer = new TM.CXTM.Writer();
+                test.assertNotNull(writer);
+                cxtm = writer.toString(tm);
+                test.assertEqual(baseline, cxtm, "CXTM error in "+filename);
+            } catch(e) {
+                console.dir(e);
+                error = true;
+            }
+            test.assertEqual(false, error, "Exception in "+filename);
+            if (!error) {
+                if (baseline !== null && baseline === cxtm) {
+                    okCount += 1;
+                    console.log(filename+" OK");
+                } else {
+                    failCount += 1;
+                    console.log(filename+" failed");
+                }
+            } else {
+                exceptionCount += 1;
+                console.log("An exception was thrown in "+filename);
+            }
+            tm.remove();
+        };
+        obj.importInvalidCXTM = function(test, filename, cxtmdir) {
+            var tm, writer, reader, cxtm, jtm = null, baseline = null, obj = null, error = false;
+            $.ajax({async: false, url: './cxtm/' + cxtmdir + '/invalid/'+filename,
+                success: function (data, statusText, xmlHttpRequest) { jtm = data; }});
+            tm = test.createTopicMap(filename);
+            test.assertNotNull(jtm);
+            test.assertNotNull(tm);
+            obj = $.parseJSON(jtm);
+            test.assertNotNull(obj);
+            test.assertNotUndefined(obj);
+            try {
+                reader = new TM.JTM.Reader(tm);
+                if (obj) {
+                    reader.fromObject(obj);
+                    error = true;
+                }
+            } catch(e) {
+                if (e.name === 'InvalidFormat') {
+                    // OK
+                    console.log("OK");
+                } else {
+                    console.dir(e);
+                    error = true;
+                }
+            }
+            test.assertEqual(false, error, "Exception in "+filename);
+            if (!error) {
+                okCount += 1;
+                console.log(filename+" OK");
+            } else {
+                exceptionCount += 1;
+                console.log("An exception was thrown in "+filename);
+            }
+            tm.remove();
+        };
 
         // Add a function that checks if the array contains the element elem
         // Equal is checked with the comp function
