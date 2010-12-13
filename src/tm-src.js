@@ -530,6 +530,8 @@ TM = (function () {
     
     /**
      * Returns the reifier of this construct.
+     * @returns The topic that reifies this construct or null if this construct
+     * is not reified.
      */
     Reifiable.prototype.getReifier = function () {
         return this.reifier;
@@ -539,6 +541,8 @@ TM = (function () {
      * Sets the reifier of the construct.
      * @throws {ModelConstraintException} If reifier already reifies another
      * construct.
+     * @param {Topic} The topic that should reify this construct or null if an
+     * existing reifier should be removed.
      * @returns {Reifiable} The reified object itself (for chaining support)
      */
     Reifiable.prototype.setReifier = function (reifier) {
@@ -678,6 +682,12 @@ TM = (function () {
     /**
      * Returns the particular feature requested for in the underlying implementation
      * of TopicMapSystem.
+     * @param featureName The name of the feature to check.
+     * @returns true if the named feature is enabled for TopicMapSystem instances created
+     * by this factory; false if the named feature is disabled for TopicMapSystem
+     * instances created by this factory.
+     * @throws {FeatureNotRecognizedException} If the underlying implementation
+     * does not recognize the named feature.
      */
     TopicMapSystemFactory.prototype.getFeature = function (featureName) {
         return this.features;
@@ -686,6 +696,11 @@ TM = (function () {
     /**
      * Gets the value of a property in the underlying implementation of
      * TopicMapSystem.
+     * A list of the core properties defined by TMAPI can be found at
+     * http://tmapi.org/properties/.
+     * @param propertyName The name of the property to retrieve.
+     * @param The value set for this property or null if no value is currently
+     * set for the property.
      */
     TopicMapSystemFactory.prototype.getProperty = function (propertyName) {
         return this.properties[propertyName];
@@ -693,6 +708,11 @@ TM = (function () {
     
     /**
      * Returns if the particular feature is supported by the TopicMapSystem.
+     * Opposite to getFeature({String}) this method returns if the requested feature
+     * is generally available / supported by the underlying TopicMapSystem and
+     * does not return the state (enabled/disabled) of the feature.
+     * @param featureName The name of the feature to check.
+     * @param true if the requested feature is supported, otherwise false.
      */
     TopicMapSystemFactory.prototype.hasFeature = function (featureName) {
         return false;
@@ -701,7 +721,8 @@ TM = (function () {
     /**
      * Obtain a new instance of a TopicMapSystemFactory.
      * @static
-     * @returns {TopicMapSystemFactory}
+     * @returns {TopicMapSystemFactory} A new instance of TopicMapSystemFactory.
+     * @throws {FactoryConfigurationException}
      */
     TopicMapSystemFactory.newInstance = function () {
         return new TopicMapSystemFactory();
@@ -710,6 +731,9 @@ TM = (function () {
     /**
      * Creates a new TopicMapSystem instance using the currently configured
      * factory parameters.
+     * @returns A new instance of a TopicMapSystem
+     * @throws {TMAPIException} If a TopicMapSystem cannot be created which
+     * satisfies the requested configuration.
      */
     TopicMapSystemFactory.prototype.newTopicMapSystem = function () {
         var backend = this.properties['com.semanticheadache.tmjs.backend'] || 'memory'; 
@@ -720,6 +744,15 @@ TM = (function () {
     
     /**
      * Sets a particular feature in the underlying implementation of TopicMapSystem.
+     * A list of the core features can be found at http://tmapi.org/features/.
+     * TODO: The exceptions are currently not implemented!
+     * @param featureName The name of the feature to be set.
+     * @param enable true to enable the feature, false to disable it.
+     * @throws {FeatureNotRecognizedException} If the underlying implementation
+     * does not recognize the named feature.
+     * @throws {FeatureNotSupportedException} If the underlying implementation 
+     * recognizes the named feature but does not support enabling or disabling it
+     * (as specified by the enabled parameter.
      */
     TopicMapSystemFactory.prototype.setFeature = function (featureName, enable) {
         this.features[featureName] = enable;
@@ -727,13 +760,19 @@ TM = (function () {
     
     /**
      * Sets a property in the underlying implementation of TopicMapSystem.
+     * A list of the core properties defined by TMAPI can be found at
+     * http://tmapi.org/properties/. An implementation is free to support properties
+     * other than the core ones.
+     * @param propertyName The name of the property to be set.
+     * @param value - The value to be set of this property or null to remove the
+     * property from the current factory configuration
      */
     TopicMapSystemFactory.prototype.setProperty = function (propertyName, value) {
         this.properties[propertyName] = value;
     };
     
     /**
-     * Creates a new instance of TopicMamSystem.
+     * Creates a new instance of TopicMapSystem.
      * @class Implementation of the TopicMapSystem interface.
      */
     TopicMapSystemMemImpl = function () {
@@ -741,19 +780,29 @@ TM = (function () {
     };
     
     /**
+     * Creates a new TopicMap and stores it within the system under the specified iri.
+     * @param {Locator} iri The address which should be used to store the TopicMap.
+     * TODO: Allow iri to be a {String} as well!
+     * @returns {TopicMap} The newly created {TopicMap} instance.
      * @throws {TopicMapExistsException} If a topic map with the given locator
      * already exists.
      */
-    TopicMapSystemMemImpl.prototype.createTopicMap = function (locator) {
-        if (this.topicmaps[locator.getReference()]) {
+    TopicMapSystemMemImpl.prototype.createTopicMap = function (iri) {
+        if (this.topicmaps[iri.getReference()]) {
             throw {name: 'TopicMapExistsException',
                 message: 'A topic map under the same IRI already exists'};
         }
-        var tm = new TopicMap(this, locator);
-        this.topicmaps[locator.getReference()] = tm;
+        var tm = new TopicMap(this, iri);
+        this.topicmaps[iri.getReference()] = tm;
         return tm;
     };
     
+    /**
+     * Returns all storage addresses of TopicMap instances known by this system.
+     * The return value may be empty but must never be null.
+     * @returns {Array} An array of Locators which represent IRIs of known
+     * {TopicMap} instances.
+     */
     TopicMapSystemMemImpl.prototype.getLocators = function () {
         var locators = [], key;
         for (key in this.topicmaps) {
@@ -764,6 +813,15 @@ TM = (function () {
         return locators;
     };
     
+    /**
+     * Retrieves a {TopicMap} managed by this system with the specified
+     * storage address iri.
+     * @param iri The storage address to retrieve the {TopicMap} from.
+     * iri can be {String} or {Locator}.
+     * @returns {TopicMap} The {TopicMap} instance managed by this system
+     * which is stored at the specified iri, or null if no such {TopicMap}
+     * is found.
+     */
     TopicMapSystemMemImpl.prototype.getTopicMap = function (locator) {
         var tm;
         if (locator instanceof Locator) {
@@ -778,16 +836,37 @@ TM = (function () {
     };
     
     /**
+     * Returns a Locator instance representing the specified IRI reference.
+     * The specified IRI reference is assumed to be absolute.
      * @param {String} iri
+     * @returns {Locator} A Locator representing the IRI reference.
+     * @throws {MalformedIRIException}
      */
     TopicMapSystemMemImpl.prototype.createLocator = function (iri) {
         return new Locator(this, iri);
     };
     
+    /**
+     * Returns the value of the feature specified by featureName for this
+     * TopicMapSystem instance.
+     * The features supported by the TopicMapSystem and the value for each
+     * feature is set when the TopicMapSystem is created by a call to
+     * <code>TopicMapSystemFactory.newTopicMapSystem()</code>and cannot be
+     * modified subsequently.
+     * FIXME: Not implemented! Returns always false.
+     * @param {String} featureName The name of the feature to check.
+     * @returns true if the named feature is enabled for this TopicMapSystem
+     * instance; false if the named feature is disabled for this instance.
+     * @throws {FeatureNotRecognizedException} If the underlying implementation
+     * does not recognize the named feature.
+     */
     TopicMapSystemMemImpl.prototype.getFeature = function (featureName) {
         return false;
     };
     
+    /**
+     * Internal function that removes a {TopicMap} from the {TopicMapSystem}.
+     */
     TopicMapSystemMemImpl.prototype._removeTopicMap = function (tm) {
         var key;
         for (key in this.topicmaps) {
@@ -798,6 +877,15 @@ TM = (function () {
         }
     };
     
+    /**
+     * Applications SHOULD call this method when the TopicMapSystem instance
+     * is no longer required.
+     * Once the {TopicMapSystem} instance is closed, the {TopicMapSystem} and any
+     * object retrieved from or created in this {TopicMapSystem} MUST NOT be
+     * used by the application.
+     * Right now, this function releases all references from the ToicMapSystem
+     * object to the TopicMap so that garbage collection can be triggered.
+     */
     TopicMapSystemMemImpl.prototype.close = function () {
         this.topicmaps = null; // release references
     };
@@ -865,6 +953,10 @@ TM = (function () {
     };
 
     /**
+     * Part of tmjs's internal event handling system. It is mainly used to update
+     * TMAPI indexes automatically.
+     * @param type. A constant from the EventType namespace.
+     * @param handler {Function} A callback function.
      * @returns {TopicMap} The topic map object itself (for chaining support)
      */
     TopicMap.prototype.register_event_handler = function (type, handler) {
@@ -934,6 +1026,10 @@ TM = (function () {
         return this;
     };
     
+    /**
+     * Returns true if "this" is a TopicMap object, false otherwise.
+     * @returns {boolean}
+     */
     TopicMap.prototype.isTopicMap = function () {
         return true;
     };
@@ -943,6 +1039,11 @@ TM = (function () {
         return this._constructId;
     };
     
+    /**
+     * Deletes the TopicMap object from the TopicMapSystem container.
+     * After invocation of this method, the TopicMap is in an undefined
+     * state and must not be used further.
+     */
     TopicMap.prototype.remove = function () {
         if (this.topicmapsystem === null) {
             return null;
@@ -964,6 +1065,11 @@ TM = (function () {
     };
     
     /**
+     * Creates an Association in this topic map with the specified type and scope.
+     * @param type {Association} The association type, MUST NOT be null.
+     * @param scope {Array} An array of themes or null if the association should
+     * be in the unconstrained scope.
+     * @returns The newly created Association.
      * @throws {ModelConstraintException} If type or scope is null.
      */
     TopicMap.prototype.createAssociation = function (type, scope) {
@@ -989,6 +1095,15 @@ TM = (function () {
         return a;
     };
     
+    /**
+     * Returns a Locator instance representing the specified IRI reference. The
+     * specified IRI reference is assumed to be absolute.
+     * @param reference {String} A string which uses the IRI notation.
+     * @returns A Locator representing the IRI reference.
+     * @throws {IllegalArgumentException} If reference is null.
+     * @throws {MalformedIRIException} If the provided string cannot be used
+     * to create a valid locator.
+     */
     TopicMap.prototype.createLocator = function (iri) {
         return new Locator(this, iri);
     };
@@ -1000,6 +1115,14 @@ TM = (function () {
         return t;
     };
     
+    /**
+     * Returns a Topic instance with an automatically generated item identifier.
+     * This method returns never an existing Topic but creates a new one with an
+     * automatically generated item identifier. How that item identifier is
+     * generated depends on the implementation. Currently the topic gets an item
+     * identifier of the following form: 'urn:x-tmjs:???' where ??? is a numeric
+     * id.
+     */
     TopicMap.prototype.createTopic = function () {
         var t = this._createEmptyTopic();
         t.addItemIdentifier(this.createLocator('urn:x-tmjs:' + t.getId()));
@@ -1007,6 +1130,18 @@ TM = (function () {
     };
     
     /**
+     * Returns a Topic instance with the specified item identifier.
+     * 
+     * This method returns either an existing Topic or creates a new Topic
+     * instance with the specified item identifier.
+     *
+     * FIXME: The following has not yet been implemented:
+     * If a topic with the specified item identifier exists in the topic map,
+     * that topic is returned. If a topic with a subject identifier equals
+     * to the specified item identifier exists, the specified item identifier
+     * is added to that topic and the topic is returned. If neither a topic
+     * with the specified item identifier nor with a subject identifier equals
+     * to the subject identifier exists, a topic with the item identifier is created.
      * @throws {ModelConstraintException} If no itemIdentifier is given.
      * @throws {IdentityConstraintException} If another construct with the
      * specified item identifier exists which is not a Topic.
@@ -1031,6 +1166,18 @@ TM = (function () {
     };
     
     /**
+     * Returns a Topic instance with the specified subject identifier.
+     * 
+     * This method returns either an existing Topic or creates a new Topic
+     * instance with the specified subject identifier.
+     * 
+     * FIXME: The following has not yet been implemented:
+     * If a topic with the specified subject identifier exists in the topic map,
+     * that topic is returned. If a topic with an item identifier equals to the
+     * specified subject identifier exists, the specified subject identifier is
+     * added to that topic and the topic is returned. If neither a topic with the
+     * specified subject identifier nor with an item identifier equals to the
+     * subject identifier exists, a topic with the subject identifier is created.
      * @throws {ModelConstraintException} If no subjectIdentifier is given.
      */
     TopicMap.prototype.createTopicBySubjectIdentifier = function (subjectIdentifier) {
@@ -1048,6 +1195,13 @@ TM = (function () {
     };
     
     /**
+     * Returns a Topic instance with the specified subject locator.
+     *
+     * This method returns either an existing Topic or creates a new Topic
+     * instance with the specified subject locator.
+     *
+     * @param subjectLocator {Locator} The subject locator the topic should contain.
+     * @returns {Topic} A Topic instance with the specified subject locator.
      * @throws {ModelConstraintException} If no subjectLocator is given.
      */
     TopicMap.prototype.createTopicBySubjectLocator = function (subjectLocator) {
@@ -1064,11 +1218,23 @@ TM = (function () {
         return t;
     };
     
+    /**
+     * Returns all Associations contained in this topic map.
+     * The return value may be empty but must never be null.
+     *
+     * @returns {Array} An array of Association objects. The array MUST NOT
+     * be modified.
+     */
     TopicMap.prototype.getAssociations = function () {
         return this.associations;
     };
     
     /**
+     * Returns a Construct by its (system specific) identifier.
+     *
+     * @param id {String} The identifier of the construct to be returned.
+     * @returns {Construct} The construct with the specified id or null if
+     * such a construct is unknown.
      * @throws {ModelConstraintException} If id is null.
      */
     TopicMap.prototype.getConstructById = function (id) {
@@ -1084,6 +1250,12 @@ TM = (function () {
     };
     
     /**
+     * Returns a {Construct} by its item identifier.
+     *
+     * @param {Locator} itemIdentifier The item identifier of the construct to
+     * be returned.
+     * @returns A construct with the specified item identifier or null if no
+     * such construct exists in the topic map.
      * @throws {ModelConstraintException} If itemIdentifier is null.
      */
     TopicMap.prototype.getConstructByItemIdentifier = function (itemIdentifier) {
@@ -1099,6 +1271,10 @@ TM = (function () {
     };
     
     /**
+     * Returns the specified index.
+     *
+     * @param className {String} The index to return.
+     * @returns An index.
      * @throws {UnsupportedOperationException} If the index type is not
      * supported.
      */
@@ -1117,10 +1293,25 @@ TM = (function () {
             message: 'getIndex ist not (yet) supported'};
     };
     
+    /**
+     * Returns null.
+     *
+     * @returns null since topic maps do not have a parent.
+     */
     TopicMap.prototype.getParent = function () {
         return null;
     };
     
+    /**
+     * Returns a topic by its subject identifier.
+     *
+     * If no topic with the specified subject identifier exists, this method
+     * returns null.
+     * @param subjectIdentifier {Locator} The subject identifier of the topic
+     * to be returned.
+     * @returns A topic with the specified subject identifier or null if no
+     * such topic exists in the topic map.
+     */
     TopicMap.prototype.getTopicBySubjectIdentifier = function (subjectIdentifier) {
         var res = this._si2topic.get(subjectIdentifier.getReference());
         if (res) {
@@ -1129,6 +1320,16 @@ TM = (function () {
         return null; // Make sure that the result is not undefined
     };
     
+    /**
+     * Returns a topic by its subject locator.
+     * If no topic with the specified subject locator exists, this method
+     * returns null.
+     *
+     * @param subjectLocator {Locator} The subject locator of the topic to be 
+     * returned.
+     * @returns A topic with the specified subject locator or null if no such
+     * topic exists in the topic map.
+     */
     TopicMap.prototype.getTopicBySubjectLocator = function (subjectLocator) {
         var res = this._sl2topic.get(subjectLocator.getReference());
         if (res) {
@@ -1137,27 +1338,81 @@ TM = (function () {
         return null; // Make sure that the result is not undefined
     };
     
+    /**
+     * Returns the Locator that was used to create the topic map.
+     * 
+     * Note: The returned locator represents the storage address of the topic
+     * map and implies no further semantics.
+     * @returns A Locator, never null.
+     * @see TopicMapSystem.createTopicMap(locator)
+     * @see TopicMapSystem.getTopicMap(locator)
+     */
     TopicMap.prototype.getLocator = function () {
         return this.locator;
     };
     
+    /**
+     * Returns all Topics contained in this topic map. The return value may be
+     * empty but must never be null.
+     *
+     * @returns An {Array} of {Topic} objects. The array MUST NOT be modified.
+     */
     TopicMap.prototype.getTopics = function () {
         return this.topics;
     };
     
+    /**
+     * Merges the topic map other into this topic map.
+     * All Topics and Associations and all of their contents in other will be
+     * added to this topic map.
+     *
+     * All information items in other will be merged into this topic map as defined by
+     * the Topic Maps - Data Model (TMDM) merging rules.
+     *
+     * The merge process will not modify other in any way.
+     * If <code>this.equals(other)</code> no changes are made to the topic map.
+     *
+     * @param other {TopicMap}  The topic map to be merged with this topic map
+     * instance; must not be null.
+     * @throws {ModelConstraintException} If other is null.
+     */
     TopicMap.prototype.mergeIn = function (topicmap) {
         // TODO implement!
         throw {name: 'NotImplemented', message: 'TopicMap.mergeIn() not implemented'};
     };
     
+    /**
+     * Returns true if the other object is equal to this one. Equality must be
+     * the result of comparing the identity (this == other) of the two objects.
+     * Note: This equality test does not reflect any equality rule according to
+     * the Topic Maps - Data Model (TMDM) by intention.
+     *
+     * @param other The object to compare this object against.
+     * @returns <code>(this === other)</code>
+     */
     TopicMap.prototype.equals = function (topicmap) {
         return this.locator.equals(topicmap.locator);
     };
     
+    /**
+     * Returns the identifier of this construct. This property has no
+     * representation in the Topic Maps - Data Model.
+     * The ID can be anything, so long as no other Construct in the same topic map
+     * has the same ID.
+     *
+     * @returns An identifier which identifies this construct uniquely within a topic
+     * map.
+     */
     TopicMap.prototype.getId = function () {
         return this.id;
     };
     
+    /**
+     * Returns the TopicMap instance to which this Topic Maps construct belongs.
+     * A TopicMap instance returns itself.
+     *
+     * @returns The topic map instance to which this construct belongs.
+     */
     TopicMap.prototype.getTopicMap = function () {
         return this;
     };
@@ -1250,16 +1505,33 @@ TM = (function () {
         'removeItemIdentifier', 'isTopic', 'isAssociation', 'isRole',
         'isOccurrence', 'isName', 'isVariant', 'isTopicMap');
     
+    /**
+     * Returns true if "this" is a {Topic} object, false otherwise.
+     * @returns {boolean}
+     */
     Topic.prototype.isTopic = function () {
         return true;
     };
     
+    /**
+     * Returns the TopicMap instance to which this Topic Maps construct belongs. 
+     *
+     * @returns The topic map instance to which this construct belongs.
+     */
     Topic.prototype.getTopicMap = function () {
         return this.parnt;
     };
     
     /**
      * Adds a subject identifier to this topic.
+     *
+     * If adding the specified subject identifier would make this topic
+     * represent the same subject as another topic and the feature "automerge"
+     * (http://tmapi.org/features/automerge/) is disabled, an
+     * IdentityConstraintException is thrown.
+     *
+     * @param subjectIdentifier {Locator} The subject identifier to be added; must not
+     * be null.
      * @throws {ModelConstraintException} If subjectIdentifier is null or
      * not defined.
      * @returns {Topic} The topic itself (for chaining support)
@@ -1283,6 +1555,14 @@ TM = (function () {
     
     /**
      * Adds a subject locator to this topic.
+     *
+     * If adding the specified subject locator would make this topic represent
+     * the same subject as another topic and the feature "automerge"
+     * (http://tmapi.org/features/automerge/) is disabled, an
+     * IdentityConstraintException is thrown.
+     *
+     * @param subjectLocator {Locator} The subject locator to be added; must not be
+     * null.
      * @throws {ModelConstraintException} If subjectLocator is null or
      * not defined.
      * @returns {Topic} The topic itself (for chaining support)
@@ -1306,6 +1586,12 @@ TM = (function () {
     
     /**
      * Adds a type to this topic.
+     * tmjs does not create an association for types added by
+     * this method. In any case, every type which was added by this method must
+     * be returned by the getTypes() method.
+     *
+     * @param {Topic} type The type of which this topic should become an instance of;
+     * must not be null.
      * @throws {ModelConstraintException} If type is null or not defined.
      * @returns {Topic} The topic itself (for chaining support)
      */
@@ -1320,9 +1606,18 @@ TM = (function () {
         return this;
     };
     
-    // TODO: @type is optional In TMAPI 2.0
-    // Creates a Name for this topic with the specified value, and scope.
-    // Creates a Name for this topic with the specified type, value, and scope.
+    /**
+     * Creates a Name for this topic with the specified value, type, and scope.
+     * If not type is given, the created Name will have the default name type
+     * (a Topic with the subject identifier
+     * http://psi.topicmaps.org/iso13250/model/topic-name).
+     *
+     * @param {String} value The string value of the name; MUST NOT be null.
+     * @param {Topic} type The name type. If it is null, the created Name will
+     * have the defaul name type.
+     * @param {Array} scope An array of themes. The collection may be undefined
+     * or null if the name should be in the unconstrained scope.
+     */
     Topic.prototype.createName = function (value, type, scope) {
         var name;
         if (type) {
@@ -1341,13 +1636,19 @@ TM = (function () {
         return name;
     };
     
-    // TODO: @datatype is optional in TMAPI, value may be string or locator.
-    // Creates an Occurrence for this topic with the specified type, IRI value, and
-    // scope.
-    // createOccurrence(Topic type, java.lang.String value, Locator datatype,
-    // java.util.Collection<Topic> scope) 
-    // Creates an Occurrence for this topic with the specified type, string value,
-    // and scope.
+    /**
+     * Creates an Occurrence for this topic with the specified type, string
+     * value, datatype, and scope.
+     * If no datatype is given the new Occurrence will have the datatype
+     * xsd:string.
+     *
+     * @param {Topic} type The occurrence type; MUST NOT be null.
+     * @param {String} value The string value of the occurrence.
+     * @param {Locator} datatype A locator indicating the datatype of the
+     * value.
+     * @param {Array} scope An optional array of themes. If the array's
+     * length is 0, the occurrence will be in the unconstrained scope.
+     */
     Topic.prototype.createOccurrence = function (type, value, datatype, scope) {
         var occ;
         SameTopicMapHelper.assertBelongsTo(this.parnt, type);
@@ -1362,11 +1663,20 @@ TM = (function () {
     
     /**
      * Returns the Names of this topic where the name type is type.
-     *type is optional.
+     * type is optional.
+     * The return value may be empty but must never be null.
+     * @param {Topic} type The type of the Names to be returned; must not be null
+     * (but can be undefined).
+     * @returns {Array} An Array of Names with the specified type.
+     * @throws {IllegalArgumentException} If type is null.
      */
     Topic.prototype.getNames = function (type) {
         var ret = [], i;
 
+        if (type === null) {
+            throw {name: 'IllegalArgumentException',
+                message: 'Topic.getOccurrences cannot be called without type'};
+        }
         for (i = 0; i < this.names.length; i += 1) {
             if (type && this.names[i].getType().equals(type)) {
                 ret.push(this.names[i]);
@@ -1380,6 +1690,9 @@ TM = (function () {
     /**
      * Returns the Occurrences of this topic where the occurrence type is type. type
      * is optional.
+     * The return value may be empty but must never be null.
+     * @param {Topic} type The type of the Occurrences to be returned; must not be null.
+     * @returns {Array} A possibly empty Array of Occurrences.
      * @throws {IllegalArgumentException} If type is null.
      */
     Topic.prototype.getOccurrences = function (type) {
@@ -1398,6 +1711,8 @@ TM = (function () {
         return ret;
     };
     
+    // Internal function that removes the occurrence occ from the topics
+    // internal list
     Topic.prototype._removeOccurrence = function (occ) {
         // remove this from TopicMap.topics
         for (var i = 0; i < this.occurrences.length; i += 1) {
@@ -1409,7 +1724,11 @@ TM = (function () {
         this.getTopicMap()._removeOccurrence(occ);
     };
     
-    // Returns the Construct which is reified by this topic.
+    /**
+     * Returns the Construct which is reified by this topic.
+     * @returns The Reifiable that is reified by this topic or null if this
+     * topic does not reify a statement.
+     */
     Topic.prototype.getReified = function (type) {
         return this.reified;
     };
@@ -1419,9 +1738,15 @@ TM = (function () {
     };
     
     /**
-     * Returns the roles played by this topic.
-     * Returns the roles played by this topic where the role type is type.
-     * assocType is optional
+     * Returns the roles played by this topic where the role type is type 
+     * or all roles of the topic. assocType is optional
+     * 
+     * @param {Topic} type The type of the Roles to be returned; must not be
+     * null, but can be undefined.
+     * @param {Topic} assocType The type of the Association from which the
+     * returned roles must be part of; must not be null.
+     * @returns A possibly empty Array of Roles with the specified type which are
+     * part of Associations with the specified assocType.
      * @throws {IllegalArgumentException} If type or assocType is null.
      */
     Topic.prototype.getRolesPlayed = function (type, assocType) {
@@ -1449,13 +1774,11 @@ TM = (function () {
     };
     
     // @private Registers role as a role played
-    // TODO: Rename to _addRolePlayed
-    Topic.prototype.addRolePlayed = function (role) {
+    Topic.prototype._addRolePlayed = function (role) {
         this.rolesPlayed.push(role);
     };
     
-    // TODO: Rename to _removeRolePlayed
-    Topic.prototype.removeRolePlayed = function (role) {
+    Topic.prototype._removeRolePlayed = function (role) {
         for (var i = 0; i < this.rolesPlayed.length; i += 1) {
             if (this.rolesPlayed[i].id === role.id) {
                 this.rolesPlayed.splice(i, 1);
@@ -1465,6 +1788,10 @@ TM = (function () {
     
     /**
      * Returns the subject identifiers assigned to this topic.
+     * The return value may be an empty Array but must never be null.
+     * 
+     * @returns {Array} A possibly empty array of Locators representing the
+     * subject identifiers.
      */
     Topic.prototype.getSubjectIdentifiers = function () {
         return this.subjectIdentifiers;
@@ -1472,6 +1799,10 @@ TM = (function () {
     
     /**
      * Returns the subject locators assigned to this topic.
+     * The return value may be an empty Array but must never be null.
+     *
+     * @returns {Array} A possibly empty array of Locators representing the
+     * subject locators.
      */
     Topic.prototype.getSubjectLocators = function () {
         return this.subjectLocators;
@@ -1479,6 +1810,12 @@ TM = (function () {
     
     /**
      * Returns the types of which this topic is an instance of.
+     * This method returns only those types which where added by
+     * addType(Topic) and may ignore type-instance relationships which are
+     * modelled as association.
+     * The return value may be empty but must never be null.
+     *
+     * @returns {Array} A possibly empty array of Topics.
      */
     Topic.prototype.getTypes = function () {
         return this.types;
@@ -1486,9 +1823,19 @@ TM = (function () {
     
     /**
      * Merges another topic into this topic.
+     * Merging a topic into this topic causes this topic to gain all of the
+     * characteristics of the other topic and to replace the other topic
+     * wherever it is used as type, theme, or reifier. After this method
+     * completes, other will have been removed from the TopicMap.
+     *
+     * If this.equals(other) no changes are made to the topic.
+     *
+     * NOTE: The other topic MUST belong to the same TopicMap instance as this
+     * topic!
+     * @param {Topic} other The topic to be merged into this topic; must not be null.
+     * @returns {Topic} The topic itself (for chaining support)
      * @throws {ModelConstraintException} If the topics reify different
      * information items.
-     * @returns {Topic} The topic itself (for chaining support)
      */
     Topic.prototype.mergeIn = function (other) {
         var arr, i, tmp, tmp2, signatures, tiidx, sidx;
@@ -1617,6 +1964,10 @@ TM = (function () {
     
     /**
      * Removes this topic from the containing TopicMap instance.
+     * This method throws a TopicInUseException if the topic plays a Role, is
+     * used as type of a Typed construct, or if it is used as theme for a Scoped
+     * construct, or if it reifies a Reifiable.
+     *
      * @throws {TopicInUseException} If the topics is used as reifier,
      * occurrence type, name type, association type, role type, topic type,
      * association theme, occurrence theme, name theme, variant theme,
@@ -1648,9 +1999,14 @@ TM = (function () {
     
     /**
      * Removes a subject identifier from this topic.
+     * @param {Locator} subjectIdentifier The subject identifier to be removed
+     * from this topic, if present (null is ignored).
      * @returns {Topic} The topic itself (for chaining support)
      */
     Topic.prototype.removeSubjectIdentifier = function (subjectIdentifier) {
+        if (!subjectIdentifier) {
+            return this;
+        }
         for (var i = 0; i < this.subjectIdentifiers.length; i += 1) {
             if (this.subjectIdentifiers[i].getReference() ===
                 subjectIdentifier.getReference()) {
@@ -1664,9 +2020,14 @@ TM = (function () {
     
     /**
      * Removes a subject locator from this topic.
+     * @param {Locator} subjectLocator The subject identifier to be removed
+     * from this topic, if present (null is ignored).
      * @returns {Topic} The topic itself (for chaining support)
      */
     Topic.prototype.removeSubjectLocator = function (subjectLocator) {
+        if (!subjectLocator) {
+            return this;
+        }
         for (var i = 0; i < this.subjectLocators.length; i += 1) {
             if (this.subjectLocators[i].getReference() ===
                 subjectLocator.getReference()) {
@@ -1680,9 +2041,15 @@ TM = (function () {
     
     /**
      * Removes a type from this topic.
+     *
+     * @param {Topic} type The type to be removed from this topic, if present
+     * (null is ignored).
      * @returns {Topic} The topic itself (for chaining support)
      */
     Topic.prototype.removeType = function (type) {
+        if (!type) {
+            return this;
+        }
         for (var i = 0; i < this.types.length; i += 1) {
             if (this.types[i].equals(type)) {
                 this.types.splice(i, 1);
@@ -1727,14 +2094,26 @@ TM = (function () {
         'removeItemIdentifier', 'isTopic', 'isAssociation', 'isRole',
         'isOccurrence', 'isName', 'isVariant', 'isTopicMap');
     
+    /**
+     * Returns true if "this" is an {Occurrence} object, false otherwise.
+     * @returns {boolean}
+     */
     Occurrence.prototype.isOccurrence = function () {
         return true;
     };
     
+    /**
+     * Returns the TopicMap instance to which this Topic Maps construct belongs. 
+     *
+     * @returns The topic map instance to which this construct belongs.
+     */
     Occurrence.prototype.getTopicMap = function () {
         return this.parnt.getParent();
     };
     
+    /**
+     * Removes this occurrence from the containing Topic instance.
+     */
     Occurrence.prototype.remove = function () {
         var i;
         for (i = 0; i < this.scope.length; i += 1) {
@@ -1770,15 +2149,38 @@ TM = (function () {
         'removeItemIdentifier', 'isTopic', 'isAssociation', 'isRole',
         'isOccurrence', 'isName', 'isVariant', 'isTopicMap');
     
+    /**
+     * Returns true if "this" is a {Name} object, false otherwise.
+     * @returns {boolean}
+     */
     Name.prototype.isName = function () {
         return true;
     };
     
+    /**
+     * Returns the TopicMap instance to which this Topic Maps construct belongs. 
+     *
+     * @returns The topic map instance to which this construct belongs.
+     */
     Name.prototype.getTopicMap = function () {
         return this.parnt.parnt;
     };
     
     /**
+     * Creates a Variant of this topic name with the specified IRI value,
+     * datatype, and scope.
+     *
+     * If datatype is undefined or null, The newly created Variant will have the
+     * datatype xsd:anyURI.
+     *
+     * The newly created Variant will contain all themes from the parent name
+     * and the themes specified in scope.
+     *
+     * @param {Locator} value A locator which represents an IRI.
+     * @param {Array} scope An Array with (size >= 1) of themes ({Topic}
+     * objects).
+     * @param {Locator} datatype A locator indicating the datatype of the value.
+     * @returns The newly created {Variant}.
      * @throws {ModelConstraintException} If scope is null.
      */
     Name.prototype.createVariant = function (value, datatype, scope) {
@@ -1812,8 +2214,11 @@ TM = (function () {
     };
     
     /**
-     * @throws {ModelConstraintException} If value is null.
+     * Sets the value of this name. The previous value is overridden.
+     *
+     * @param {String} value The name string to be assigned to the name.
      * @returns {Name} The name itself (for chaining support)
+     * @throws {ModelConstraintException} If value is null.
      */
     Name.prototype.setValue = function (value) {
         if (!value) {
@@ -1824,10 +2229,24 @@ TM = (function () {
         return this;
     };
     
+
+    /**
+     * Returns the value of this name.
+     *
+     * @returns A string representing the value of this name.
+     */
     Name.prototype.getValue = function (value) {
         return this.value;
     };
     
+
+    /**
+     * Deletes this construct from its parent container. After invocation of
+     * this method, the construct is in an undefined state and must not be used
+     * further.
+     *
+     * @returns {Topic} The parent topic (for chaining support)
+     */
     Name.prototype.remove = function () {
         var i;
         for (i = 0; i < this.scope.length; i += 1) {
@@ -1849,6 +2268,12 @@ TM = (function () {
         this.getTopicMap()._removeVariant(variant);
     };
 
+    /**
+     * Returns the Variants defined for this name. The return value may be empty
+     * but must never be null.
+     *
+     * @returns An Array of {Variant} objects. The array MUST NOT be modified.
+     */
     Name.prototype.getVariants = function () {
         return this.variants;
     };
@@ -1964,8 +2389,8 @@ TM = (function () {
         if (this.player.equals(player)) {
             return;
         }
-        this.player.removeRolePlayed(this);
-        player.addRolePlayed(this);
+        this.player._removeRolePlayed(this);
+        player._addRolePlayed(this);
         this.player = player;
         return this;
     };
@@ -2013,7 +2438,7 @@ TM = (function () {
         SameTopicMapHelper.assertBelongsTo(this.parnt, type);
         SameTopicMapHelper.assertBelongsTo(this.parnt, player);
         var role = new Role(this, type, player);
-        player.addRolePlayed(role);
+        player._addRolePlayed(role);
         this.roles.push(role);
         this.parnt.addRoleEvent.fire(role, {type: type, player: player});
         return role;
@@ -2026,7 +2451,7 @@ TM = (function () {
                 break;
             }
         }
-        role.getPlayer().removeRolePlayed(role);
+        role.getPlayer()._removeRolePlayed(role);
         this.getTopicMap()._removeRole(role);
     };
     

@@ -1,3 +1,6 @@
+* Topic.prototype.removeSubjectIdentifier, Topic.prototype.removeSubjectLocator,
+  Topic.prototype.removeType now ignore null as a parameter
+
 == 0.4.0 2010-12-01
 * JTM 1.1 support. Lots of bugfixes in JTM 1.0 reader/writer
 * CXTM export
