@@ -10,7 +10,7 @@ Topic Maps based applications in Web browsers. It can be used to create
 semantic mashups. The JavaScript library is independent of libraries such
 as jQuery or prototype.js, but it can be used in combination with them.
 
-For more details check out the [project's homepage]([http://github.com/jansc/tmjs).
+For more details check out the [project's homepage](http://github.com/jansc/tmjs).
 
 
 # Features
