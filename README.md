@@ -10,7 +10,7 @@ Topic Maps based applications in Web browsers. It can be used to create
 semantic mashups. The JavaScript library is independent of libraries such
 as jQuery or prototype.js, but it can be used in combination with them.
 
-For more details check out the [project's homepage](http://github.com/jansc/tmjs).
+For more details check out the [project's homepage](https://github.com/jansc/tmjs).
 
 
 # Features
@@ -87,9 +87,9 @@ By default newTopicMapSystem() returns an in-memory implementation.
 
 See these topics for more information:
 
-* [Getting started](http://wiki.github.com/jansc/tmjs/getting-started)
-* [JTM import and export](http://wiki.github.com/jansc/tmjs/jtm-import-and-export)
-* [Duplicate removal](http://wiki.github.com/jansc/tmjs/duplicate-removal)
+* [Getting started](https://github.com/jansc/tmjs/wiki/getting-started)
+* [JTM import and export](https://github.com/jansc/tmjs/wiki/jtm-import-and-export)
+* [Duplicate removal](https://github.com/jansc/tmjs/wiki/duplicate-removal)
 
 
 # Distribution overview
@@ -114,7 +114,7 @@ the source code and to run the unit tests.
 For feedback or if you find any bugs or have comments or feature request
 please use the issue tracker at
 
-[project's homepage](http://github.com/jansc/tmjs)
+[project's homepage](https://github.com/jansc/tmjs)
 
 
 # Copyright and License
